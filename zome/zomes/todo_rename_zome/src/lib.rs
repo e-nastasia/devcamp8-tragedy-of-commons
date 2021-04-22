@@ -1,7 +1,11 @@
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
 
-mod calendar_event;
+mod game_session;
+mod game_round;
+mod game_move;
+
+
 mod utils;
 
 // TODO: Actually code the zome, all this code is just for reference and quick copy-paste
