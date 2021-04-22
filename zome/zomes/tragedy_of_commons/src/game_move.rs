@@ -1,6 +1,5 @@
 use hdk::prelude::*;
-use std::collections::HashMap;
-use crate::game_round::ResourceAmount;
+use crate::types::ResourceAmount;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {

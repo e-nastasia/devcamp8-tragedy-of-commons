@@ -1,9 +1,8 @@
 use hdk::prelude::*;
 use std::collections::HashMap;
+use crate::types::{ReputationAmount,ResourceAmount};
 
-pub type ResourceAmount = u32;
-pub type ReputationAmount = i32;
-
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
     pub resource_amount: u32,
     pub player_stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)>,

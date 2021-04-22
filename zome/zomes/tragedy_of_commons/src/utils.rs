@@ -1,4 +1,7 @@
 use hdk::prelude::*;
+// NOTE: didn't had time to figure out how to apply this once on a lib level
+// TODO: remove it later
+#[allow(dead_code)]
 
 pub fn try_get_and_convert<T: TryFrom<Entry>>(
     entry_hash: EntryHash,

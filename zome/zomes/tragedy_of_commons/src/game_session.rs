@@ -1,6 +1,8 @@
 use hdk::prelude::*;
-use crate::game_round::ResourceAmount;
+//use holo_hash::EntryHashB64;
+use crate::types::ResourceAmount;
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SessionState {
     InProgress,
     Lost { last_round: EntryHash },
@@ -34,9 +36,10 @@ pub struct GameSessionInput {
     invited: Vec<AgentPubKey>,
 }
 
+/* 
 pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
     let agent_info = agent_info()?;
     
     // todo: get timestamp as systime
-
 }
+*/
