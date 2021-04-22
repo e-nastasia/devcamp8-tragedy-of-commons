@@ -42,7 +42,7 @@ orchestrator.registerScenario(
     const bob_calendar = bob_happ.cells[0];
 
     let calendarEvent = await alice_calendar.call(
-      "todo_rename_zome",
+      "tragedy_of_commons",
       "create_calendar_event",
       {
         title: "Event 1",
@@ -57,7 +57,7 @@ orchestrator.registerScenario(
     await sleep(10);
 
     let calendarEvents = await alice_calendar.call(
-      "todo_rename_zome",
+      "tragedy_of_commons",
       "get_all_calendar_events",
       null
     );

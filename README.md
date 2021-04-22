@@ -21,7 +21,10 @@ This is what is has included:
 
 1. Create a new repository from this template (you can use the `Use this template` button on the top of this page).
 2. Look for all the `TODO` keyword to see the places that need to be changed. (NOTE: replacing it inside the files can easily be done with your IDE, and for renaming files & directories you can use this bash one-liner: `new_name=YOUR_NEW_NAME_HERE find . -name "*todo_rename*" | while read line ; do mv $line $(echo $line | sed 's/todo_rename/$new_name/g') ; done`)
+`grep -RIn 'todo_rename_zome'  --exclude-dir=target -l . |  while read line ; do sed -i 's/todo_rename_zome/tragedy_of_commons/g' $line ; done`
+
 3. Remove this section of this README.md until this next line.
+
 
 ---
 
@@ -35,7 +38,7 @@ This module is designed to be included in other DNAs, assuming as little as poss
 
 ## Documentation
 
-See our [`storybook`](https://holochain-open-dev.github.io/todo_rename_zome).
+See our [`storybook`](https://holochain-open-dev.github.io/tragedy_of_commons).
 
 ## Installation and usage
 
@@ -47,11 +50,11 @@ See our [`storybook`](https://holochain-open-dev.github.io/todo_rename_zome).
 4. Add this zome as a dependency in the `Cargo.toml` file:
 ```toml
 [dependencies]
-todo_rename_zome = {git = "TODO_CHANGE_MODULE_URL", package = "todo_rename_zome"}
+tragedy_of_commons = {git = "TODO_CHANGE_MODULE_URL", package = "tragedy_of_commons"}
 ```
 5. Create a `src` folder besides the `Cargo.toml` with this content:
 ```rust
-extern crate todo_rename_zome;
+extern crate tragedy_of_commons;
 ```
 6. If you haven't yet, in the top level `Cargo.toml` file of your DNA, add this to specify which version of holochain you want to target:
 ```toml
