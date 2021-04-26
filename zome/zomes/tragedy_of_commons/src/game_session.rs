@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-//use holo_hash::EntryHashB64;
+use holo_hash::EntryHashB64;
 use crate::types::ResourceAmount;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,17 +29,65 @@ pub struct GameSession {
 // GameSEssion and SessionInput
 pub struct GameSessionInput {
     regeneration_factor: f32,
-    start_amount: u32,
+    start_amount: ResourceAmount,
     resource_coef: u32,
     reputation_coef: u32,
     num_rounds: u32,
     invited: Vec<AgentPubKey>,
 }
 
-/* 
-pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
-    let agent_info = agent_info()?;
-    
-    // todo: get timestamp as systime
+pub struct GameParams {
+    regeneration_factor: f32,
+    start_amount: ResourceAmount,
+    num_rounds: u32,
 }
-*/
+
+
+impl GameSession {
+    
+    // called in different contexts:
+    // if validation: if round isn't available, validation sin't finished
+    // if session state update: round is available
+    pub fn update_state(&self, game_round: GameRound) -> () {
+        // this is called every time after GameRound is created
+        
+
+        // if round is lost <= 0:
+        //  game session is lost
+        // elif number round == num_rounds:
+        //  game session is finished
+        // else:
+        //  game session is in progress
+        
+    }
+    
+    
+    
+    
+}
+
+pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
+    // NOTE: we create a new session already having invites answered by everyone invited
+    // and invite zome handles invite process before this fn call
+    let agent_info = agent_info()?;
+
+    // todo:
+    // get timestamp
+    // create entry
+    // make link from agent address to game session entry
+    // use remote signals from RSM to send a real-time notif to invited players
+    //  ! using remote signal to ping other holochain backends, instead of emit_signal
+    //  that would talk with the UI
+    // NOTE: we're sending signals to notify that players need to make their moves
+
+
+    // let new_session = GameSession {
+    //     owner: agent_info,
+    //     regeneration_factor
+    // }
+    
+    // // todo: get timestamp as systime
+    // create_entry(&calendar_event)?;
+}
+
+
