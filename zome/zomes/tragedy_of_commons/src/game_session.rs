@@ -25,14 +25,14 @@ pub struct GameParams {
 pub struct GameSession {
     pub owner: AgentPubKey,
     pub created_at: Timestamp,
-    pub invited: Vec<AgentPubKey>,
     pub status: SessionState,
     pub game_params: GameParams,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameSessionInput {
     pub game_params: GameParams,    
-    pub invited: Vec<AgentPubKey>,
+    pub players: Vec<AgentPubKey>,
 }
 
 impl GameSession {
@@ -68,7 +68,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
     //  ! using remote signal to ping other holochain backends, instead of emit_signal
     //  that would talk with the UI
     // NOTE: we're sending signals to notify that players need to make their moves
-
+    // TODO: include current round number, 0 , in notif data
 
     // let new_session = GameSession {
     //     owner: agent_info,
