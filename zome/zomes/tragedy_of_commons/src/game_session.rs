@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
 use crate::types::ResourceAmount;
+use crate::game_round::GameRound;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SessionState {
@@ -11,37 +12,28 @@ pub enum SessionState {
     Finished { last_round: EntryHash }
 }
 
-
-#[hdk_entry(id = "game_session", visibility = "public")]
-pub struct GameSession {
-    pub owner: AgentPubKey,
-    pub regeneration_factor: f32,
-    pub starting_amount_of_resources: ResourceAmount,
-    pub resource_coef: u32,
-    pub reputation_coef: u32,
-    pub created_at: Timestamp,
-    pub invited: Vec<AgentPubKey>,
-    pub status: SessionState,
-    pub num_rounds: u32,
-}
-
-// TODO: separate game input params into another struct to include in both
-// GameSEssion and SessionInput
-pub struct GameSessionInput {
-    regeneration_factor: f32,
-    start_amount: ResourceAmount,
-    resource_coef: u32,
-    reputation_coef: u32,
-    num_rounds: u32,
-    invited: Vec<AgentPubKey>,
-}
-
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameParams {
     regeneration_factor: f32,
     start_amount: ResourceAmount,
     num_rounds: u32,
+    resource_coef: u32,
+    reputation_coef: u32,
 }
 
+#[hdk_entry(id = "game_session", visibility = "public")]
+pub struct GameSession {
+    pub owner: AgentPubKey,
+    pub created_at: Timestamp,
+    pub invited: Vec<AgentPubKey>,
+    pub status: SessionState,
+    pub game_params: GameParams,
+}
+
+pub struct GameSessionInput {
+    pub game_params: GameParams,    
+    pub invited: Vec<AgentPubKey>,
+}
 
 impl GameSession {
     
@@ -59,13 +51,10 @@ impl GameSession {
         // else:
         //  game session is in progress
         
-    }
-    
-    
-    
-    
+    }    
 }
 
+/*
 pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
     // NOTE: we create a new session already having invites answered by everyone invited
     // and invite zome handles invite process before this fn call
@@ -89,5 +78,4 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
     // // todo: get timestamp as systime
     // create_entry(&calendar_event)?;
 }
-
-
+*/
