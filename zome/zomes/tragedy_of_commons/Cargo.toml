@@ -9,8 +9,19 @@ crate-type = ["cdylib", "rlib"]
 name = "tragedy_of_commons"
 
 [dependencies]
+hdk = { git = "https://github.com/holochain/holochain", branch = "develop" }
 derive_more = "0"
 serde = "1"
+chrono = "0.4.19"
 
-holo_hash = "0.0.2-alpha.1"
-hdk = "0.0.100"
+
+[dev-dependencies]
+fixt = { git = "https://github.com/holochain/holochain", branch = "develop" }
+holochain_types = { git = "https://github.com/holochain/holochain", branch = "develop" }
+holochain_zome_types = { git = "https://github.com/holochain/holochain", branch = "develop" }
+mockall = { version = "0.9"}
+
+[features]
+default = []
+mock = ["hdk/mock"]
+

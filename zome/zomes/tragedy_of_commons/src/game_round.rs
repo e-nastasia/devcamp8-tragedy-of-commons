@@ -1,9 +1,13 @@
+
+
 use hdk::prelude::*;
 use holo_hash::{EntryHashB64, HeaderHashB64};
 use std::collections::HashMap;
 use crate::types::{ReputationAmount,ResourceAmount};
 use crate::game_session::GameParams;
 use crate::game_move::GameMove;
+
+
 
 // todo: rename it so we don't have name clash with SessionState
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -23,11 +27,15 @@ pub struct GameRound {
 
 // todo: implement round lost logic in round methods
 
-fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> () {
+#[allow(dead_code)]
+#[allow(unused_imports)]
+fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> u32 {
     // todo:
     // calculate round state from the player moves
     // 
-    unimplemented!()
+    let sum:u32 = player_moves.iter().map(|x| x.resources).sum();
+    params.start_amount - sum
+    // unimplemented!()
 }
 
 
@@ -52,3 +60,43 @@ fn new_game_round(session: EntryHash, previous_round: Option<HeaderHashB64>, pla
     unimplemented!()
 }
 
+
+
+
+#[cfg(test)]
+mod tests {
+    use std::vec;
+    use super::*;
+    use hdk::prelude::*;
+    use ::fixt::prelude::*;
+
+    // #[test]
+    // fn create_entry_mocked() {
+    //     let mut mock_hdk = hdk::prelude::MockHdkT::new();
+
+
+    #[test]
+    fn test_calculate_round_state() {
+        let gp = GameParams {
+            regeneration_factor: 1.1,
+            start_amount: 100,
+            num_rounds: 3,
+            resource_coef: 3,
+            reputation_coef: 2,
+        };
+        let move1 = GameMove {
+            owner: fixt!(AgentPubKey),
+            previous_round: Some(fixt!(EntryHash)),
+            resources: 5,            
+        };
+        let move2 = GameMove {
+            owner: fixt!(AgentPubKey),
+            previous_round: Some(fixt!(EntryHash)),
+            resources: 10,            
+        };
+        let s = calculate_round_state(gp.clone(), vec![move1, move2]);
+        assert_eq!(gp.clone().start_amount - 15, s);
+    }
+
+
+}

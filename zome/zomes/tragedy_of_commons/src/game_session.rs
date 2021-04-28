@@ -14,11 +14,11 @@ pub enum SessionState {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameParams {
-    regeneration_factor: f32,
-    start_amount: ResourceAmount,
-    num_rounds: u32,
-    resource_coef: u32,
-    reputation_coef: u32,
+    pub regeneration_factor: f32,
+    pub start_amount: ResourceAmount,
+    pub num_rounds: u32,
+    pub resource_coef: u32,
+    pub reputation_coef: u32,
 }
 
 #[hdk_entry(id = "game_session", visibility = "public")]
@@ -40,7 +40,7 @@ impl GameSession {
     // called in different contexts:
     // if validation: if round isn't available, validation sin't finished
     // if session state update: round is available
-    pub fn update_state(&self, game_round: GameRound) -> () {
+    pub fn update_state(&self, _game_round: GameRound) -> () {
         // this is called every time after GameRound is created
         
 
