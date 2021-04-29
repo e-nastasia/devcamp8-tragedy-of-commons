@@ -54,8 +54,8 @@ impl GameSession {
     }    
 }
 
-/*
 pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
+    /*
     // NOTE: we create a new session already having invites answered by everyone invited
     // and invite zome handles invite process before this fn call
     let agent_info = agent_info()?;
@@ -77,5 +77,47 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<EntryHashB64> {
     
     // // todo: get timestamp as systime
     // create_entry(&calendar_event)?;
+    */
+    unimplemented!()
 }
-*/
+
+
+
+#[cfg(test)]
+mod tests {
+    use std::vec;
+    use super::*;
+    use hdk::prelude::*;
+    use ::fixt::prelude::*;
+
+    #[test]
+    fn test_new_session() {
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+        let headerhash = fixt!(HeaderHash);
+        let closure_header_hash = headerhash.clone();
+        mock_hdk.expect_create()
+            // .with(hdk::prelude::mockall::predicate::eq(
+            //         UpdateInput::new(headerhash.clone().into(), 
+            //         EntryWithDefId::try_from(&super::Greeting).unwrap())
+            //     ))
+            .times(1)
+            .return_once(move |_| Ok(closure_header_hash));
+
+        hdk::prelude::set_hdk(mock_hdk);
+
+
+        let input = GameSessionInput {
+            game_params: GameParams {
+                regeneration_factor: 1.1,
+                start_amount: 100,
+                num_rounds: 3,
+                resource_coef: 3,
+                reputation_coef: 2,
+            },    
+            players: vec![fixt!(AgentPubKey),fixt!(AgentPubKey),fixt!(AgentPubKey)], // 3 random players
+        };
+
+        new_session(input);
+
+    }
+}

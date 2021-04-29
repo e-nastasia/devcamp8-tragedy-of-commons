@@ -26,15 +26,12 @@ pub struct GameRound {
 
 
 // todo: implement round lost logic in round methods
-
-#[allow(dead_code)]
-#[allow(unused_imports)]
-fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> u32 {
+fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> () {
     // todo:
     // calculate round state from the player moves
     // 
-    let sum:u32 = player_moves.iter().map(|x| x.resources).sum();
-    params.start_amount - sum
+    let consumed_resources_in_round:u32 = player_moves.iter().map(|x| x.resources).sum();
+    params.start_amount - consumed_resources_in_round
     // unimplemented!()
 }
 

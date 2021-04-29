@@ -6,9 +6,17 @@
 
 ## nix-shell
 
-Run all the commands specified in the documentation inside the nix-shell provided by the `*.nix` files at the root of this repository.
+tixel: If you want to work with mock hdk then the only way I found to do this is to clone holochain repo.
+https://github.com/holochain/holochain.git
+And run this command in the root dir:
+    nix-shell --argstr flavor happDev
+Once you are in the nix-shell you can run your cargo tests in this project:
 
-To enter the nix-shell at the root of this repository, simply run `nix-shell` in it.
+RUSTFLAGS='-A warnings' cargo test
+
+// Run all the commands specified in the documentation inside the nix-shell provided by the `*.nix` files at the root of this repository.
+
+// To enter the nix-shell at the root of this repository, simply run `nix-shell` in it.
 
 ## Structure
 
