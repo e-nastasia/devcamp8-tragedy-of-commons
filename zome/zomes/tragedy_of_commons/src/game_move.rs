@@ -21,9 +21,14 @@ pub struct GameMoveInput {
     pub previous_round: Option<EntryHashB64>,
 }
 
-fn new_move() -> (input: GameMoveInput) {
+fn new_move(input: GameMoveInput) -> () {
     // todo: calculate agent address
     // todo: create a GameMove entry
+    // note: we need to avoid querying for all game moves here because
+    // that would block the move by the player. How can we separate those two things?
     // todo: call make_new_round to attempt to make a new round
     // 
 }
+
+// Question: how do we make moves discoverable by the players?
+fn get_all_round_moves() 
