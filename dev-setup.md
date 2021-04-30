@@ -6,10 +6,6 @@
 
 ## nix-shell
 
-tixel: If you want to work with mock hdk then the only way I found to do this is to clone holochain repo.
-https://github.com/holochain/holochain.git
-And run this command in the root dir:
-    nix-shell --argstr flavor happDev
 Once you are in the nix-shell you can run your cargo tests in this project:
 
 RUSTFLAGS='-A warnings' cargo test
