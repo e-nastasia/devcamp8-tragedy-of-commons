@@ -20,10 +20,9 @@ pub struct GameRound {
     pub previous_round_moves: Vec<EntryHash>
 }
 
-
-// todo: implement round lost logic in round methods
-
-fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> () {
+// NOTE: this fn would be used both in validation and when creating game round entries
+// so it has to be very lightweight and can not make any DHT queries
+fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> RoundState {
     // todo:
     // calculate round state from the player moves
     // 
@@ -34,13 +33,15 @@ fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> () 
 
 // NOTE: game round is always created once players made their moves, so every round is always
 // a retrospective of moves made, not created before and updated later
+// NOTE: given the retrospective nature, maybe we should call this fn "close current round" or
+// "start next round" to avoid adding more confusion
 fn new_game_round(session: EntryHash, previous_round: Option<HeaderHashB64>, player_moves: Vec<GameMove>) -> ExternResult<EntryHashB64> {
     // validate that player_moves.len() == session.game_params.invited.len(),
     // otherwise current round isn't complete and we can't create a new one
     
     // let state = calculate_round_state
     // if latest_round not None:
-    //  update existing round entry on the latest_round hash
+    //  update existing round entry on the latest_round hash (continuing the update chain)
     // else:
     //  create new round entry
     //  make a link from session -> round
