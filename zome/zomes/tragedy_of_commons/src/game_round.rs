@@ -7,7 +7,7 @@ use crate::types::{ReputationAmount,ResourceAmount};
 use crate::game_session::GameParams;
 use crate::game_move::GameMove;
 
-
+const no_reputation:ReputationAmount = 0;
 
 // todo: rename it so we don't have name clash with SessionState
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -29,10 +29,24 @@ pub struct GameRound {
 fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> RoundState {
     // todo:
     // calculate round state from the player moves
-    // 
+    
+    // resources 
     let consumed_resources_in_round:u32 = player_moves.iter().map(|x| x.resources).sum();
-    params.start_amount - consumed_resources_in_round
-    // unimplemented!()
+    let total_leftover_resource = params.start_amount - consumed_resources_in_round;
+
+    // player stats
+    let mut stats:HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
+    for p in player_moves.iter() {
+        let a = p.owner.clone();
+        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, no_reputation);
+        stats.insert(a, tuple);
+    }
+
+    RoundState{
+        resource_amount: total_leftover_resource,
+        player_stats: stats,
+    }
+
 }
 
 
@@ -68,14 +82,11 @@ mod tests {
     use super::*;
     use hdk::prelude::*;
     use ::fixt::prelude::*;
-
-    // #[test]
-    // fn create_entry_mocked() {
-    //     let mut mock_hdk = hdk::prelude::MockHdkT::new();
-
+    use mockall::mock;
 
     #[test]
     fn test_calculate_round_state() {
+
         let gp = GameParams {
             regeneration_factor: 1.1,
             start_amount: 100,
@@ -83,18 +94,31 @@ mod tests {
             resource_coef: 3,
             reputation_coef: 2,
         };
+
+        let p1_key = fixt!(AgentPubKey);
         let move1 = GameMove {
-            owner: fixt!(AgentPubKey),
-            previous_round: Some(fixt!(EntryHash)),
+            owner: p1_key.clone(),
+            previous_round: Some(EntryHashB64::from(fixt!(EntryHash))),
             resources: 5,            
         };
+
+        let p2_key = fixt!(AgentPubKey);
         let move2 = GameMove {
-            owner: fixt!(AgentPubKey),
-            previous_round: Some(fixt!(EntryHash)),
+            owner: p2_key.clone(),
+            previous_round: Some(EntryHashB64::from(fixt!(EntryHash))),
             resources: 10,            
         };
         let s = calculate_round_state(gp.clone(), vec![move1, move2]);
-        assert_eq!(gp.clone().start_amount - 15, s);
+        assert_eq!(gp.clone().start_amount - 15, s.resource_amount);
+        
+        let stats_p1: (ResourceAmount, ReputationAmount) = *s.player_stats.get(&p1_key.clone()).unwrap();
+        assert_eq!(stats_p1.0, 5);
+        assert_eq!(stats_p1.1, 0);
+        
+        let stats_p2: (ResourceAmount, ReputationAmount) = *s.player_stats.get(&p2_key.clone()).unwrap();
+        assert_eq!(stats_p2.0, 10);
+        assert_eq!(stats_p1.1, 0);
+
     }
 
 
