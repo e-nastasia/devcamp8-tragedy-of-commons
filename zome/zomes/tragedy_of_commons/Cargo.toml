@@ -22,6 +22,6 @@ holochain_zome_types = { git = "https://github.com/holochain/holochain", branch 
 mockall = { version = "0.9"}
 
 [features]
-default = []
+default = ["mock"]
 mock = ["hdk/mock"]
 

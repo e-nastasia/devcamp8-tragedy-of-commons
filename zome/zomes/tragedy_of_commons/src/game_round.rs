@@ -26,7 +26,7 @@ pub struct GameRound {
 
 
 // todo: implement round lost logic in round methods
-fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> () {
+fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> u32 {
     // todo:
     // calculate round state from the player moves
     // 
