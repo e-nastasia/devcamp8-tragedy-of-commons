@@ -35,3 +35,20 @@ hc s generate workdir/happ/sample.happ --run=8888
 ```
 
 Now `holochain` will be listening at port `8888`;
+
+----------------------------
+
+## Implementation
+
+### Flow
+
+- player decides to create a new game and invites other people to it
+    - at this point, the invite zome from Manuel (Guillem has more details) will take care of:
+        - creating invites
+        - managing their state (pending, accepted, declined)
+    - game session is only created once everyone answered their invites, only for accepted players
+- once the session is created, players are notified that they can make their moves
+- every player makes a single move for the first round
+- first round is created (==closed) once all accepted players make their moves
+- new round starts immediately after that and all players can make another move
+- this happens until 
