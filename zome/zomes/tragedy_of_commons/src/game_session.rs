@@ -1,8 +1,8 @@
+use crate::game_round::GameRound;
+use crate::types::ResourceAmount;
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
 use holo_hash::HeaderHashB64;
-use crate::types::ResourceAmount;
-use crate::game_round::GameRound;
 use std::time::SystemTime;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -11,7 +11,7 @@ pub enum SessionState {
     Lost { last_round: EntryHash },
     // TODO: when validating things, check that last game round is finished to verify
     // that session itself is finished
-    Finished { last_round: EntryHash }
+    Finished { last_round: EntryHash },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -33,18 +33,16 @@ pub struct GameSession {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameSessionInput {
-    pub game_params: GameParams,    
+    pub game_params: GameParams,
     pub players: Vec<AgentPubKey>,
 }
 
 impl GameSession {
-    
     // called in different contexts:
     // if validation: if round isn't available, validation sin't finished
     // if session state update: round is available
     pub fn update_state(&self, _game_round: GameRound) {
         // this is called every time after GameRound is created
-        
 
         // if round is lost <= 0:
         //  game session is lost
@@ -52,15 +50,13 @@ impl GameSession {
         //  game session is finished
         // else:
         //  game session is in progress
-        
-    }    
+    }
 }
 
 pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
-    
     // NOTE: we create a new session already having invites answered by everyone invited
     // and invite zome handles invite process before this fn call
-    let agent_info:AgentInfo = agent_info()?;
+    let agent_info: AgentInfo = agent_info()?;
 
     // todo:
     // get timestamp
@@ -72,7 +68,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
         game_params: input.game_params,
     };
     let headerhash = create_entry(&gs)?;
-    
+
     // make link from agent address to game session entry
     // use remote signals from RSM to send a real-time notif to invited players
     remote_signal(gs, input.players)?;
@@ -80,18 +76,18 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     //  that would talk with the UI
     // NOTE: we're sending signals to notify that players need to make their moves
     // TODO: include current round number, 0 , in notif data
-    
+
     // let new_session = GameSession {
-        //     owner: agent_info,
-        //     regeneration_factor
-        // }
-        
-        // // todo: get timestamp as systime
-        // create_entry(&calendar_event)?;
-        
-        Ok(HeaderHashB64::from(headerhash))
-    }
-    
+    //     owner: agent_info,
+    //     regeneration_factor
+    // }
+
+    // // todo: get timestamp as systime
+    // create_entry(&calendar_event)?;
+
+    Ok(HeaderHashB64::from(headerhash))
+}
+
 // function required to process signal see hdk/src/p2p.rs
 #[hdk_extern]
 fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
@@ -99,13 +95,12 @@ fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::vec;
     use super::*;
+    use fixt::prelude::*;
     use hdk::prelude::*;
-    use ::fixt::prelude::*;
+    use std::vec;
 
     #[test]
     fn test_new_session() {
@@ -122,7 +117,8 @@ mod tests {
         let agent_pubkey = fixt!(AgentPubKey);
         let agent_info = AgentInfo::new(agent_pubkey.clone(), agent_pubkey.clone());
 
-        mock_hdk.expect_agent_info()
+        mock_hdk
+            .expect_agent_info()
             .times(1)
             .return_once(move |_| Ok(agent_info));
 
@@ -131,29 +127,29 @@ mod tests {
 
         let entryhash = fixt!(EntryHash);
         let closure_header_hash = headerhash.clone();
-        mock_hdk.expect_create()
+        mock_hdk
+            .expect_create()
             .with(hdk::prelude::mockall::predicate::eq(
-                EntryWithDefId::try_from( GameSession {
-                    owner:agent_pubkey.clone(), 
-                    status: SessionState::InProgress, 
+                EntryWithDefId::try_from(GameSession {
+                    owner: agent_pubkey.clone(),
+                    status: SessionState::InProgress,
                     game_params: game_params.clone(),
-                }
-                ).unwrap())
-            )
+                })
+                .unwrap(),
+            ))
             .times(1)
             .return_once(move |_| Ok(closure_header_hash));
 
-            
-            
-            let input = GameSessionInput {
-                game_params: game_params,  
-                players: vec![fixt!(AgentPubKey),fixt!(AgentPubKey),fixt!(AgentPubKey)], // 3 random players
-            };
-            
-        mock_hdk.expect_remote_signal()
+        let input = GameSessionInput {
+            game_params: game_params,
+            players: vec![fixt!(AgentPubKey), fixt!(AgentPubKey), fixt!(AgentPubKey)], // 3 random players
+        };
+
+        mock_hdk
+            .expect_remote_signal()
             .times(1)
             .return_once(move |_| Ok(()));
-            
+
         hdk::prelude::set_hdk(mock_hdk);
         new_session(input);
     }

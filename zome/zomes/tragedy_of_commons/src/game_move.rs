@@ -1,6 +1,6 @@
+use crate::types::ResourceAmount;
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
-use crate::types::ResourceAmount;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
@@ -44,7 +44,7 @@ fn try_to_close_round(current_round: EntryHash) {
     unimplemented!()
 }
 
-// Retrieves all available game moves made in a certain round, where entry_hash identifies 
+// Retrieves all available game moves made in a certain round, where entry_hash identifies
 // base for the links.
 fn get_all_round_moves(entry_hash: EntryHash) {
     unimplemented!()
