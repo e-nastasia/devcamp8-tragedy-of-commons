@@ -21,7 +21,7 @@ pub struct GameMoveInput {
     pub previous_round: Option<EntryHashB64>,
 }
 
-fn new_move(input: GameMoveInput) -> () {
+fn new_move(input: GameMoveInput) {
     // todo: calculate agent address
     // todo: create a GameMove entry
     // todo: (if we're making a link from round to move) make a link round -> move
