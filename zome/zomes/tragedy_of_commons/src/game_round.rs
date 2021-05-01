@@ -73,7 +73,7 @@ fn new_game_round(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fixt::prelude::*;
+    use ::fixt::prelude::*;
     use hdk::prelude::*;
     use mockall::mock;
     use std::vec;

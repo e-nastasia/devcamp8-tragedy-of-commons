@@ -20,3 +20,26 @@ entry_defs![
     game_round::GameRound::entry_def(),
     game_move::GameMove::entry_def()
 ];
+
+// give unrestricted access to recv_remote_signal, which is needed for sending remote signals
+#[hdk_extern]
+fn init(_: ()) -> ExternResult<InitCallbackResult> {
+    // grant unrestricted access to accept_cap_claim so other agents can send us claims
+    let mut functions: GrantedFunctions = BTreeSet::new();
+    functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+    create_cap_grant(CapGrantEntry {
+        tag: "".into(),
+        // empty access converts to unrestricted
+        access: ().into(),
+        functions,
+    })?;
+
+    Ok(InitCallbackResult::Pass)
+}
+
+// function required to process remote signals see hdk/src/p2p.rs
+#[hdk_extern]
+fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
+    emit_signal(&signal)?;
+    Ok(())
+}

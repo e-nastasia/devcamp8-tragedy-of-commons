@@ -88,17 +88,10 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     Ok(HeaderHashB64::from(headerhash))
 }
 
-// function required to process signal see hdk/src/p2p.rs
-#[hdk_extern]
-fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
-    emit_signal(&signal)?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fixt::prelude::*;
+    use ::fixt::prelude::*;
     use hdk::prelude::*;
     use std::vec;
 
