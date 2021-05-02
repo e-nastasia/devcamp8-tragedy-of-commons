@@ -6,9 +6,13 @@
 
 ## nix-shell
 
-Run all the commands specified in the documentation inside the nix-shell provided by the `*.nix` files at the root of this repository.
+Once you are in the nix-shell you can run your cargo tests in this project:
 
-To enter the nix-shell at the root of this repository, simply run `nix-shell` in it.
+RUSTFLAGS='-A warnings' cargo test
+
+// Run all the commands specified in the documentation inside the nix-shell provided by the `*.nix` files at the root of this repository.
+
+// To enter the nix-shell at the root of this repository, simply run `nix-shell` in it.
 
 ## Structure
 

@@ -1,6 +1,6 @@
+use crate::types::ResourceAmount;
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
-use crate::types::ResourceAmount;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
@@ -21,7 +21,7 @@ pub struct GameMoveInput {
     pub previous_round: Option<EntryHashB64>,
 }
 
-fn new_move(input: GameMoveInput) -> () {
+fn new_move(input: GameMoveInput) {
     // todo: calculate agent address
     // todo: create a GameMove entry
     // todo: (if we're making a link from round to move) make a link round -> move
@@ -44,7 +44,7 @@ fn try_to_close_round(current_round: EntryHash) {
     unimplemented!()
 }
 
-// Retrieves all available game moves made in a certain round, where entry_hash identifies 
+// Retrieves all available game moves made in a certain round, where entry_hash identifies
 // base for the links.
 fn get_all_round_moves(entry_hash: EntryHash) {
     unimplemented!()
