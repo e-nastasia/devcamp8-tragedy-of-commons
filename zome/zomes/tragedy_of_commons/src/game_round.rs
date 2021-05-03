@@ -5,7 +5,7 @@ use hdk::prelude::*;
 use holo_hash::{EntryHashB64, HeaderHashB64};
 use std::collections::HashMap;
 
-const no_reputation: ReputationAmount = 0;
+const NO_REPUTATION: ReputationAmount = 0;
 
 // todo: rename it so we don't have name clash with SessionState
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -36,7 +36,8 @@ fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> Rou
     let mut stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
     for p in player_moves.iter() {
         let a = p.owner.clone();
-        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, no_reputation);
+        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, NO_REPUTATION
+    );
         stats.insert(a, tuple);
     }
 

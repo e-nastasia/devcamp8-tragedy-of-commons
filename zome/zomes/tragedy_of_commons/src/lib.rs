@@ -1,9 +1,16 @@
 use hdk::prelude::*;
 //use holo_hash::EntryHashB64;
+#[allow(unused_imports)]
+#[allow(dead_code)]
+#[allow(unused)]
 mod game_move;
+#[allow(unused_imports)]
+#[allow(dead_code)]
+#[allow(unused)]
 mod game_round;
 #[allow(unused_imports)]
 #[allow(dead_code)]
+#[allow(unused)]
 mod game_session;
 mod types;
 mod utils;

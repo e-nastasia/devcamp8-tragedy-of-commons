@@ -8,7 +8,7 @@
 
 Once you are in the nix-shell you can run your cargo tests in this project:
 
-RUSTFLAGS='-A warnings' cargo test
+RUSTFLAGS='-A warnings' cargo test --features "mock"
 
 // Run all the commands specified in the documentation inside the nix-shell provided by the `*.nix` files at the root of this repository.
 
