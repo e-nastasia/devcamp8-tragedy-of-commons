@@ -1,4 +1,7 @@
+// use game_session::GameSession;
 use hdk::prelude::*;
+
+use crate::game_session::SignalPayload;
 //use holo_hash::EntryHashB64;
 #[allow(unused_imports)]
 #[allow(dead_code)]
@@ -46,7 +49,10 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
 
 // function required to process remote signals see hdk/src/p2p.rs
 #[hdk_extern]
-fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
-    emit_signal(&signal)?;
-    Ok(())
+fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
+    tracing::debug!("remote signal received");
+    let sig: SignalPayload = signal.decode()?;
+    debug!("Received remote signal {:?}", sig);
+    let msg_to_user = ExternIO::encode("Start round")?;
+    Ok(emit_signal(&msg_to_user)?)
 }

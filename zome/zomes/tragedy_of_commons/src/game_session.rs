@@ -96,13 +96,26 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     //  ! using remote signal to ping other holochain backends, instead of emit_signal
     //  that would talk with the UI
     // NOTE: we're sending signals to notify that players need to make their moves
-    // TODO: include current round number, 0 , in notif data  --> tixel: why do we need this?
-    remote_signal(gs, input.players)?;
+    // TODO: include current round number, 0 , in notif data  
+
+    let payload = ExternIO::encode(SignalPayload::StartRound(gs))?;
+    remote_signal(
+        payload,
+        input.players.clone(),
+    )?;
+    tracing::debug!("sending signal to {:?}", input.players.clone());
 
     // // todo: get timestamp as systime
     // create_entry(&calendar_event)?;
 
     Ok(HeaderHashB64::from(header_hash))
+}
+
+#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
+#[serde(tag = "signal_name", content = "signal_payload")]
+pub enum SignalPayload {
+    StartRound(GameSession),
+    GameStopped,
 }
 
 #[cfg(test)]

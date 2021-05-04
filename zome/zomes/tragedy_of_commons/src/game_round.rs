@@ -36,8 +36,7 @@ fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> Rou
     let mut stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
     for p in player_moves.iter() {
         let a = p.owner.clone();
-        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, NO_REPUTATION
-    );
+        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, NO_REPUTATION);
         stats.insert(a, tuple);
     }
 
