@@ -53,39 +53,69 @@ impl GameSession {
     }
 }
 
+
+//external function that can be called from UI/test, until invitation zoom is added.
+#[hdk_extern]
+pub fn start_new_session(player_list:Vec<AgentPubKey>) -> ExternResult<HeaderHashB64> {
+    let input = GameSessionInput {
+    game_params: GameParams {
+        regeneration_factor: 1.1,
+        start_amount: 100,
+        num_rounds: 3,
+        resource_coef: 3,
+        reputation_coef: 2,
+        },
+    players: player_list,
+    };
+    new_session(input)
+
+}
+
 pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     // NOTE: we create a new session already having invites answered by everyone invited
     // and invite zome handles invite process before this fn call
-    let agent_info: AgentInfo = agent_info()?;
+    let agent_info: AgentInfo = agent_info()?; // agent that starts new game
 
     // todo:
     // get timestamp
 
+    let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
     let gs = GameSession {
-        owner: agent_info.agent_latest_pubkey,
+        owner: latest_pubkey.clone(),
         status: SessionState::InProgress,
         game_params: input.game_params,
     };
-    let headerhash = create_entry(&gs)?;
+    let header_hash = create_entry(&gs)?;
+    let entry_hash_game_session = hash_entry(&gs)?;
 
-    // make link from agent address to game session entry
+    // make link from every player to agent address to game session entry
+    create_link(latest_pubkey.clone().into(), entry_hash_game_session, LinkTag::new("my_game_sessions"))?;
+
     // use remote signals from RSM to send a real-time notif to invited players
-    remote_signal(gs, input.players)?;
     //  ! using remote signal to ping other holochain backends, instead of emit_signal
     //  that would talk with the UI
     // NOTE: we're sending signals to notify that players need to make their moves
-    // TODO: include current round number, 0 , in notif data
+    // TODO: include current round number, 0 , in notif data  
 
-    // let new_session = GameSession {
-    //     owner: agent_info,
-    //     regeneration_factor
-    // }
+    let payload = ExternIO::encode(SignalPayload::StartRound(gs))?;
+    remote_signal(
+        payload,
+        input.players.clone(),
+    )?;
+    tracing::debug!("sending signal to {:?}", input.players.clone());
 
     // // todo: get timestamp as systime
     // create_entry(&calendar_event)?;
 
-    Ok(HeaderHashB64::from(headerhash))
+    Ok(HeaderHashB64::from(header_hash))
+}
+
+#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
+#[serde(tag = "signal_name", content = "signal_payload")]
+pub enum SignalPayload {
+    StartRound(GameSession),
+    GameStopped,
 }
 
 #[cfg(test)]
@@ -121,29 +151,41 @@ mod tests {
         let entryhash = fixt!(EntryHash);
         let closure_header_hash = headerhash.clone();
         mock_hdk
-            .expect_create()
-            .with(hdk::prelude::mockall::predicate::eq(
-                EntryWithDefId::try_from(GameSession {
-                    owner: agent_pubkey.clone(),
-                    status: SessionState::InProgress,
-                    game_params: game_params.clone(),
-                })
+        .expect_create()
+        .with(hdk::prelude::mockall::predicate::eq(
+            EntryWithDefId::try_from(GameSession {
+                owner: agent_pubkey.clone(),
+                status: SessionState::InProgress,
+                game_params: game_params.clone(),
+            })
                 .unwrap(),
             ))
             .times(1)
             .return_once(move |_| Ok(closure_header_hash));
+            
+            let input = GameSessionInput {
+                game_params: game_params,
+                players: vec![fixt!(AgentPubKey), fixt!(AgentPubKey), fixt!(AgentPubKey)], // 3 random players
+            };
+            
+            let entry_hash_game_session = fixt!(EntryHash);
+            mock_hdk
+            .expect_hash_entry()
+            .times(1)
+            .return_once(move |_| Ok(entry_hash_game_session));
 
-        let input = GameSessionInput {
-            game_params: game_params,
-            players: vec![fixt!(AgentPubKey), fixt!(AgentPubKey), fixt!(AgentPubKey)], // 3 random players
-        };
-
-        mock_hdk
+            mock_hdk
             .expect_remote_signal()
             .times(1)
             .return_once(move |_| Ok(()));
-
-        hdk::prelude::set_hdk(mock_hdk);
-        new_session(input);
+            
+            let header_hash_link = fixt!(HeaderHash);
+            mock_hdk
+            .expect_create_link()
+            .times(1)
+            .return_once(move |_| Ok(header_hash_link));
+            
+            hdk::prelude::set_hdk(mock_hdk);
+            new_session(input);
+        }
     }
-}
