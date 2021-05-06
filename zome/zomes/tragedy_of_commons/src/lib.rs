@@ -37,10 +37,10 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     // grant unrestricted access to accept_cap_claim so other agents can send us claims
     let mut functions: GrantedFunctions = BTreeSet::new();
     functions.insert((zome_info()?.zome_name, "recv_remote_signal".into()));
+
     create_cap_grant(CapGrantEntry {
         tag: "".into(),
-        // empty access converts to unrestricted
-        access: ().into(),
+        access: ().into(), // empty access converts to unrestricted
         functions,
     })?;
 
@@ -52,7 +52,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
 fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
     tracing::debug!("remote signal received");
     let sig: SignalPayload = signal.decode()?;
-    debug!("Received remote signal {:?}", sig);
+    tracing::debug!("Received remote signal {:?}", sig);
     let msg_to_user = ExternIO::encode("Start round")?;
     Ok(emit_signal(&msg_to_user)?)
 }

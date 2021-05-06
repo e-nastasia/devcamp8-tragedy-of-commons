@@ -1,9 +1,9 @@
-use crate::game_round::GameRound;
+use crate::game_round::{GameRound, GameRoundResults, RoundState};
 use crate::types::ResourceAmount;
 use hdk::prelude::*;
 use holo_hash::EntryHashB64;
 use holo_hash::HeaderHashB64;
-use std::time::SystemTime;
+use std::{collections::HashMap, time::SystemTime};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
@@ -79,26 +79,38 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     // todo:
     // get timestamp
 
-    let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
     let gs = GameSession {
-        owner: latest_pubkey.clone(),
+        owner: agent_info.agent_initial_pubkey.clone(),
         status: SessionState::InProgress,
         game_params: input.game_params,
     };
     let header_hash = create_entry(&gs)?;
     let entry_hash_game_session = hash_entry(&gs)?;
+    
+    // make link from every players agent address to game session entry
+    create_link(agent_info.agent_initial_pubkey.clone().into(), 
+    entry_hash_game_session.clone(), LinkTag::new("game_sessions"))?;
 
-    // make link from every player to agent address to game session entry
-    create_link(latest_pubkey.clone().into(), entry_hash_game_session, LinkTag::new("my_game_sessions"))?;
+    // create game round results for round 0
+    // this is starting point for all the game moves of round 1 to reference (implicit link)
+    let no_moves:Vec<EntryHash> = vec![];
+    let round_zero = GameRound{
+        round_num: 1,
+        round_state: RoundState {
+            resource_amount: gs.game_params.start_amount,
+            player_stats: HashMap::new(), // TODO add map that gives all players full starting stats <AgentPubKey, (ResourceAmount, ReputationAmount)>,
+        },
+        session: entry_hash_game_session.clone(),
+        previous_round_moves: no_moves,
+    };
 
     // use remote signals from RSM to send a real-time notif to invited players
     //  ! using remote signal to ping other holochain backends, instead of emit_signal
     //  that would talk with the UI
     // NOTE: we're sending signals to notify that players need to make their moves
-    // TODO: include current round number, 0 , in notif data  
-
-    let payload = ExternIO::encode(SignalPayload::StartRound(gs))?;
+    // TODO: include current round number, 0 , in notif data  --> tixel: why do we need this?
+    let payload = ExternIO::encode(SignalPayload::StartNextRound(round_zero))?;
     remote_signal(
         payload,
         input.players.clone(),
@@ -114,7 +126,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "signal_name", content = "signal_payload")]
 pub enum SignalPayload {
-    StartRound(GameSession),
+    StartNextRound(GameRound),
     GameStopped,
 }
 
