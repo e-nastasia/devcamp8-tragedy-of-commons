@@ -15,12 +15,34 @@ pub struct RoundState {
 }
 
 #[hdk_entry(id = "game_round", visibility = "public")]
-pub struct GameRound {
+pub struct GameRoundResults {
     pub round_num: u32,
     pub session: EntryHash,
     pub round_state: RoundState,
     pub previous_round_moves: Vec<EntryHash>,
 }
+
+pub struct GameRoundResultsInput {
+    pub session: EntryHash,
+    pub previous_round: Option<HeaderHashB64>,
+    pub player_moves: Vec<GameMove>
+}
+
+/*
+validation rules:
+
+- In any game session there's always only one round with the respective round_num
+- len of rounds update chain is always <= game_session.params.num_rounds + 1
+
+- validation calculus: validate one round at a time and assume params of previous round
+    are already valid
+- 
+
+TODO: impl validation as:
+validate_update_entry_game_round_results -> EntryID
+
+
+*/
 
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
@@ -50,11 +72,7 @@ fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> Rou
 // a retrospective of moves made, not created before and updated later
 // NOTE: given the retrospective nature, maybe we should call this fn "close current round" or
 // "start next round" to avoid adding more confusion
-fn new_game_round(
-    session: EntryHash,
-    previous_round: Option<HeaderHashB64>,
-    player_moves: Vec<GameMove>,
-) -> ExternResult<EntryHashB64> {
+fn new_game_round(input: GameRoundResultsInput) -> ExternResult<EntryHashB64> {
     // validate that player_moves.len() == session.game_params.invited.len(),
     // otherwise current round isn't complete and we can't create a new one
 

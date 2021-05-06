@@ -21,7 +21,27 @@ pub struct GameMoveInput {
     pub previous_round: Option<EntryHashB64>,
 }
 
-fn new_move(input: GameMoveInput) {
+/*
+validation rules:
+
+- validate that one player only made one move for any round
+    - right now we'll need to run get_links for that, can we avoid it?
+    - alternative: get agent activity
+        retrieves source chain headers from this agent
+        get all headers that are get_link / new entry for game move
+        validate that we're not repeating the same move
+
+        validate that moves are made with timestamp >= game session
+    - another alternative: avoid strict validation here, instead take first move
+        made by agent for any round and use it when calculating
+        - NOTE: we'll have vulnerability
+        - NOTE: update round closing rules to check that every AGENT made a move
+
+        - TODO: impl validation to make sure move is commited by player who's playing the game
+        
+*/
+
+fn new_move(input: GameMoveInput) -> () {
     // todo: calculate agent address
     // todo: create a GameMove entry
     // todo: (if we're making a link from round to move) make a link round -> move
