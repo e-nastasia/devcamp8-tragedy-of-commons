@@ -37,11 +37,19 @@ pub struct GameSessionInput {
     pub players: Vec<AgentPubKey>,
 }
 
+/*
+validation rules:
+
+- make sure session is created only when invites are answered and there's at least one accepted
+    - TODO: add addresses of accepted invites into game session, later
+
+*/
+
 impl GameSession {
     // called in different contexts:
     // if validation: if round isn't available, validation sin't finished
     // if session state update: round is available
-    pub fn update_state(&self, _game_round: GameRound) {
+    pub fn update_state(&self, _game_round: GameRoundResults) {
         // this is called every time after GameRound is created
 
         // if round is lost <= 0:
@@ -79,6 +87,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     // todo:
     // get timestamp
 
+    let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
     let gs = GameSession {
         owner: agent_info.agent_initial_pubkey.clone(),
