@@ -27,7 +27,7 @@ pub fn err(reason: &str) -> WasmError {
 entry_defs![
     Path::entry_def(),
     game_session::GameSession::entry_def(),
-    game_round::GameRound::entry_def(),
+    game_round::GameRoundResults::entry_def(),
     game_move::GameMove::entry_def()
 ];
 

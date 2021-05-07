@@ -25,7 +25,7 @@ pub struct GameRoundResults {
 pub struct GameRoundResultsInput {
     pub session: EntryHash,
     pub previous_round: Option<HeaderHashB64>,
-    pub player_moves: Vec<GameMove>
+    pub player_moves: Vec<GameMove>,
 }
 
 /*
@@ -36,7 +36,7 @@ validation rules:
 
 - validation calculus: validate one round at a time and assume params of previous round
     are already valid
-- 
+-
 
 TODO: impl validation as:
 validate_update_entry_game_round_results -> EntryID
