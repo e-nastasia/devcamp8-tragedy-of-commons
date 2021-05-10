@@ -1,8 +1,6 @@
-use crate::game_round::{GameRound, GameRoundResults, RoundState};
+use crate::{game_round::{GameRound, RoundState}, types::ReputationAmount};
 use crate::types::ResourceAmount;
 use hdk::prelude::*;
-use holo_hash::EntryHashB64;
-use holo_hash::HeaderHashB64;
 use std::{collections::HashMap, time::SystemTime};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -24,17 +22,28 @@ pub struct GameParams {
 }
 
 #[hdk_entry(id = "game_session", visibility = "public")]
+#[derive(Clone)]
 pub struct GameSession {
-    pub owner: AgentPubKey,
-    // pub created_at: Timestamp,
-    pub status: SessionState,
-    pub game_params: GameParams,
+    pub owner: AgentPubKey,         // who started the game
+    // pub created_at: Timestamp,     // when the game was started
+    pub status: SessionState,       // how the game is going
+    pub game_params: GameParams,    // what specific game are we playing
+    pub players: Vec<AgentPubKey>,  // who is playing
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameSessionInput {
     pub game_params: GameParams,
     pub players: Vec<AgentPubKey>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SignalPayload {
+    pub game_session: GameSession,
+    pub game_session_entry_hash: EntryHash,
+    pub previous_round: GameRound,    
+    pub previous_round_entry_hash: EntryHash,
+
 }
 
 /*
@@ -49,7 +58,7 @@ impl GameSession {
     // called in different contexts:
     // if validation: if round isn't available, validation sin't finished
     // if session state update: round is available
-    pub fn update_state(&self, _game_round: GameRoundResults) {
+    pub fn update_state(&self, _game_round: GameRound) {
         // this is called every time after GameRound is created
 
         // if round is lost <= 0:
@@ -64,7 +73,7 @@ impl GameSession {
 
 //external function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
-pub fn start_new_session(player_list:Vec<AgentPubKey>) -> ExternResult<HeaderHashB64> {
+pub fn start_new_session(player_list:Vec<AgentPubKey>) -> ExternResult<HeaderHash> {
     let input = GameSessionInput {
     game_params: GameParams {
         regeneration_factor: 1.1,
@@ -79,7 +88,7 @@ pub fn start_new_session(player_list:Vec<AgentPubKey>) -> ExternResult<HeaderHas
 
 }
 
-pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
+pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     // NOTE: we create a new session already having invites answered by everyone invited
     // and invite zome handles invite process before this fn call
     let agent_info: AgentInfo = agent_info()?; // agent that starts new game
@@ -93,49 +102,64 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
         owner: agent_info.agent_initial_pubkey.clone(),
         status: SessionState::InProgress,
         game_params: input.game_params,
+        players: input.players.clone(),
     };
-    let header_hash = create_entry(&gs)?;
+    create_entry(&gs)?;
     let entry_hash_game_session = hash_entry(&gs)?;
     
     // make link from every players agent address to game session entry
-    create_link(agent_info.agent_initial_pubkey.clone().into(), 
-    entry_hash_game_session.clone(), LinkTag::new("game_sessions"))?;
+    // tixel: this is not needed I think, implicit links are in game session
+    // might only be needed if remote_signal for some reason would proof to be unreliable
+    // create_link(agent_info.agent_initial_pubkey.clone().into(), 
+    // entry_hash_game_session.clone(), LinkTag::new("game_sessions"))?;
 
     // create game round results for round 0
     // this is starting point for all the game moves of round 1 to reference (implicit link)
     let no_moves:Vec<EntryHash> = vec![];
     let round_zero = GameRound{
-        round_num: 1,
+        round_num: 0,
         round_state: RoundState {
-            resource_amount: gs.game_params.start_amount,
-            player_stats: HashMap::new(), // TODO add map that gives all players full starting stats <AgentPubKey, (ResourceAmount, ReputationAmount)>,
+            resource_amount: gs.game_params.start_amount.clone(),
+            player_stats: give_all_players_full_stats(gs.game_params.clone(), input.players.clone()), 
         },
         session: entry_hash_game_session.clone(),
         previous_round_moves: no_moves,
     };
+    let header_hash_round_zero = create_entry(&round_zero)?;
+    let entry_hash_round_zero = hash_entry(&round_zero)?;
 
     // use remote signals from RSM to send a real-time notif to invited players
     //  ! using remote signal to ping other holochain backends, instead of emit_signal
     //  that would talk with the UI
-    // NOTE: we're sending signals to notify that players need to make their moves
-    // TODO: include current round number, 0 , in notif data  --> tixel: why do we need this?
-    let payload = ExternIO::encode(SignalPayload::StartNextRound(round_zero))?;
-    remote_signal(
-        payload,
-        input.players.clone(),
-    )?;
+    // NOTE: we're sending signals to notify that a new round has started and
+    // that players need to make their moves
+    // WARNING: remote_signal is fire and forget, no error if it fails, might be a weak point if this were production happ
+    let signal_payload = SignalPayload{ 
+        // tixel: not sure if we need the full objects or only the hashes or both. The tests will tell...
+        game_session: gs.clone(),
+        game_session_entry_hash: entry_hash_game_session,
+        previous_round: round_zero,
+        previous_round_entry_hash: entry_hash_round_zero,
+    };
+    let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
+    remote_signal(signal, input.players.clone())?;
     tracing::debug!("sending signal to {:?}", input.players.clone());
-
+    
     // // todo: get timestamp as systime
     // create_entry(&calendar_event)?;
+    
+    Ok(header_hash_round_zero)
+}
 
-    Ok(HeaderHashB64::from(header_hash))
+fn give_all_players_full_stats(_gp:GameParams, _p:Vec<AgentPubKey>) -> HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)>{
+    // TODO add map that gives all players full starting stats <AgentPubKey, (ResourceAmount, ReputationAmount)>,
+    HashMap::new()
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "signal_name", content = "signal_payload")]
-pub enum SignalPayload {
-    StartNextRound(GameRound),
+pub enum GameSignal {
+    StartNextRound(SignalPayload),
     GameStopped,
 }
 
@@ -160,6 +184,7 @@ mod tests {
         // mock agent info
         let agent_pubkey = fixt!(AgentPubKey);
         let agent_info = AgentInfo::new(agent_pubkey.clone(), agent_pubkey.clone());
+        let agent2_pubkey = fixt!(AgentPubKey);
 
         mock_hdk
             .expect_agent_info()
@@ -178,6 +203,7 @@ mod tests {
                 owner: agent_pubkey.clone(),
                 status: SessionState::InProgress,
                 game_params: game_params.clone(),
+                players: vec![agent_pubkey.clone(), agent2_pubkey]
             })
                 .unwrap(),
             ))

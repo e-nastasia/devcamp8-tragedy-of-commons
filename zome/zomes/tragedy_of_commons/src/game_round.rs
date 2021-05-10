@@ -2,7 +2,6 @@ use crate::game_move::GameMove;
 use crate::game_session::GameParams;
 use crate::types::{ReputationAmount, ResourceAmount};
 use hdk::prelude::*;
-use holo_hash::{EntryHashB64, HeaderHashB64};
 use std::collections::HashMap;
 
 const NO_REPUTATION: ReputationAmount = 0;
@@ -15,7 +14,7 @@ pub struct RoundState {
 }
 
 #[hdk_entry(id = "game_round", visibility = "public")]
-pub struct GameRoundResults {
+pub struct GameRound {
     pub round_num: u32,
     pub session: EntryHash,
     pub round_state: RoundState,
@@ -24,7 +23,7 @@ pub struct GameRoundResults {
 
 pub struct GameRoundResultsInput {
     pub session: EntryHash,
-    pub previous_round: Option<HeaderHashB64>,
+    pub previous_round: Option<HeaderHash>,
     pub player_moves: Vec<GameMove>
 }
 
@@ -46,7 +45,7 @@ validate_update_entry_game_round_results -> EntryID
 
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
-fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> RoundState {
+pub fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> RoundState {
     // todo:
     // calculate round state from the player moves
 
@@ -72,7 +71,7 @@ fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) -> Rou
 // a retrospective of moves made, not created before and updated later
 // NOTE: given the retrospective nature, maybe we should call this fn "close current round" or
 // "start next round" to avoid adding more confusion
-fn new_game_round(input: GameRoundResultsInput) -> ExternResult<EntryHashB64> {
+fn new_game_round(input: GameRoundResultsInput) -> ExternResult<EntryHash> {
     // validate that player_moves.len() == session.game_params.invited.len(),
     // otherwise current round isn't complete and we can't create a new one
 
@@ -109,14 +108,14 @@ mod tests {
         let p1_key = fixt!(AgentPubKey);
         let move1 = GameMove {
             owner: p1_key.clone(),
-            previous_round: Some(EntryHashB64::from(fixt!(EntryHash))),
+            previous_round: Some(fixt!(EntryHash)),
             resources: 5,
         };
 
         let p2_key = fixt!(AgentPubKey);
         let move2 = GameMove {
             owner: p2_key.clone(),
-            previous_round: Some(EntryHashB64::from(fixt!(EntryHash))),
+            previous_round: Some(fixt!(EntryHash)),
             resources: 10,
         };
         let s = calculate_round_state(gp.clone(), vec![move1, move2]);
