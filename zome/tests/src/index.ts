@@ -5,6 +5,7 @@ import {
   TransportConfigType,
   Player,
 } from "@holochain/tryorama";
+import { ScenarioApi } from "@holochain/tryorama/lib/api";
 import path from "path";
 
 const conductorConfig = Config.gen({});
@@ -68,41 +69,41 @@ const installation: InstallAgentsHapps = [
 // );
 
 orchestrator.registerScenario(
-  "create posts p2p and retrieve them",
-  async (s, t) => {
+  "start new game session with 2 players",
+  async (s: ScenarioApi, t) => {
+    // SETUP
     const ZOME_NAME = "tragedy_of_commons";
-    const [alice, bob, clare] = await s.players([conductorConfig, conductorConfig, conductorConfig]);
-
-    // install your happs into the coductors and destructuring the returned happ data using the same
-    // array structure as you created in your installation array.
+    const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
     const [[alice_common]] = await alice.installAgentsHapps(installation);
     const [[bob_common]] = await bob.installAgentsHapps(installation);
-    //const [[clare_common]] = await clare.installAgentsHapps(installation);
 
     await s.shareAllNodes([alice, bob])
 
-    // let capGrant = await alice_common.cells[0].call(
-    //   ZOME_NAME,
-    //   "create_cap_access",
-    //   {
-    //     function: "receive_p2p_message",
-    //     agent: bob_common.agent,
-    //   }
-    // );
-    // console.log(capGrant);
-    // t.ok(capGrant);
-    
-    // let capGrantBob = await bob_common.cells[0].call(
-    //   ZOME_NAME,
-    //   "create_cap_access",
-    //   {
-    //     function: "receive_p2p_message",
-    //     agent: alice_common.agent,
-    //   }
-    // );
-    // console.log(capGrantBob);
-    // t.ok(capGrantBob);
 
+    // SIGNAL HANDLERS
+    let prev_round_hash;
+    let signalPromiseAlice = new Promise<void>((resolve) => alice.setSignalHandler((signal) => {
+      let payload = signal.data.payload
+      t.ok(payload);
+      console.log("Alice received Signal:", signal.data.payload);
+      prev_round_hash = signal.data.payload.signal_payload.previous_round_entry_hash;
+      resolve();
+    }));
+    // .then(function(data) {
+    //     tixel: there should be a way to write this test without the sleep(5000) workaround
+    //            using chained promises, but I haven't figured out how
+    //     console.log("INSIDE PROMISE:",data);
+    //     return null;    
+    // });
+    let signalPromiseBob = new Promise<void>((resolve) => bob.setSignalHandler((signal) => {
+      let payload = signal.data.payload
+      t.ok(payload);
+      console.log("Bob received Signal:");
+      resolve();
+    }));
+
+
+    // START GAME
     //Alice starts a new game (session) with bob and herself
     let session_header_hash = await alice_common.cells[0].call(
       ZOME_NAME,
@@ -111,7 +112,34 @@ orchestrator.registerScenario(
     );
     console.log(session_header_hash);
     t.ok(session_header_hash);
-    
+
+    //Ensure every thing is ok
+    await signalPromiseAlice;
+    await signalPromiseBob;
+
+    sleep(500);
+    console.log("prev_round_hash", prev_round_hash);
+
+    // ROUND 1
+    // Alice makes 1 move
+    let game_move_round_1_alice = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "new_move",
+      {resource_amount: 5, previous_round: prev_round_hash},
+    );
+
+    // Bob makes 1 move
+    let game_move_round_1_bob = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "new_move",
+      {resource_amount: 25, previous_round: prev_round_hash},
+    );
+    console.log(game_move_round_1_alice);
+    t.ok(game_move_round_1_alice);
+    console.log(game_move_round_1_bob);
+    t.ok(game_move_round_1_bob);
+
+    // CHECK  TO CLOSE GAME
   }
 );
 
