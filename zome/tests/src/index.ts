@@ -71,7 +71,7 @@ const installation: InstallAgentsHapps = [
 orchestrator.registerScenario(
   "start new game session with 2 players",
   async (s: ScenarioApi, t) => {
-    // setup
+    // SETUP
     const ZOME_NAME = "tragedy_of_commons";
     const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
     const [[alice_common]] = await alice.installAgentsHapps(installation);
@@ -80,14 +80,13 @@ orchestrator.registerScenario(
     await s.shareAllNodes([alice, bob])
 
 
-    // signal handlers
+    // SIGNAL HANDLERS
     let prev_round_hash;
     let signalPromiseAlice = new Promise<void>((resolve) => alice.setSignalHandler((signal) => {
       let payload = signal.data.payload
       t.ok(payload);
       console.log("Alice received Signal:", signal.data.payload);
       prev_round_hash = signal.data.payload.signal_payload.previous_round_entry_hash;
-      // let x_prev_round_hash = signal.data.payload.signal_payload.previous_round_entry_hash;
       resolve();
     }));
     // .then(function(data) {
@@ -104,6 +103,7 @@ orchestrator.registerScenario(
     }));
 
 
+    // START GAME
     //Alice starts a new game (session) with bob and herself
     let session_header_hash = await alice_common.cells[0].call(
       ZOME_NAME,
@@ -120,6 +120,7 @@ orchestrator.registerScenario(
     sleep(500);
     console.log("prev_round_hash", prev_round_hash);
 
+    // ROUND 1
     // Alice makes 1 move
     let game_move_round_1_alice = await alice_common.cells[0].call(
       ZOME_NAME,
@@ -137,6 +138,8 @@ orchestrator.registerScenario(
     t.ok(game_move_round_1_alice);
     console.log(game_move_round_1_bob);
     t.ok(game_move_round_1_bob);
+
+    // CHECK  TO CLOSE GAME
   }
 );
 

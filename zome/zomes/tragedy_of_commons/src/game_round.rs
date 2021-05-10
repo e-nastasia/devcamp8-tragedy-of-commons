@@ -21,12 +21,6 @@ pub struct GameRound {
     pub previous_round_moves: Vec<EntryHash>,
 }
 
-pub struct GameRoundResultsInput {
-    pub session: EntryHash,
-    pub previous_round: Option<HeaderHashB64>,
-    pub player_moves: Vec<GameMove>,
-}
-
 /*
 validation rules:
 
@@ -71,21 +65,21 @@ pub fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) ->
 // a retrospective of moves made, not created before and updated later
 // NOTE: given the retrospective nature, maybe we should call this fn "close current round" or
 // "start next round" to avoid adding more confusion
-fn new_game_round(input: GameRoundResultsInput) -> ExternResult<EntryHash> {
-    // validate that player_moves.len() == session.game_params.invited.len(),
-    // otherwise current round isn't complete and we can't create a new one
+// fn new_game_round(input: GameRoundResultsInput) -> ExternResult<EntryHash> {
+//     // validate that player_moves.len() == session.game_params.invited.len(),
+//     // otherwise current round isn't complete and we can't create a new one
 
-    // let state = calculate_round_state
-    // if latest_round not None:
-    //  update existing round entry on the latest_round hash (continuing the update chain)
-    // else:
-    //  create new round entry
-    //  make a link from session -> round
-    // if round is finished or lost:
-    //  update game session state
+//     // let state = calculate_round_state
+//     // if latest_round not None:
+//     //  update existing round entry on the latest_round hash (continuing the update chain)
+//     // else:
+//     //  create new round entry
+//     //  make a link from session -> round
+//     // if round is finished or lost:
+//     //  update game session state
 
-    unimplemented!()
-}
+//     unimplemented!()
+// }
 
 #[cfg(test)]
 mod tests {

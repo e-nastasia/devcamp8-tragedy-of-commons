@@ -1,4 +1,4 @@
-use crate::{game_round::calculate_round_state, game_session::GameSession, types::ResourceAmount, utils::try_get_and_convert};
+use crate::{game_round::{GameRound, calculate_round_state}, game_session::GameSession, types::ResourceAmount, utils::try_get_and_convert};
 use hdk::prelude::*;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
@@ -72,9 +72,10 @@ pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash>{
 // would actually be a game session entry) and attempt to close the current round by creating it's entry.
 // This would solely depend on the amount of moves retrieved being equal to the amount of players in the game
 #[hdk_extern]
-pub fn try_to_close_round(input: CloseRoundInput) -> ExternResult<HeaderHash>{
-    let game_session:GameSession = try_get_and_convert(input.game_session.into())?;    
-    let links  = get_links(input.previous_round.into(), Some(LinkTag::new("game_move")))?;
+pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<HeaderHash>{
+    let prev_round:GameRound = try_get_and_convert(prev_round_hash.clone())?;
+    let game_session:GameSession = try_get_and_convert(prev_round.session)?;    
+    let links  = get_links(prev_round_hash, Some(LinkTag::new("game_move")))?;
     let links_vec = links.into_inner();
     if (links_vec.len() < game_session.players.len()){
         let missing_moves_count = game_session.players.len() - links_vec.len();
