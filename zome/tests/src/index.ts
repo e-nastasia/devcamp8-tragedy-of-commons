@@ -132,7 +132,7 @@ orchestrator.registerScenario(
     let game_move_round_1_bob = await bob_common.cells[0].call(
       ZOME_NAME,
       "new_move",
-      {resource_amount: 25, previous_round: prev_round_hash},
+      {resource_amount: 125, previous_round: prev_round_hash},
     );
     console.log(game_move_round_1_alice);
     t.ok(game_move_round_1_alice);
@@ -140,6 +140,11 @@ orchestrator.registerScenario(
     t.ok(game_move_round_1_bob);
 
     // CHECK  TO CLOSE GAME
+    let close_game_round_1_bob = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "try_to_close_round",
+      prev_round_hash,
+    );
   }
 );
 

@@ -44,7 +44,7 @@ pub fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) ->
     // calculate round state from the player moves
 
     // resources
-    let consumed_resources_in_round: u32 = player_moves.iter().map(|x| x.resources).sum();
+    let consumed_resources_in_round: i32 = player_moves.iter().map(|x| x.resources).sum();
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats

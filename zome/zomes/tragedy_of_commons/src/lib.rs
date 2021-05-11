@@ -1,7 +1,7 @@
 // use game_session::GameSession;
 use hdk::prelude::*;
 
-use crate::game_session::GameSignal;
+use crate::game_session::{GameSignal};
 #[allow(unused_imports)]
 use crate::game_session::SignalPayload;
 #[allow(unused_imports)]
@@ -29,7 +29,8 @@ entry_defs![
     Path::entry_def(),
     game_session::GameSession::entry_def(),
     game_round::GameRound::entry_def(),
-    game_move::GameMove::entry_def()
+    game_move::GameMove::entry_def(),
+    game_session::GameScores::entry_def()
 ];
 
 // give unrestricted access to recv_remote_signal, which is needed for sending remote signals

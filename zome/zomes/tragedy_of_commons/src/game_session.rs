@@ -12,7 +12,7 @@ pub enum SessionState {
     Finished { last_round: EntryHash },
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Copy)]
 pub struct GameParams {
     pub regeneration_factor: f32,
     pub start_amount: ResourceAmount,
@@ -31,19 +31,28 @@ pub struct GameSession {
     pub players: Vec<AgentPubKey>,  // who is playing
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameSessionInput {
     pub game_params: GameParams,
     pub players: Vec<AgentPubKey>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct SignalPayload {
     pub game_session: GameSession,
     pub game_session_entry_hash: EntryHash,
     pub previous_round: GameRound,    
     pub previous_round_entry_hash: EntryHash,
 
+}
+
+
+#[hdk_entry(id = "game_scores", visibility = "public")]
+#[derive(Clone)]
+pub struct GameScores {
+    pub game_session: GameSession,
+    pub game_session_entry_hash: EntryHash,
+    //TODO add the actual results :-)
 }
 
 /*
@@ -160,7 +169,7 @@ fn give_all_players_full_stats(_gp:GameParams, _p:Vec<AgentPubKey>) -> HashMap<A
 #[serde(tag = "signal_name", content = "signal_payload")]
 pub enum GameSignal {
     StartNextRound(SignalPayload),
-    GameStopped,
+    GameOver(GameScores),
 }
 
 #[cfg(test)]

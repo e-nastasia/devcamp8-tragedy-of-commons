@@ -1,2 +1,2 @@
-pub type ResourceAmount = u32;
+pub type ResourceAmount = i32;
 pub type ReputationAmount = i32;

@@ -1,4 +1,4 @@
-use crate::{game_round::{GameRound, calculate_round_state}, game_session::GameSession, types::ResourceAmount, utils::try_get_and_convert};
+use crate::{game_round::{GameRound, RoundState, calculate_round_state}, game_session::{GameScores, GameSession, GameSignal, SignalPayload}, types::ResourceAmount, utils::try_get_and_convert};
 use hdk::prelude::*;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
@@ -72,9 +72,9 @@ pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash>{
 // would actually be a game session entry) and attempt to close the current round by creating it's entry.
 // This would solely depend on the amount of moves retrieved being equal to the amount of players in the game
 #[hdk_extern]
-pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<HeaderHash>{
+pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash>{
     let prev_round:GameRound = try_get_and_convert(prev_round_hash.clone())?;
-    let game_session:GameSession = try_get_and_convert(prev_round.session)?;    
+    let game_session:GameSession = try_get_and_convert(prev_round.session.clone())?;    
     let links  = get_links(prev_round_hash, Some(LinkTag::new("game_move")))?;
     let links_vec = links.into_inner();
     if (links_vec.len() < game_session.players.len()){
@@ -88,15 +88,57 @@ pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<HeaderHash
     }
     
     let round_state = calculate_round_state(game_session.game_params, moves);
-    
-    unimplemented!()
+
+    if round_state.resource_amount > 0 {
+        create_new_round(prev_round.round_num, game_session.clone(), round_state)
+    } else {
+        end_game(game_session.clone(), round_state)
+    }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CloseRoundInput {
-    pub previous_round: EntryHash,
-    pub game_session: EntryHash,
+fn create_new_round(prev_round_num:u32, session:GameSession, round_state:RoundState) -> ExternResult<EntryHash> {
+    let session_hash = hash_entry(&session)?;
+    let round = GameRound{
+        round_num: prev_round_num + 1,
+        round_state: round_state,
+        session: session_hash.clone(),
+        previous_round_moves: vec![],
+    };
+    create_entry(&round)?;
+    let entry_hash_round = hash_entry(&round)?;
+
+    // todo send GameSignal: StartNextRound
+    let signal_payload = SignalPayload{ 
+        // tixel: not sure if we need the full objects or only the hashes or both. The tests will tell...
+        game_session: session.clone(),
+        game_session_entry_hash: session_hash.clone(),
+        previous_round: round,
+        previous_round_entry_hash: entry_hash_round.clone(),
+    };
+    let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
+    remote_signal(signal, session.players.clone())?;
+    tracing::debug!("sending signal to {:?}", session.players.clone());
+
+    Ok(entry_hash_round)  
 }
+
+fn end_game(session:GameSession, round_state:RoundState) -> ExternResult<EntryHash>{
+    let session_hash = hash_entry(&session)?;
+    // todo send GameSignal: StartNextRound
+    let scores = GameScores{ 
+        // tixel: not sure if we need the full objects or only the hashes or both. The tests will tell...
+        game_session: session.clone(),
+        game_session_entry_hash: session_hash.clone(),
+    };
+    create_entry(&scores)?;
+    let scores_entry_hash = hash_entry(&scores)?;
+    let signal = ExternIO::encode(GameSignal::GameOver(scores))?;
+    remote_signal(signal, session.players.clone())?;
+    tracing::debug!("sending signal to {:?}", session.players.clone());
+
+    Ok(scores_entry_hash)
+}
+
 // Retrieves all available game moves made in a certain round, where entry_hash identifies
 // base for the links.
 fn get_all_round_moves(entry_hash: EntryHash) {
