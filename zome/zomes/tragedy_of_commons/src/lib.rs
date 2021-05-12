@@ -1,7 +1,7 @@
 // use game_session::GameSession;
 use hdk::prelude::*;
 
-use crate::game_session::{GameSignal};
+use crate::game_session::GameSignal;
 #[allow(unused_imports)]
 use crate::game_session::SignalPayload;
 #[allow(unused_imports)]
@@ -53,12 +53,11 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
 #[hdk_extern]
 fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
     debug!("Received remote signal {:?}", signal);
-    let game_signal_result:Result<GameSignal, SerializedBytesError> = signal.decode();
+    let game_signal_result: Result<GameSignal, SerializedBytesError> = signal.decode();
     //debug!("Received REMOTE signal {:?}", sig);
     match game_signal_result {
-        Ok(a) =>  emit_signal(a),
+        Ok(a) => emit_signal(a),
         Err(_) => Err(WasmError::Guest("Remote signal failed".into())),
-
     }
 }
 
