@@ -119,6 +119,8 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     // make link from every players agent address to game session entry
     // tixel: this is not needed I think, implicit links are in game session
     // might only be needed if remote_signal for some reason would proof to be unreliable
+    // e-nastasia: I think we'll need it to implement "list all games I've created"
+    // functionality for any user.
     // create_link(agent_info.agent_initial_pubkey.clone().into(), 
     // entry_hash_game_session.clone(), LinkTag::new("game_sessions"))?;
 
@@ -128,8 +130,8 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     let round_zero = GameRound{
         round_num: 0,
         round_state: RoundState {
-            resource_amount: gs.game_params.start_amount.clone(),
-            player_stats: give_all_players_full_stats(gs.game_params.clone(), input.players.clone()), 
+            resource_amount: gs.game_params.start_amount,
+            player_stats: give_all_players_full_stats(gs.game_params, input.players.clone()), 
         },
         session: entry_hash_game_session.clone(),
         previous_round_moves: no_moves,
