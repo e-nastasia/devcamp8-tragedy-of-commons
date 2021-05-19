@@ -1,4 +1,4 @@
-use crate::types::ResourceAmount;
+use crate::types::{new_player_stats, ResourceAmount};
 use crate::{
     game_round::{GameRound, RoundState},
     types::ReputationAmount,
@@ -126,15 +126,22 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     // create game round results for round 0
     // this is starting point for all the game moves of round 1 to reference (implicit link)
     let no_moves: Vec<EntryHash> = vec![];
-    let round_zero = GameRound {
-        round_num: 0,
-        round_state: RoundState {
-            resource_amount: gs.game_params.start_amount,
-            player_stats: give_all_players_full_stats(gs.game_params, input.players.clone()),
-        },
-        session: entry_hash_game_session.clone(),
-        previous_round_moves: no_moves,
-    };
+
+    let round_zero = GameRound::new(
+        0,
+        entry_hash_game_session.clone(),
+        RoundState::new(
+            // NOTE(e-nastasia): we don't have to do clone() for the start_amount
+            // because it's one of the primitive types that implement the Copy trait
+            // so it's value will be copied instead of being moved
+            gs.game_params.start_amount,
+            // TODO: this fn call breaks everything as we don't have serialization implemented
+            //  for the PlayerStats container type
+            //new_player_stats(input.players.clone()),
+            give_all_players_full_stats(gs.game_params, input.players.clone()),
+        ),
+        no_moves,
+    );
     let header_hash_round_zero = create_entry(&round_zero)?;
     let entry_hash_round_zero = hash_entry(&round_zero)?;
 
@@ -179,7 +186,7 @@ pub enum GameSignal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ::fixt::prelude::*;
+    use fixt::prelude::*;
     use hdk::prelude::*;
     use std::vec;
 

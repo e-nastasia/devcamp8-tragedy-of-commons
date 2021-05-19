@@ -1,6 +1,6 @@
 use crate::game_move::GameMove;
 use crate::game_session::GameParams;
-use crate::types::{ReputationAmount, ResourceAmount};
+use crate::types::{PlayerStats, ReputationAmount, ResourceAmount};
 use hdk::prelude::*;
 use std::collections::HashMap;
 
@@ -10,7 +10,7 @@ const NO_REPUTATION: ReputationAmount = 0;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RoundState {
     pub resource_amount: ResourceAmount,
-    pub player_stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)>,
+    pub player_stats: PlayerStats,
 }
 
 #[hdk_entry(id = "game_round", visibility = "public")]
@@ -19,6 +19,33 @@ pub struct GameRound {
     pub session: EntryHash,
     pub round_state: RoundState,
     pub previous_round_moves: Vec<EntryHash>,
+}
+
+impl RoundState {
+    /// Creates a new RoundState instance with the provided input
+    pub fn new(resource_amount: ResourceAmount, player_stats: PlayerStats) -> RoundState {
+        RoundState {
+            resource_amount,
+            player_stats,
+        }
+    }
+}
+
+impl GameRound {
+    /// Creates a new GameRound instance with the provided input
+    pub fn new(
+        round_num: u32,
+        session: EntryHash,
+        round_state: RoundState,
+        previous_round_moves: Vec<EntryHash>,
+    ) -> GameRound {
+        GameRound {
+            round_num,
+            session,
+            round_state,
+            previous_round_moves,
+        }
+    }
 }
 
 /*
@@ -84,7 +111,7 @@ pub fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ::fixt::prelude::*;
+    use fixt::prelude::*;
     use hdk::prelude::*;
     use mockall::mock;
     use std::vec;
