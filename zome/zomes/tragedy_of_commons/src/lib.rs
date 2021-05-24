@@ -1,9 +1,10 @@
 // use game_session::GameSession;
 use hdk::prelude::*;
+#[allow(unused)]
+use holo_hash::{AgentPubKeyB64, EntryHashB64};
 
-use crate::game_session::GameSignal;
 #[allow(unused_imports)]
-use crate::game_session::SignalPayload;
+use crate::game_session::{GameSessionInput, GameSignal, SignalPayload};
 #[allow(unused_imports)]
 #[allow(dead_code)]
 #[allow(unused)]
@@ -18,8 +19,6 @@ mod game_round;
 mod game_session;
 mod types;
 mod utils;
-
-// TODO: Actually code the zome, all this code is just for reference and quick copy-paste
 
 pub fn err(reason: &str) -> WasmError {
     WasmError::Guest(String::from(reason))
@@ -60,6 +59,29 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
         Err(_) => Err(WasmError::Guest("Remote signal failed".into())),
     }
 }
+
+/// Placeholder function that can be called from UI/test, until invitation zoom is added.
+#[hdk_extern]
+pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
+    game_session::start_dummy_session(player_list)
+}
+
+/// Function to call when player wants to start a new game and has already selected
+/// invitees for this game. This function is only supposed to handle invite zome integration
+/// and it shouldn't be really creating a new GameSession entry.
+// #[hdk_extern]
+// pub fn propose_new_session() -> ExternResult<HeaderHash> {}
+
+// TODO: think of better naming to distinguish between sessions "as owner" and "as player"
+/// Function to list all game sessions that the caller has created
+/// In other words, all sessions that the caller owns
+// #[hdk_extern]
+// pub fn get_my_owned_sessions() -> ExternResult<Vec<EntryHashB64>> {}
+
+/// Function to list all game sessions in which caller has been a player/owner
+/// This list would include both owned game sessions and those to which caller has
+/// been invited by other players
+// pub fn get_all_my_sessions() -> ExternResult<Vec<EntryHashB64>> {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct SignalTest {

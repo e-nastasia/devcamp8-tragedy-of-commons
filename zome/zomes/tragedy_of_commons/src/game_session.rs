@@ -82,9 +82,8 @@ impl GameSession {
     }
 }
 
-//external function that can be called from UI/test, until invitation zoom is added.
-#[hdk_extern]
-pub fn start_new_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
+// placeholder function that can be called from UI/test, until invitation zoom is added.
+pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
     let input = GameSessionInput {
         game_params: GameParams {
             regeneration_factor: 1.1,
