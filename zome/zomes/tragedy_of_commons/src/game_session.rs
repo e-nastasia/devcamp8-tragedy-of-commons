@@ -4,6 +4,7 @@ use crate::{
     types::ReputationAmount,
 };
 use hdk::prelude::*;
+use holo_hash::AgentPubKeyB64;
 use std::{collections::HashMap, time::SystemTime};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -27,17 +28,17 @@ pub struct GameParams {
 #[hdk_entry(id = "game_session", visibility = "public")]
 #[derive(Clone)]
 pub struct GameSession {
-    pub owner: AgentPubKey, // who started the game
+    pub owner: AgentPubKeyB64, // who started the game
     // pub created_at: Timestamp,     // when the game was started
-    pub status: SessionState,      // how the game is going
-    pub game_params: GameParams,   // what specific game are we playing
-    pub players: Vec<AgentPubKey>, // who is playing
+    pub status: SessionState,         // how the game is going
+    pub game_params: GameParams,      // what specific game are we playing
+    pub players: Vec<AgentPubKeyB64>, // who is playing
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameSessionInput {
     pub game_params: GameParams,
-    pub players: Vec<AgentPubKey>,
+    pub players: Vec<AgentPubKeyB64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
@@ -82,7 +83,7 @@ impl GameSession {
 
 //external function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
-pub fn start_new_session(player_list: Vec<AgentPubKey>) -> ExternResult<HeaderHash> {
+pub fn start_new_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
     let input = GameSessionInput {
         game_params: GameParams {
             regeneration_factor: 1.1,
@@ -107,7 +108,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
     let gs = GameSession {
-        owner: agent_info.agent_initial_pubkey.clone(),
+        owner: AgentPubKeyB64::from(agent_info.agent_initial_pubkey),
         status: SessionState::InProgress,
         game_params: input.game_params,
         players: input.players.clone(),
@@ -137,8 +138,8 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
             gs.game_params.start_amount,
             // TODO: this fn call breaks everything as we don't have serialization implemented
             //  for the PlayerStats container type
-            //new_player_stats(input.players.clone()),
-            give_all_players_full_stats(gs.game_params, input.players.clone()),
+            new_player_stats(input.players.clone()),
+            //give_all_players_full_stats(gs.game_params, input.players.clone()),
         ),
         no_moves,
     );
@@ -159,7 +160,18 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
         previous_round_entry_hash: entry_hash_round_zero,
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
-    remote_signal(signal, input.players.clone())?;
+    // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
+    // the AgentPubKey type, we need to convert our keys to the expected data type
+    // NOTE(e-nastasia): this could've been very well done in the remote_signal call itself,
+    // but I needed separate space to write this thing step-by-step, and you, the reader,
+    // would probably find it helpful to read it too. We may refactor this later :)
+    let pub_keys_vec: Vec<AgentPubKey> = input
+        .players
+        .clone()
+        .iter()
+        .map(|k| AgentPubKey::from(k.clone()))
+        .collect();
+    remote_signal(signal, pub_keys_vec)?;
     tracing::debug!("sending signal to {:?}", input.players.clone());
 
     // // todo: get timestamp as systime
@@ -170,8 +182,8 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 
 fn give_all_players_full_stats(
     _gp: GameParams,
-    _p: Vec<AgentPubKey>,
-) -> HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> {
+    _p: Vec<AgentPubKeyB64>,
+) -> HashMap<AgentPubKeyB64, (ResourceAmount, ReputationAmount)> {
     // TODO add map that gives all players full starting stats <AgentPubKey, (ResourceAmount, ReputationAmount)>,
     HashMap::new()
 }

@@ -5,10 +5,11 @@ use crate::{
     utils::try_get_and_convert,
 };
 use hdk::prelude::*;
+use holo_hash::AgentPubKeyB64;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
-    pub owner: AgentPubKey,
+    pub owner: AgentPubKeyB64,
     // For the very first round this option would be None, because we create game rounds
     // retrospectively. And since all players are notified by the signal when they can make
     // a move, maybe we could pass that value from there, so that every player has it
@@ -50,7 +51,7 @@ pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     // todo: calculate agent address
     // todo: create a GameMove entry
     let game_move = GameMove {
-        owner: agent_info()?.agent_initial_pubkey,
+        owner: AgentPubKeyB64::from(agent_info()?.agent_initial_pubkey),
         resources: input.resource_amount,
         previous_round: input.previous_round.clone(),
     };
@@ -131,7 +132,20 @@ fn create_new_round(
         previous_round_entry_hash: entry_hash_round.clone(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
-    remote_signal(signal, session.players.clone())?;
+    // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
+    // the AgentPubKey type, we need to convert our keys to the expected data type
+    // NOTE(e-nastasia): this could've been very well done in the remote_signal call itself,
+    // but I needed separate space to write this thing step-by-step, and you, the reader,
+    // would probably find it helpful to read it too. We may refactor this later :)
+    // NOTE(e-nastasia): the same code is in the game_session.rs, I copied it from there.
+    // TODO(e-nastasia): refactor this to avoid repetition
+    let pub_keys_vec: Vec<AgentPubKey> = session
+        .players
+        .clone()
+        .iter()
+        .map(|k| AgentPubKey::from(k.clone()))
+        .collect();
+    remote_signal(signal, pub_keys_vec)?;
     tracing::debug!("sending signal to {:?}", session.players.clone());
 
     Ok(entry_hash_round)
@@ -148,7 +162,13 @@ fn end_game(session: GameSession, round_state: RoundState) -> ExternResult<Entry
     create_entry(&scores)?;
     let scores_entry_hash = hash_entry(&scores)?;
     let signal = ExternIO::encode(GameSignal::GameOver(scores))?;
-    remote_signal(signal, session.players.clone())?;
+    let pub_keys_vec: Vec<AgentPubKey> = session
+        .players
+        .clone()
+        .iter()
+        .map(|k| AgentPubKey::from(k.clone()))
+        .collect();
+    remote_signal(signal, pub_keys_vec)?;
     tracing::debug!("sending signal to {:?}", session.players.clone());
 
     Ok(scores_entry_hash)

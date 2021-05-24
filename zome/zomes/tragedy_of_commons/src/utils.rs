@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+//use holo_hash::AgentPubKeyB64;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
 #[allow(dead_code)]
@@ -18,3 +19,7 @@ pub fn try_from_element<T: TryFrom<Entry>>(element: Element) -> ExternResult<T> 
         _ => Err(crate::err("Could not convert element")),
     }
 }
+
+// pub fn convert_keys_from_b64(input: Vec<AgentPubKey>) -> Vec<AgentPubKeyB64> {
+//     input.iter().map(|k| AgentPubKey::from(k.clone())).collect()
+// }

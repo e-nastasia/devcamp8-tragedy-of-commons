@@ -2,6 +2,7 @@ use crate::game_move::GameMove;
 use crate::game_session::GameParams;
 use crate::types::{PlayerStats, ReputationAmount, ResourceAmount};
 use hdk::prelude::*;
+use holo_hash::AgentPubKeyB64;
 use std::collections::HashMap;
 
 const NO_REPUTATION: ReputationAmount = 0;
@@ -75,7 +76,7 @@ pub fn calculate_round_state(params: GameParams, player_moves: Vec<GameMove>) ->
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats
-    let mut stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
+    let mut stats: HashMap<AgentPubKeyB64, (ResourceAmount, ReputationAmount)> = HashMap::new();
     for p in player_moves.iter() {
         let a = p.owner.clone();
         let tuple: (ResourceAmount, ReputationAmount) = (p.resources, NO_REPUTATION);
