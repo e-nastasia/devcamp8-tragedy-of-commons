@@ -2,7 +2,7 @@ use crate::{
     game_round::{calculate_round_state, GameRound, RoundState},
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
-    utils::try_get_and_convert,
+    utils::{convert_keys_from_b64, try_get_and_convert},
 };
 use hdk::prelude::*;
 use holo_hash::AgentPubKeyB64;
@@ -134,18 +134,7 @@ fn create_new_round(
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
     // the AgentPubKey type, we need to convert our keys to the expected data type
-    // NOTE(e-nastasia): this could've been very well done in the remote_signal call itself,
-    // but I needed separate space to write this thing step-by-step, and you, the reader,
-    // would probably find it helpful to read it too. We may refactor this later :)
-    // NOTE(e-nastasia): the same code is in the game_session.rs, I copied it from there.
-    // TODO(e-nastasia): refactor this to avoid repetition
-    let pub_keys_vec: Vec<AgentPubKey> = session
-        .players
-        .clone()
-        .iter()
-        .map(|k| AgentPubKey::from(k.clone()))
-        .collect();
-    remote_signal(signal, pub_keys_vec)?;
+    remote_signal(signal, convert_keys_from_b64(session.players.clone()))?;
     tracing::debug!("sending signal to {:?}", session.players.clone());
 
     Ok(entry_hash_round)
@@ -162,13 +151,9 @@ fn end_game(session: GameSession, round_state: RoundState) -> ExternResult<Entry
     create_entry(&scores)?;
     let scores_entry_hash = hash_entry(&scores)?;
     let signal = ExternIO::encode(GameSignal::GameOver(scores))?;
-    let pub_keys_vec: Vec<AgentPubKey> = session
-        .players
-        .clone()
-        .iter()
-        .map(|k| AgentPubKey::from(k.clone()))
-        .collect();
-    remote_signal(signal, pub_keys_vec)?;
+    // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
+    // the AgentPubKey type, we need to convert our keys to the expected data type
+    remote_signal(signal, convert_keys_from_b64(session.players.clone()))?;
     tracing::debug!("sending signal to {:?}", session.players.clone());
 
     Ok(scores_entry_hash)
