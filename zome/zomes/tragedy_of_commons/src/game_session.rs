@@ -97,13 +97,14 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<Hea
     new_session(input)
 }
 
+/// Create a new GameSession with the confirmed players (who accepted their invites).
+/// NOTE: we're only creating session for those who accepted and only if there are at
+/// least two of them -- otherwise there won't be any turns.
 pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
-    // NOTE: we create a new session already having invites answered by everyone invited
-    // and invite zome handles invite process before this fn call
-    let agent_info: AgentInfo = agent_info()?; // agent that starts new game
+    // agent that starts new game
+    let agent_info: AgentInfo = agent_info()?;
 
-    // todo:
-    // get timestamp
+    // TODO: get timestamp as systime
 
     let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
@@ -136,10 +137,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
             // because it's one of the primitive types that implement the Copy trait
             // so it's value will be copied instead of being moved
             gs.game_params.start_amount,
-            // TODO: this fn call breaks everything as we don't have serialization implemented
-            //  for the PlayerStats container type
             new_player_stats(input.players.clone()),
-            //give_all_players_full_stats(gs.game_params, input.players.clone()),
         ),
         no_moves,
     );
@@ -165,18 +163,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     remote_signal(signal, convert_keys_from_b64(input.players.clone()))?;
     tracing::debug!("sending signal to {:?}", input.players.clone());
 
-    // // todo: get timestamp as systime
-    // create_entry(&calendar_event)?;
-
     Ok(header_hash_round_zero)
-}
-
-fn give_all_players_full_stats(
-    _gp: GameParams,
-    _p: Vec<AgentPubKeyB64>,
-) -> HashMap<AgentPubKeyB64, (ResourceAmount, ReputationAmount)> {
-    // TODO add map that gives all players full starting stats <AgentPubKey, (ResourceAmount, ReputationAmount)>,
-    HashMap::new()
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
