@@ -7,7 +7,6 @@ use std::collections::HashMap;
 
 const NO_REPUTATION: ReputationAmount = 0;
 
-// todo: rename it so we don't have name clash with SessionState
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RoundState {
     pub resource_amount: ResourceAmount,

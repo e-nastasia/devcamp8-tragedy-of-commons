@@ -129,6 +129,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     // this is starting point for all the game moves of round 1 to reference (implicit link)
     let no_moves: Vec<EntryHash> = vec![];
 
+    // TODO: create a link from session to game round entry to make the round discoverable
     let round_zero = GameRound::new(
         0,
         entry_hash_game_session.clone(),

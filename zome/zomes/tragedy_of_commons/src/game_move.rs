@@ -28,7 +28,9 @@ pub struct GameMoveInput {
 
 /*
 validation rules:
+    - TODO: impl validation to make sure move is commited by player who's playing the game
 
+for the context, here are notes on how we've made this decision:
 - validate that one player only made one move for any round
     - right now we'll need to run get_links for that, can we avoid it?
     - alternative: get agent activity
@@ -41,15 +43,10 @@ validation rules:
         made by agent for any round and use it when calculating
         - NOTE: we'll have vulnerability
         - NOTE: update round closing rules to check that every AGENT made a move
-
-        - TODO: impl validation to make sure move is commited by player who's playing the game
-
 */
 #[hdk_extern]
 pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
-    // todo: calculate agent address
-    // todo: create a GameMove entry
     let game_move = GameMove {
         owner: AgentPubKeyB64::from(agent_info()?.agent_initial_pubkey),
         resources: input.resource_amount,
@@ -84,8 +81,12 @@ pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
 pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash> {
     let prev_round: GameRound = try_get_and_convert(prev_round_hash.clone())?;
     let game_session: GameSession = try_get_and_convert(prev_round.session.clone())?;
+    // TODO: refactor getting moves from the previous round into it's own fn get_all_round_moves
     let links = get_links(prev_round_hash, Some(LinkTag::new("game_move")))?;
     let links_vec = links.into_inner();
+    // TODO: implement check to verify that each player has made a single move
+    // Since we're not validating that every player has only made one move, we need to make
+    // this check here, otherwise game would be broken.
     if (links_vec.len() < game_session.players.len()) {
         let missing_moves_count = game_session.players.len() - links_vec.len();
         return Err(WasmError::Guest(format!(
@@ -101,6 +102,9 @@ pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash>
 
     let round_state = calculate_round_state(game_session.game_params, moves);
 
+    // TODO: add check here that we're creating a new round only if
+    // it's num is < game.num_rounds, so that we don't accidentally create more rounds
+    // than are supposed to be in the game
     if round_state.resource_amount > 0 {
         create_new_round(prev_round.round_num, game_session.clone(), round_state)
     } else {
@@ -108,12 +112,15 @@ pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash>
     }
 }
 
+// TODO: refactor this fn signature to accept hash of the previous round
 fn create_new_round(
     prev_round_num: u32,
     session: GameSession,
     round_state: RoundState,
 ) -> ExternResult<EntryHash> {
     let session_hash = hash_entry(&session)?;
+    // TODO: instead of creating a new entry, we should continue the update chain
+    // from the previous round entry hash and commit an updated version
     let round = GameRound {
         round_num: prev_round_num + 1,
         round_state: round_state,
@@ -123,7 +130,6 @@ fn create_new_round(
     create_entry(&round)?;
     let entry_hash_round = hash_entry(&round)?;
 
-    // todo send GameSignal: StartNextRound
     let signal_payload = SignalPayload {
         // tixel: not sure if we need the full objects or only the hashes or both. The tests will tell...
         game_session: session.clone(),
@@ -142,7 +148,6 @@ fn create_new_round(
 
 fn end_game(session: GameSession, round_state: RoundState) -> ExternResult<EntryHash> {
     let session_hash = hash_entry(&session)?;
-    // todo send GameSignal: StartNextRound
     let scores = GameScores {
         // tixel: not sure if we need the full objects or only the hashes or both. The tests will tell...
         game_session: session.clone(),
@@ -150,6 +155,9 @@ fn end_game(session: GameSession, round_state: RoundState) -> ExternResult<Entry
     };
     create_entry(&scores)?;
     let scores_entry_hash = hash_entry(&scores)?;
+
+    // TODO: update GameSession entry to set it's state to closed
+
     let signal = ExternIO::encode(GameSignal::GameOver(scores))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
     // the AgentPubKey type, we need to convert our keys to the expected data type
@@ -161,6 +169,6 @@ fn end_game(session: GameSession, round_state: RoundState) -> ExternResult<Entry
 
 // Retrieves all available game moves made in a certain round, where entry_hash identifies
 // base for the links.
-fn get_all_round_moves(entry_hash: EntryHash) {
-    unimplemented!()
+fn get_all_round_moves(round_entry_hash: EntryHash) {
+    unimplemented!();
 }
