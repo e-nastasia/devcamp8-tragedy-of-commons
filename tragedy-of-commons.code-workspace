@@ -1,13 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "zome/zomes/tragedy_of_commons/"
-		},
-		{
-			"path": "zome/tests/"
-		},
-		{
-			"path": "ui"
+			"path": "./"
 		},
 	],
 	"extensions": {
