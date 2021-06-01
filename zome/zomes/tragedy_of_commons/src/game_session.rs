@@ -8,6 +8,9 @@ use hdk::prelude::*;
 use holo_hash::AgentPubKeyB64;
 use std::{collections::HashMap, time::SystemTime};
 
+pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
+pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
     InProgress,
@@ -109,7 +112,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     let latest_pubkey = agent_info.agent_latest_pubkey;
     // create entry for game session
     let gs = GameSession {
-        owner: AgentPubKeyB64::from(agent_info.agent_initial_pubkey),
+        owner: AgentPubKeyB64::from(latest_pubkey.clone()),
         status: SessionState::InProgress,
         game_params: input.game_params,
         players: input.players.clone(),
@@ -117,13 +120,44 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     create_entry(&gs)?;
     let entry_hash_game_session = hash_entry(&gs)?;
 
-    // make link from every players agent address to game session entry
-    // tixel: this is not needed I think, implicit links are in game session
-    // might only be needed if remote_signal for some reason would proof to be unreliable
-    // e-nastasia: I think we'll need it to implement "list all games I've created"
-    // functionality for any user.
-    // create_link(agent_info.agent_initial_pubkey.clone().into(),
-    // entry_hash_game_session.clone(), LinkTag::new("game_sessions"))?;
+    // create link from session owner's address to the game session entry
+    create_link(
+        latest_pubkey.clone().into(),
+        entry_hash_game_session.clone(),
+        LinkTag::new(OWNER_SESSION_TAG),
+    )?;
+
+    // create links from all game players' addresses to the game session entry
+    // NOTE: This block of code causes the following fail during integration tests,
+    // right after this fn is executed:
+    // ★ Jun 01 15:59:21.759 ERROR holochain::core::workflow::sys_validation_workflow:
+    // msg="Direct validation failed" element=Element { signed_header: SignedHeaderHashed
+    // { header: HoloHashed(CreateLink(CreateLink { author: AgentPubKey(uhCAkMsIhmhShfPW2csSUGKWy3o3SByrsM5OtjvYw2NUGtWHfx0_a),
+    // timestamp: Timestamp(2021-06-01T12:59:21.738976003Z), header_seq: 6,
+    // prev_header: HeaderHash(uhCkkHuvSzvfSIW6zacatoWMzTmCZmhN74-q2wqLO19B7xzUUW3PB),
+    // base_address: EntryHash(uhCEkflwCaLuNnGSAucS0oTmh5RS6zdpL6VqJDkjwHALr1O23Y3g3),
+    // target_address: EntryHash(uhCEkT0HGjuC_XGdaNhNJf76ko6zCMel7oXWwzbqsa9RISus-PP0w),
+    // zome_id: ZomeId(0),
+    // tag: LinkTag([103, 97, 109, 101, 95, 115, 101, 115, 115, 105, 111, 110, 115]) })),
+    // signature: [0, 178, 115, 124, 71, 224, 105, 105, 32, 68, 37, 126, 155, 140, 200, 97, 230, 245, 25, 167, 253, 75, 57, 200, 44, 204, 149, 176, 156, 214, 229, 62, 69, 155, 203, 93, 106, 132, 34, 101, 78, 53, 211, 115, 242, 189, 95, 36, 99, 155, 237, 85, 210, 51, 73, 162, 92, 161, 24, 250, 170, 0, 94, 3] },
+    // entry: NotApplicable }
+    // ★
+    // 15:59:21 [tryorama] error: Test error: {
+    //   type: 'error',
+    //   data: {
+    //     type: 'internal_error',
+    //     data: 'Source chain error: InvalidCommit error: The dependency AnyDhtHash(uhCEkflwCaLuNnGSAucS0oTmh5RS6zdpL6VqJDkjwHALr1O23Y3g3) is not held'
+    //   }
+    // }
+    for p in input.players.iter() {
+        if AgentPubKey::from(p.clone()) != latest_pubkey {
+            create_link(
+                AgentPubKey::from(p.clone()).into(),
+                entry_hash_game_session.clone(),
+                LinkTag::new(PARTICIPANT_SESSION_TAG),
+            )?;
+        }
+    }
 
     // create game round results for round 0
     // this is starting point for all the game moves of round 1 to reference (implicit link)
