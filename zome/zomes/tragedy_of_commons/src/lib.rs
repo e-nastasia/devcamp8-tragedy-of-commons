@@ -6,7 +6,7 @@ use holo_hash::{AgentPubKeyB64, EntryHashB64};
 #[allow(unused_imports)]
 use crate::{
     game_move::GameMoveInput,
-    game_session::{GameSessionInput, GameSignal, SignalPayload},
+    game_session::{GameSessionInput, GameSession, GameSignal, SignalPayload, OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG},
 };
 #[allow(unused_imports)]
 #[allow(dead_code)]
@@ -84,18 +84,24 @@ pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
 /// Function to list all game sessions that the caller has created
 /// In other words, all sessions that the caller owns
-// #[hdk_extern]
-// pub fn get_my_owned_sessions() -> ExternResult<Vec<EntryHashB64>> {}
+#[hdk_extern]
+pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+     game_session::get_sessions(OWNER_SESSION_TAG)
+}
 
 /// Function to list all game sessions in which caller has been a player/owner
 /// This list would include both owned game sessions and those to which caller has
 /// been invited by other players
-// pub fn get_all_my_sessions() -> ExternResult<Vec<EntryHashB64>> {}
+// #[hdk_extern]
+// pub fn get_all_my_sessions() -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+//     game_session::get_sessions(PARTICIPANT_SESSION_TAG)
+// }
 
 /// Function to list all active sessions in which caller participates
 // pub fn get_my_active_sessions() -> ExternResult<Vec<EntryHashB64>> {}
 
 /// Function to make a new move in the game specified by input
+#[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     game_move::new_move(input)
 }
