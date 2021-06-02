@@ -5,8 +5,8 @@ use crate::{
     utils::convert_keys_from_b64,
 };
 use hdk::prelude::*;
-use holo_hash::AgentPubKeyB64;
 use std::{collections::HashMap, time::SystemTime};
+use holo_hash::{AgentPubKeyB64, EntryHashB64};
 
 pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
 pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
@@ -199,6 +199,33 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     tracing::debug!("sending signal to {:?}", input.players.clone());
 
     Ok(header_hash_round_zero)
+}
+
+pub fn get_sessions(link_tag: &str) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+    let agent_info: AgentInfo = agent_info()?;
+    let links = get_links(agent_info.agent_latest_pubkey.into(), Some(LinkTag::new(link_tag)))?;
+    let results = links
+        .into_inner()
+        .iter()
+        .map(|link| {
+            let result = get_game_session(link.target.clone())?;
+            Ok((EntryHashB64::from(link.target.clone()), result))
+        })
+        .collect::<ExternResult<Vec<(EntryHashB64, GameSession)>>>()?;
+
+    Ok(results)
+}
+
+fn get_game_session(game_result_hash: EntryHash) -> ExternResult<GameSession> {
+    let element = get(game_result_hash.clone(), GetOptions::default())?
+        .ok_or(WasmError::Guest(format!("Could not get game session at: {}", game_result_hash).into()))?;
+
+    let game_result: GameSession = element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest("Could not get game result".into()))?;
+
+    Ok(game_result)
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
