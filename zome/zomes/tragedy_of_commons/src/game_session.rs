@@ -120,6 +120,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     create_entry(&gs)?;
     let entry_hash_game_session = hash_entry(&gs)?;
 
+    tracing::debug!("================= Creating link from OWNER address {:?} to game session {:?}", latest_pubkey.clone(), entry_hash_game_session.clone());
     // create link from session owner's address to the game session entry
     create_link(
         latest_pubkey.clone().into(),
@@ -129,7 +130,7 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 
     // create links from all game players' addresses to the game session entry
     // NOTE: This block of code causes the following fail during integration tests,
-    // right after this fn is executed:
+    // right after this entire fn is executed:
     // ★ Jun 01 15:59:21.759 ERROR holochain::core::workflow::sys_validation_workflow:
     // msg="Direct validation failed" element=Element { signed_header: SignedHeaderHashed
     // { header: HoloHashed(CreateLink(CreateLink { author: AgentPubKey(uhCAkMsIhmhShfPW2csSUGKWy3o3SByrsM5OtjvYw2NUGtWHfx0_a),
@@ -150,9 +151,11 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     //   }
     // }
     for p in input.players.iter() {
-        if AgentPubKey::from(p.clone()) != latest_pubkey {
+        let p_key = AgentPubKey::from(p.clone());
+        if p_key != latest_pubkey && p_key != agent_info.agent_initial_pubkey {
+            tracing::debug!("================= Creating link from PARTICIPANT address {:?} to game session {:?}", p_key.clone(), entry_hash_game_session.clone());
             create_link(
-                AgentPubKey::from(p.clone()).into(),
+                p_key.into(),
                 entry_hash_game_session.clone(),
                 LinkTag::new(PARTICIPANT_SESSION_TAG),
             )?;
