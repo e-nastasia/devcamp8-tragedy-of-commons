@@ -6,3 +6,7 @@ properties: ~
 zomes:
   - name: tragedy_of_commons
     bundled: ../../target/wasm32-unknown-unknown/release/tragedy_of_commons.wasm
+  - name: profiles
+    bundled: ../../target/wasm32-unknown-unknown/release/profiles.wasm
+  - name: invitations
+    bundled: ../../target/wasm32-unknown-unknown/release/invitations.wasm

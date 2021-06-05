@@ -1,6 +1,8 @@
 [workspace]
 members = [
   "zomes/tragedy_of_commons",
+  "zomes/invitations",
+  "zomes/profiles",
 ]
 
 [profile.dev]
