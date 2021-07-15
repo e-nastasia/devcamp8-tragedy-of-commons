@@ -79,6 +79,8 @@ orchestrator.registerScenario(
 
     await s.shareAllNodes([alice, bob])
 
+    await sleep(1000)
+
 
     // SIGNAL HANDLERS
     let prev_round_hash;
@@ -117,7 +119,7 @@ orchestrator.registerScenario(
     await signalPromiseAlice;
     await signalPromiseBob;
 
-    sleep(500);
+    await sleep(2000);
     console.log("prev_round_hash", prev_round_hash);
 
     // ROUND 1
@@ -138,6 +140,8 @@ orchestrator.registerScenario(
     t.ok(game_move_round_1_alice);
     console.log(game_move_round_1_bob);
     t.ok(game_move_round_1_bob);
+    
+    await sleep(2000);
 
     // CHECK  TO CLOSE GAME
     let close_game_round_1_bob = await bob_common.cells[0].call(
