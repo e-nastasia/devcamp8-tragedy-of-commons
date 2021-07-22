@@ -75,6 +75,7 @@ orchestrator.registerScenario(
     const ZOME_NAME = "tragedy_of_commons";
     const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
     const [[alice_common]] = await alice.installAgentsHapps(installation);
+    await sleep(2000)
     const [[bob_common]] = await bob.installAgentsHapps(installation);
 
     await s.shareAllNodes([alice, bob])
