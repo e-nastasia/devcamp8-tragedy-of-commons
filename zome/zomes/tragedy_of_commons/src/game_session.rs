@@ -129,29 +129,9 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     )?;
 
     // create links from all game players' addresses to the game session entry
-    // NOTE: This block of code causes the following fail during integration tests,
-    // right after this entire fn is executed:
-    // ★ Jun 01 15:59:21.759 ERROR holochain::core::workflow::sys_validation_workflow:
-    // msg="Direct validation failed" element=Element { signed_header: SignedHeaderHashed
-    // { header: HoloHashed(CreateLink(CreateLink { author: AgentPubKey(uhCAkMsIhmhShfPW2csSUGKWy3o3SByrsM5OtjvYw2NUGtWHfx0_a),
-    // timestamp: Timestamp(2021-06-01T12:59:21.738976003Z), header_seq: 6,
-    // prev_header: HeaderHash(uhCkkHuvSzvfSIW6zacatoWMzTmCZmhN74-q2wqLO19B7xzUUW3PB),
-    // base_address: EntryHash(uhCEkflwCaLuNnGSAucS0oTmh5RS6zdpL6VqJDkjwHALr1O23Y3g3),
-    // target_address: EntryHash(uhCEkT0HGjuC_XGdaNhNJf76ko6zCMel7oXWwzbqsa9RISus-PP0w),
-    // zome_id: ZomeId(0),
-    // tag: LinkTag([103, 97, 109, 101, 95, 115, 101, 115, 115, 105, 111, 110, 115]) })),
-    // signature: [0, 178, 115, 124, 71, 224, 105, 105, 32, 68, 37, 126, 155, 140, 200, 97, 230, 245, 25, 167, 253, 75, 57, 200, 44, 204, 149, 176, 156, 214, 229, 62, 69, 155, 203, 93, 106, 132, 34, 101, 78, 53, 211, 115, 242, 189, 95, 36, 99, 155, 237, 85, 210, 51, 73, 162, 92, 161, 24, 250, 170, 0, 94, 3] },
-    // entry: NotApplicable }
-    // ★
-    // 15:59:21 [tryorama] error: Test error: {
-    //   type: 'error',
-    //   data: {
-    //     type: 'internal_error',
-    //     data: 'Source chain error: InvalidCommit error: The dependency AnyDhtHash(uhCEkflwCaLuNnGSAucS0oTmh5RS6zdpL6VqJDkjwHALr1O23Y3g3) is not held'
-    //   }
-    // }
     for p in input.players.iter() {
         let p_key = AgentPubKey::from(p.clone());
+        // skip the game creator
         if p_key != latest_pubkey && p_key != agent_info.agent_initial_pubkey {
             tracing::debug!("================= Creating link from PARTICIPANT address {:?} to game session {:?}", p_key.clone(), entry_hash_game_session.clone());
             create_link(
