@@ -83,22 +83,28 @@ pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
 /// Function to list all game sessions that the caller has created
-/// In other words, all sessions that the caller owns
 #[hdk_extern]
 pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-     game_session::get_sessions(OWNER_SESSION_TAG)
+     game_session::get_sessions(vec![OWNER_SESSION_TAG])
 }
 
-/// Function to list all game sessions in which caller has been a player/owner
-/// This list would include both owned game sessions and those to which caller has
-/// been invited by other players
-// #[hdk_extern]
-// pub fn get_all_my_sessions() -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-//     game_session::get_sessions(PARTICIPANT_SESSION_TAG)
-// }
+/// Function to list game sessions in which caller has been a participant.
+#[hdk_extern]
+pub fn get_my_played_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+    game_session::get_sessions(vec![PARTICIPANT_SESSION_TAG])
+}
 
-/// Function to list all active sessions in which caller participates
-// pub fn get_my_active_sessions() -> ExternResult<Vec<EntryHashB64>> {}
+/// Function to list all game sessions in which caller was involved, both as
+/// an owner and as a participant
+#[hdk_extern]
+pub fn get_all_my_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+    game_session::get_sessions(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])
+}
+
+/// Function to list all active sessions where caller is either owner or participant
+// pub fn get_my_active_sessions() -> ExternResult<Vec<EntryHashB64>> {
+//     game_session::get_sessions(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])
+// }
 
 /// Function to make a new move in the game specified by input
 #[hdk_extern]

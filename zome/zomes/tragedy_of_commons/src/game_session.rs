@@ -5,8 +5,8 @@ use crate::{
     utils::convert_keys_from_b64,
 };
 use hdk::prelude::*;
-use std::{collections::HashMap, time::SystemTime};
 use holo_hash::{AgentPubKeyB64, EntryHashB64};
+use std::{collections::HashMap, time::SystemTime};
 
 pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
 pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
@@ -120,7 +120,11 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     create_entry(&gs)?;
     let entry_hash_game_session = hash_entry(&gs)?;
 
-    tracing::debug!("================= Creating link from OWNER address {:?} to game session {:?}", latest_pubkey.clone(), entry_hash_game_session.clone());
+    tracing::debug!(
+        "================= Creating link from OWNER address {:?} to game session {:?}",
+        latest_pubkey.clone(),
+        entry_hash_game_session.clone()
+    );
     // create link from session owner's address to the game session entry
     create_link(
         latest_pubkey.clone().into(),
@@ -184,11 +188,19 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     Ok(header_hash_round_zero)
 }
 
-pub fn get_sessions(link_tag: &str) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-    let agent_info: AgentInfo = agent_info()?;
-    let links = get_links(agent_info.agent_latest_pubkey.into(), Some(LinkTag::new(link_tag)))?;
-    let results = links
-        .into_inner()
+pub fn get_sessions(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+    let agent_key: EntryHash = agent_info()?.agent_latest_pubkey.into();
+    let mut results_tmp: Vec<Link> = vec![];
+    for lt in link_tags {
+        let mut links = get_links(
+            agent_key.clone(),
+            Some(LinkTag::new(lt)),
+        )?
+        .into_inner();
+        results_tmp.append(&mut links);
+    }
+
+    let results = results_tmp
         .iter()
         .map(|link| {
             let result = get_game_session(link.target.clone())?;
@@ -200,8 +212,9 @@ pub fn get_sessions(link_tag: &str) -> ExternResult<Vec<(EntryHashB64, GameSessi
 }
 
 fn get_game_session(game_result_hash: EntryHash) -> ExternResult<GameSession> {
-    let element = get(game_result_hash.clone(), GetOptions::default())?
-        .ok_or(WasmError::Guest(format!("Could not get game session at: {}", game_result_hash).into()))?;
+    let element = get(game_result_hash.clone(), GetOptions::default())?.ok_or(WasmError::Guest(
+        format!("Could not get game session at: {}", game_result_hash).into(),
+    ))?;
 
     let game_result: GameSession = element
         .entry()
