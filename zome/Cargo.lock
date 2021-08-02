@@ -628,7 +628,7 @@ dependencies = [
 [[package]]
 name = "ffs"
 version = "0.0.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "backtrace",
  "cfg-if 0.1.10",
@@ -640,25 +640,9 @@ dependencies = [
 [[package]]
 name = "fixt"
 version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
- "holochain_serialized_bytes",
- "lazy_static",
- "parking_lot 0.10.2",
- "paste 1.0.5",
- "rand 0.7.3",
- "rand_core 0.5.1",
- "serde",
- "strum",
- "strum_macros",
-]
-
-[[package]]
-name = "fixt"
-version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75#6b34b1797042b72aa7ae80364d3616a321924f75"
-dependencies = [
- "holochain_serialized_bytes",
+ "holochain_serialized_bytes 0.0.50",
  "lazy_static",
  "parking_lot 0.10.2",
  "paste 1.0.5",
@@ -906,12 +890,12 @@ checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 [[package]]
 name = "hdk"
 version = "0.0.101-alpha.0"
-source = "git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75#6b34b1797042b72aa7ae80364d3616a321924f75"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "hdk_derive",
- "holo_hash 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
+ "holo_hash",
  "holochain_wasmer_guest",
- "holochain_zome_types 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
+ "holochain_zome_types",
  "mockall 0.9.1",
  "paste 1.0.5",
  "serde",
@@ -925,9 +909,9 @@ dependencies = [
 [[package]]
 name = "hdk_derive"
 version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75#6b34b1797042b72aa7ae80364d3616a321924f75"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
- "holochain_zome_types 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
+ "holochain_zome_types",
  "paste 1.0.5",
  "proc-macro2",
  "quote",
@@ -955,30 +939,14 @@ dependencies = [
 [[package]]
 name = "holo_hash"
 version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "arbitrary",
  "base64",
  "blake2b_simd",
  "derive_more",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
- "holochain_serialized_bytes",
- "rand 0.7.3",
- "serde",
- "serde_bytes",
- "thiserror",
-]
-
-[[package]]
-name = "holo_hash"
-version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75#6b34b1797042b72aa7ae80364d3616a321924f75"
-dependencies = [
- "base64",
- "blake2b_simd",
- "derive_more",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
- "holochain_serialized_bytes",
+ "fixt",
+ "holochain_serialized_bytes 0.0.50",
  "rand 0.7.3",
  "serde",
  "serde_bytes",
@@ -988,12 +956,12 @@ dependencies = [
 [[package]]
 name = "holochain_keystore"
 version = "0.0.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "ghost_actor",
- "holo_hash 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
- "holochain_serialized_bytes",
- "holochain_zome_types 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
+ "holo_hash",
+ "holochain_serialized_bytes 0.0.50",
+ "holochain_zome_types",
  "lair_keystore_api",
  "lair_keystore_client",
  "serde",
@@ -1009,7 +977,22 @@ version = "0.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e77d1f384e8c8908f12d12301d5fc7861779fa68e6f74078d8876ed6aedf7eab"
 dependencies = [
- "holochain_serialized_bytes_derive",
+ "holochain_serialized_bytes_derive 0.0.50",
+ "rmp-serde",
+ "serde",
+ "serde-transcode",
+ "serde_bytes",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "holochain_serialized_bytes"
+version = "0.0.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9805b3e01e7b5c144782a0823db4dc895fec18a9ccd45a492ce7c7bf157a9e38"
+dependencies = [
+ "holochain_serialized_bytes_derive 0.0.51",
  "rmp-serde",
  "serde",
  "serde-transcode",
@@ -1029,9 +1012,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "holochain_serialized_bytes_derive"
+version = "0.0.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1077232d0c427d64feb9e138fa22800e447eafb1810682d6c13beb95333cb32c"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "holochain_types"
 version = "0.0.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -1045,13 +1038,13 @@ dependencies = [
  "derive_more",
  "either",
  "ffs",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
+ "fixt",
  "flate2",
  "futures",
- "holo_hash 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
+ "holo_hash",
  "holochain_keystore",
- "holochain_serialized_bytes",
- "holochain_zome_types 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
+ "holochain_serialized_bytes 0.0.50",
+ "holochain_zome_types",
  "itertools 0.10.0",
  "lazy_static",
  "mockall 0.8.3",
@@ -1077,9 +1070,10 @@ dependencies = [
 [[package]]
 name = "holochain_wasmer_common"
 version = "0.0.67"
-source = "git+https://github.com/holochain/holochain-wasmer.git?tag=v0.0.69#850b8811730d4adecf490ca8f8df2d16ba3024e9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90cb4e0ce3995ed8fe5b7f1695b714bab5b7a343487fea8ae0ce14c38e225d24"
 dependencies = [
- "holochain_serialized_bytes",
+ "holochain_serialized_bytes 0.0.50",
  "serde",
  "serde_bytes",
  "thiserror",
@@ -1088,11 +1082,11 @@ dependencies = [
 [[package]]
 name = "holochain_wasmer_guest"
 version = "0.0.67"
-source = "git+https://github.com/holochain/holochain-wasmer.git?tag=v0.0.69#850b8811730d4adecf490ca8f8df2d16ba3024e9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9c2f16b3f80ee23107b1c20de51aae8fcd90948833fed830ddbd61b86f5c0b2"
 dependencies = [
- "holochain_serialized_bytes",
+ "holochain_serialized_bytes 0.0.50",
  "holochain_wasmer_common",
- "parking_lot 0.11.1",
  "serde",
  "tracing",
 ]
@@ -1100,38 +1094,16 @@ dependencies = [
 [[package]]
 name = "holochain_zome_types"
 version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "chrono",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
- "holo_hash 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
- "holochain_serialized_bytes",
+ "fixt",
+ "holo_hash",
+ "holochain_serialized_bytes 0.0.50",
  "paste 1.0.5",
  "rand 0.7.3",
  "serde",
  "serde_bytes",
- "strum",
- "subtle",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "holochain_zome_types"
-version = "0.0.2-alpha.1"
-source = "git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75#6b34b1797042b72aa7ae80364d3616a321924f75"
-dependencies = [
- "chrono",
- "derive_builder",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
- "holo_hash 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?rev=6b34b1797042b72aa7ae80364d3616a321924f75)",
- "holochain_serialized_bytes",
- "nanoid",
- "paste 1.0.5",
- "rand 0.7.3",
- "serde",
- "serde_bytes",
- "shrinkwraprs",
  "strum",
  "subtle",
  "thiserror",
@@ -1356,9 +1328,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.86"
+version = "0.2.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7282d924be3275cec7f6756ff4121987bc6481325397dde6ba3e7802b1a8b1c"
+checksum = "320cfe77175da3a483efed4bc0adc1968ca050b098ce4f2f1c13a56626128790"
 
 [[package]]
 name = "linked-hash-map"
@@ -1516,9 +1488,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mockall_double"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e25b78d34b2b713b1d000d629079755cfc166e6a65f9f4c1c012a94305467c5"
+dependencies = [
+ "cfg-if 1.0.0",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "mr_bundle"
 version = "0.0.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -1647,7 +1631,7 @@ checksum = "04ee3ae3ce7a7b9f875526d3f956c106f991114f1c61a0e10553918256efc8fc"
 dependencies = [
  "chrono",
  "derive_more",
- "holochain_serialized_bytes",
+ "holochain_serialized_bytes 0.0.51",
  "inferno",
  "once_cell",
  "opentelemetry",
@@ -2206,9 +2190,9 @@ dependencies = [
 
 [[package]]
 name = "rcgen"
-version = "0.8.10"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e80a701a04edd9cab874a3d59323bebe24c9a92dd602088c78da83732066d1b"
+checksum = "4974f7e96ee51fa3c90c3022e02c3a7117e71cb2a84518a55e44360135200c25"
 dependencies = [
  "chrono",
  "pem",
@@ -2525,9 +2509,9 @@ dependencies = [
 
 [[package]]
 name = "signal-hook-registry"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16f1d0fef1604ba8f7a073c7e701f213e056707210e9020af4528e0101ce11a6"
+checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
 dependencies = [
  "libc",
 ]
@@ -2748,9 +2732,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.5.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83f0c8e7c0addab50b663055baf787d0af7f413a46e6e7fb9559a4e4db7137a5"
+checksum = "4b7b349f11a7047e6d1276853e612d152f5e8a352c61917887cc2169e2366b4c"
 dependencies = [
  "autocfg 1.0.1",
  "bytes",
@@ -2804,7 +2788,7 @@ dependencies = [
 [[package]]
 name = "tokio_helper"
 version = "0.0.1"
-source = "git+https://github.com/holochain/holochain?branch=develop#a6ac0439670ba367c723a80d3b8bc7c419aa5f6e"
+source = "git+https://github.com/holochain/holochain?rev=3a47f9798c6175997d27d450a7c4a0b92d17d4da#3a47f9798c6175997d27d450a7c4a0b92d17d4da"
 dependencies = [
  "futures",
  "num_cpus",
@@ -2932,12 +2916,14 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "derive_more",
- "fixt 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
+ "fixt",
  "hdk",
  "holochain_types",
- "holochain_zome_types 0.0.2-alpha.1 (git+https://github.com/holochain/holochain?branch=develop)",
  "mockall 0.9.1",
+ "mockall_double",
+ "paste 1.0.5",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,13 +1,19 @@
+use game_session::GameParams;
 // use game_session::GameSession;
 use hdk::prelude::*;
 #[allow(unused)]
-use holo_hash::{AgentPubKeyB64, EntryHashB64};
+use holo_hash::*;
+use utils::convert_keys_from_b64;
 
 #[allow(unused_imports)]
 use crate::{
     game_move::GameMoveInput,
-    game_session::{GameSessionInput, GameSession, GameSignal, SignalPayload, OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG},
+    game_session::{
+        GameSession, GameSessionInput, GameSignal, SignalPayload, OWNER_SESSION_TAG,
+        PARTICIPANT_SESSION_TAG,
+    },
 };
+mod error;
 #[allow(unused_imports)]
 #[allow(dead_code)]
 #[allow(unused)]
@@ -66,7 +72,15 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
 pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
-    game_session::start_dummy_session(player_list)
+    let game_params = GameParams {
+        regeneration_factor: 1.1,
+        start_amount: 100,
+        num_rounds: 3,
+        resource_coef: 3,
+        reputation_coef: 2,
+    };
+    let players = convert_keys_from_b64(&player_list);
+    game_session::new_session(players, game_params)
 }
 
 /// Function to call when player wants to start a new game and has already selected
@@ -78,14 +92,16 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<Hea
 /// Function to call by the invite zome once all invites are taken care of
 /// and we can actually create the GameSession and start playing
 pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
-    game_session::new_session(input)
+    let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
+    let game_params = input.game_params;
+    game_session::new_session(players, game_params)
 }
 
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
 /// Function to list all game sessions that the caller has created
 #[hdk_extern]
 pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-     game_session::get_sessions(vec![OWNER_SESSION_TAG])
+    game_session::get_sessions(vec![OWNER_SESSION_TAG])
 }
 
 /// Function to list game sessions in which caller has been a participant.
@@ -115,9 +131,13 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
 /// Function to call from the UI on a regular basis to try and close the currently
 /// active GameRound. It will check the currently available GameRound state and then
 /// will close it if it's possible. If not, it will return None
-pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash> {
+pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<HeaderHashB64> {
     // TODO: this should probably go to the game_round.rs instead
-    game_move::try_to_close_round(prev_round_hash)
+    let x = game_round::try_to_close_round(prev_round_hash.into());
+    match x {
+        Ok(hash) => Ok(HeaderHashB64::from(hash)),
+        Err(error) => Err(error),
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
