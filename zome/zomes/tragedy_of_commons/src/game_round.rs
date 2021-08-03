@@ -1,5 +1,7 @@
 use crate::game_move::GameMove;
-use crate::game_session::{GameParams, GameScores, GameSession, GameSignal, SignalPayload};
+use crate::game_session::{
+    GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
+};
 use crate::types::{PlayerStats, ReputationAmount, ResourceAmount};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
@@ -7,19 +9,21 @@ use crate::utils::{
 use hdk::prelude::*;
 use holo_hash::*;
 use std::collections::HashMap;
+use std::vec;
 
 const NO_REPUTATION: ReputationAmount = 0;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoundState {
     pub resource_amount: ResourceAmount,
     pub player_stats: PlayerStats,
 }
 
 #[hdk_entry(id = "game_round", visibility = "public")]
+#[derive(Clone, PartialEq, Eq)]
 pub struct GameRound {
     pub round_num: u32,
-    pub session: EntryHash,
+    pub session: HeaderHash,
     pub round_state: RoundState,
     pub game_moves: Vec<EntryHash>,
 }
@@ -38,7 +42,7 @@ impl GameRound {
     /// Creates a new GameRound instance with the provided input
     pub fn new(
         round_num: u32,
-        session: EntryHash,
+        session: HeaderHash,
         round_state: RoundState,
         previous_round_moves: Vec<EntryHash>,
     ) -> GameRound {
@@ -148,12 +152,12 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
     // game moves
     info!("fetching links to game moves");
     let links = get_links(
-        entry_from_element_create_or_update(&last_round_element)?,
+        entry_hash_from_element(&last_round_element)?.to_owned(),
         Some(LinkTag::new("game_move")),
     )?;
     let mut moves: Vec<GameMove> = vec![];
     for link in links.into_inner() {
-        println!("fetching game move element, trying locally first");
+        debug!("fetching game move element, trying locally first");
         let game_move_element = match get(link.target.clone(), GetOptions::content())? {
             Some(element) => element,
             None => return Err(WasmError::Guest("Game move not found".into())),
@@ -175,7 +179,7 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
         );
         return Err(WasmError::Guest(
             format!(
-                "Still waiting on {} players",
+                "Still waiting on {} player(s)",
                 &game_session.players.len() - &moves.len()
             )
             .into(),
@@ -198,6 +202,7 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
     } else {
         return end_game(
             &game_session,
+            &game_session_element.header_address(),
             &last_round,
             last_round_element.header_address(),
             &round_state,
@@ -222,18 +227,19 @@ fn create_new_round(
     last_round_header_hash: &HeaderHash,
     round_state: &RoundState,
 ) -> ExternResult<HeaderHash> {
-    let round = GameRound {
+    info!("start new round: updating game round entry");
+    //update chain from the previous round entry hash and commit an updated version
+    let next_round = GameRound {
         round_num: last_round.round_num + 1,
         round_state: round_state.clone(),
-        session: last_round.session.clone(),
+        session: last_round.session.clone().into(),
         game_moves: vec![],
     };
-    info!("creating new game round");
-    //update chain from the previous round entry hash and commit an updated version
-    let round_header_hash_update = update_entry(last_round_header_hash.clone(), &round)?;
+    let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
+    debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
     let signal_payload = SignalPayload {
-        game_session_entry_hash: last_round.session.clone(),
+        game_session_header_hash: last_round.session.clone(),
         round_header_hash_update: round_header_hash_update.clone(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
@@ -245,6 +251,7 @@ fn create_new_round(
 
 fn end_game(
     game_session: &GameSession,
+    game_session_header_hash: &HeaderHash,
     last_round: &GameRound,
     last_round_header_hash: &HeaderHash,
     round_state: &RoundState,
@@ -255,9 +262,26 @@ fn end_game(
     // only a signal to all players that game has ended
     // players that miss the signal should have their UI poll GameRound
     // based on that content it can be derive if the game has ended or not
+
+    info!("updating game session: setting finished state and adding player stats");
+    //update chain for game session entry
+    let game_session_update = GameSession {
+        owner: game_session.owner.clone(),
+        status: SessionState::Finished,
+        game_params: game_session.game_params.clone(),
+        players: game_session.players.clone(),
+        scores: round_state.player_stats.clone(),
+    };
+    let game_session_header_hash_update =
+        update_entry(game_session_header_hash.clone(), &game_session_update)?;
+    debug!(
+        "updated game session header hash: {:?}",
+        game_session_header_hash_update.clone()
+    );
+
     info!("signaling player game has ended");
     let signal_payload = SignalPayload {
-        game_session_entry_hash: last_round.session.clone(),
+        game_session_header_hash: game_session_header_hash_update.clone(),
         round_header_hash_update: last_round_header_hash.clone(),
     };
     let signal = ExternIO::encode(GameSignal::GameOver(signal_payload))?;
@@ -266,7 +290,7 @@ fn end_game(
     remote_signal(signal, game_session.players.clone())?;
     debug!("sending signal to {:?}", game_session.players.clone());
 
-    Ok(last_round_header_hash.clone())
+    Ok(game_session_header_hash_update.clone())
 }
 
 // Retrieves all available game moves made in a certain round, where entry_hash identifies
@@ -279,13 +303,15 @@ fn get_all_round_moves(round_entry_hash: EntryHash) {
 #[rustfmt::skip]   // skipping formatting is needed, because to correctly import fixt we needed "use ::fixt::prelude::*;" which rustfmt does not like
 
 mod tests {
-    use crate::types::new_player_stats;
+    use crate::{types::new_player_stats, utils::enable_tracing};
 
     use super::*;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
     use mockall::mock;
     use std::vec;
+    use holochain_types::prelude::ElementFixturator;
+
 
     #[test]
     fn test_calculate_round_state() {
@@ -300,14 +326,14 @@ mod tests {
         let p1_key = fixt!(AgentPubKey);
         let move1 = GameMove {
             owner: p1_key.clone(),
-            previous_round: fixt!(EntryHash),
+            round: fixt!(HeaderHash),
             resources: 5,
         };
 
         let p2_key = fixt!(AgentPubKey);
         let move2 = GameMove {
             owner: p2_key.clone(),
-            previous_round: fixt!(EntryHash),
+            round: fixt!(HeaderHash),
             resources: 10,
         };
         let s = calculate_round_state(&gp, vec![move1, move2]);
@@ -337,10 +363,11 @@ mod tests {
                 reputation_coef: 2,
             },
             players: vec![],
+            scores: PlayerStats::new(),
         };
         let prev_round_not_last_round = GameRound {
             round_num: 1,
-            session: fixt!(EntryHash),
+            session: fixt!(HeaderHash),
             round_state: RoundState{ resource_amount: 100, player_stats:HashMap::new() },
             game_moves: vec![],
         };
@@ -350,7 +377,7 @@ mod tests {
         };
         let prev_round_last_round = GameRound {
             round_num: 3,
-            session: fixt!(EntryHash),
+            session: fixt!(HeaderHash),
             round_state: RoundState{ resource_amount: 100, player_stats:HashMap::new() },
             game_moves: vec![],
         };
@@ -368,4 +395,735 @@ mod tests {
         assert_eq!(true, start_new_round(&game_session, &prev_round_not_last_round, &round_state_resources_depleted));
         assert_eq!(true, start_new_round(&game_session, &prev_round_not_last_round, &round_state_resources_zero));       
     }
+
+    #[test]
+    // to run just this test =>   RUSTFLAGS='-A warnings' cargo test --features "mock" --package tragedy_of_commons --lib -- game_round::tests::test_try_to_close_round_fails_not_enough_moves --exact --nocapture
+    fn test_try_to_close_round_fails_not_enough_moves() {
+        enable_tracing(tracing::Level::DEBUG);
+
+        info!("closing round should fail because only one of two players has made a move.");
+        // mock agent info
+        let agent_pubkey_alice = fixt!(AgentPubKey);
+        let agent_pubkey_bob = fixt!(AgentPubKey);
+        let players = vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()];
+
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+
+        // mock game session element
+        let game_params = GameParams {
+            regeneration_factor: 1.0,
+            start_amount: 100,
+            num_rounds: 3,
+            resource_coef: 3,
+            reputation_coef: 2,
+        };
+        let game_session = GameSession {
+            owner: agent_pubkey_alice.clone(),
+           // status: SessionState::InProgress,
+            game_params,
+            players: players.clone(),
+            status: crate::game_session::SessionState::InProgress,
+            scores: PlayerStats::new(),
+        };
+
+        let mut element_with_game_session: Element = fixt!(Element);
+        let create_header_1 = fixt!(Create);
+        *element_with_game_session.as_header_mut() = Header::Create(create_header_1.clone());
+        *element_with_game_session.as_entry_mut() = ElementEntry::Present(game_session.clone().try_into().unwrap());
+        let game_session_header_hash_closure = element_with_game_session.header_address().clone();
+        debug!("game session header hash: {:?}", element_with_game_session.header_address().clone());
+
+        let game_round_one = GameRound {
+            round_num: 1,
+            round_state: RoundState {player_stats: new_player_stats(&players), resource_amount: 100},
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+        
+        let mut element_with_game_round: Element = fixt!(Element);
+        let create_header_2 = fixt!(Create);
+        *element_with_game_round.as_header_mut() = Header::Create(create_header_2.clone());
+        *element_with_game_round.as_entry_mut() = ElementEntry::Present(game_round_one.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round.header_address().clone());
+
+
+        // game move
+        let game_move_alice = GameMove {
+            owner: agent_pubkey_alice.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_alice = fixt!(Element);
+        let create_header_3 = fixt!(Create);
+        *element_with_game_move_alice.as_header_mut() = Header::Create(create_header_3.clone());
+        *element_with_game_move_alice.as_entry_mut() =
+            ElementEntry::Present(game_move_alice.try_into().unwrap());
+        let move_alice_round1_entry_hash = Header::Create(create_header_3.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_alice_header_hash_closure = element_with_game_move_alice.header_address().clone();
+        debug!("game move header hash: {:?}", element_with_game_move_alice.header_address().clone());
+
+        // link
+        let move_alice_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_alice_round1 = Link {
+            target: move_alice_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_alice_round1_link_header_hash.into(),
+        };
+        let game_moves: Links = vec![link_to_move_alice_round1].into();
+
+
+
+
+        let header_hash_closure = element_with_game_round.header_address().clone();
+
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_round.header_address().clone().into(),
+            GetOptions::latest(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+        
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_session.header_address().clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+
+
+        mock_hdk
+        .expect_get_links()
+        .times(1)
+        .return_once(move |_| Ok(game_moves));
+        
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_alice_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+
+        // let header_hash_final_round = fixt!(HeaderHash);
+        
+        hdk::prelude::set_hdk(mock_hdk);
+        let result = try_to_close_round(header_hash_closure.into());
+        let err = result.err().unwrap();
+        info!("{:?}", err);
+        match err {
+            WasmError::Guest(x) => assert_eq!(x, "Still waiting on 1 player(s)"),
+            _ => assert_eq!(true, false),
+        }
+    }
+    
+    #[test]
+    fn test_try_to_close_round_success_create_next_round() {
+        enable_tracing(tracing::Level::DEBUG);
+        // mock agent info
+        let agent_pubkey_alice = fixt!(AgentPubKey);
+        let agent_pubkey_bob = fixt!(AgentPubKey);
+        
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+        
+        debug!("prepare game session element");
+        // mock game session element
+        let game_params = GameParams {
+            regeneration_factor: 1.0,
+            start_amount: 100,
+            num_rounds: 3,
+            resource_coef: 3,
+            reputation_coef: 2,
+        };
+        let players = vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()];
+        let game_session = GameSession {
+            owner: agent_pubkey_alice.clone(),
+            // status: SessionState::InProgress,
+            game_params,
+            players: vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()],
+            status: crate::game_session::SessionState::InProgress,
+            scores: PlayerStats::new(),
+        };
+        let mut element_with_game_session: Element = fixt!(Element);
+        let create_header_1 = fixt!(Create);
+        *element_with_game_session.as_header_mut() = Header::Create(create_header_1.clone());
+        *element_with_game_session.as_entry_mut() = ElementEntry::Present(game_session.clone().try_into().unwrap());
+        let game_session_header_hash_closure = element_with_game_session.header_address().clone();
+        debug!("game session header hash: {:?}", element_with_game_session.header_address().clone());
+
+        // Game round one
+        let game_round_zero = GameRound {
+            round_num: 0,
+            round_state: RoundState {
+                resource_amount: 100,
+                player_stats: new_player_stats(&players),
+            },
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+        debug!("prepare game round element");
+        let mut element_with_game_round: Element = fixt!(Element);
+        let create_header_2 = fixt!(Create);
+        let game_round_header_hash_closure = element_with_game_round.header_address().clone();
+        *element_with_game_round.as_header_mut() = Header::Create(create_header_2.clone());
+        *element_with_game_round.as_entry_mut() = ElementEntry::Present(game_round_zero.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round.header_address().clone());
+
+        // Game round one - update
+        let game_round_zero_update_to_round_one = GameRound {
+            round_num: 1,
+            round_state: RoundState {
+                resource_amount: 100,
+                player_stats: new_player_stats(&players),
+            },
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+        debug!("prepare game round element - update");
+        let mut element_with_game_round_update: Element = fixt!(Element);
+        let update_header_1 = fixt!(Update);
+        let game_round_update_header_hash_closure = element_with_game_round_update.header_address().clone();
+        *element_with_game_round_update.as_header_mut() = Header::Update(update_header_1.clone());
+        *element_with_game_round_update.as_entry_mut() = ElementEntry::Present(game_round_zero_update_to_round_one.clone().try_into().unwrap());
+        debug!("game round update header hash: {:?}", element_with_game_round_update.header_address().clone());
+
+        // game move alice
+        debug!("prepare game move element alice");
+        let game_move_alice = GameMove {
+            owner: agent_pubkey_alice.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_alice = fixt!(Element);
+        let create_header_3 = fixt!(Create);
+        *element_with_game_move_alice.as_header_mut() = Header::Create(create_header_3.clone());
+        *element_with_game_move_alice.as_entry_mut() =
+            ElementEntry::Present(game_move_alice.try_into().unwrap());
+        let move_alice_round1_entry_hash = Header::Create(create_header_3.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_alice_header_hash_closure = element_with_game_move_alice.header_address().clone();
+
+
+        // game move bob
+        debug!("prepare game move element bob");
+        let game_move_bob = GameMove {
+            owner: agent_pubkey_bob.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_bob = fixt!(Element);
+        let create_header_4 = fixt!(Create);
+        *element_with_game_move_bob.as_header_mut() = Header::Create(create_header_4.clone());
+        *element_with_game_move_bob.as_entry_mut() =
+            ElementEntry::Present(game_move_bob.try_into().unwrap());
+        let move_bob_round1_entry_hash = Header::Create(create_header_4.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_bob_header_hash_closure = element_with_game_move_bob.header_address().clone();
+
+
+        // links
+        debug!("prepare game move links");
+        let move_alice_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_alice_round1 = Link {
+            target: move_alice_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_alice_round1_link_header_hash.into(),
+        };
+
+        let move_bob_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_bob_round1 = Link {
+            target: move_bob_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_bob_round1_link_header_hash.into(),
+        };
+        let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();
+
+
+        let header_hash_closure = element_with_game_round.header_address().clone();
+
+        debug!("mock get game round");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_round.header_address().clone().into(),
+            GetOptions::latest(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+
+        debug!("mock get game session");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_session.header_address().clone().into(),
+            GetOptions::content(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+
+        debug!("mock get links");
+        mock_hdk
+            .expect_get_links()
+            .times(1)
+            .return_once(move |_| Ok(game_moves));
+        
+        debug!("mock get game move alice");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_alice_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+
+        debug!("mock get game move bob");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_bob_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+
+        debug!("mock update game round chain to contain game round 1");
+        let game_round_1_header_hash = fixt!(HeaderHash);
+        let game_round_1_header_hash_closure = game_round_1_header_hash.clone();
+        mock_hdk
+            .expect_update()
+            .times(1)
+            .return_once(move |_| Ok(game_round_1_header_hash_closure.clone()));
+        
+        mock_hdk
+            .expect_remote_signal()
+            .times(1)
+            .return_once(move |_| Ok(()));          
+        
+        hdk::prelude::set_hdk(mock_hdk);
+        let result = try_to_close_round(game_round_header_hash_closure.clone());
+        assert_eq!(result.unwrap(), game_round_1_header_hash);
+    }
+
+    #[test]
+    fn test_try_to_close_round_success_end_game_resources_depleted(){
+        enable_tracing(tracing::Level::DEBUG);
+        // mock agent info
+        let agent_pubkey_alice = fixt!(AgentPubKey);
+        let agent_pubkey_bob = fixt!(AgentPubKey);
+        let players = vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()];
+        
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+        
+        debug!("prepare game session element");
+        // mock game session element
+        let game_params = GameParams {
+            regeneration_factor: 1.0,
+            start_amount: 100,
+            num_rounds: 3,
+            resource_coef: 3,
+            reputation_coef: 2,
+        };
+        let game_session = GameSession {
+            owner: agent_pubkey_alice.clone(),
+            game_params,
+            players: players.clone(),
+            status: crate::game_session::SessionState::InProgress,       
+            scores: PlayerStats::new(), 
+        };
+        let mut element_with_game_session: Element = fixt!(Element);
+        let create_header_1 = fixt!(Create);
+        *element_with_game_session.as_header_mut() = Header::Create(create_header_1.clone());
+        *element_with_game_session.as_entry_mut() = ElementEntry::Present(game_session.clone().try_into().unwrap());
+        let game_session_header_hash_closure = element_with_game_session.header_address().clone();
+
+        // Game round one
+        let game_round_zero = GameRound {
+            round_num: 0,
+            round_state: RoundState {
+                resource_amount: 100,
+                player_stats: new_player_stats(&players),
+            },
+            game_moves: vec![],
+            session: element_with_game_session.header_address().clone(),
+        };
+
+        debug!("prepare game round element");
+        let mut element_with_game_round: Element = fixt!(Element);
+        let create_header_2 = fixt!(Create);
+        let game_round_header_hash_closure = element_with_game_round.header_address().clone();
+        *element_with_game_round.as_header_mut() = Header::Create(create_header_2.clone());
+        *element_with_game_round.as_entry_mut() = ElementEntry::Present(game_round_zero.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round.header_address().clone());
+
+        // Game round one - update
+        let game_round_updated_to_round_one = GameRound {
+            round_num: 1,
+            round_state: RoundState{
+                player_stats: new_player_stats(&players),
+                resource_amount: -10,
+            },
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+        debug!("prepare game round element");
+        let mut element_with_game_round_update: Element = fixt!(Element);
+        let update_header_1 = fixt!(Update);
+        let game_round_update_header_hash_closure = element_with_game_round_update.header_address().clone();
+        *element_with_game_round_update.as_header_mut() = Header::Update(update_header_1.clone());
+        *element_with_game_round_update.as_entry_mut() = ElementEntry::Present(game_round_updated_to_round_one.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round_update.header_address().clone());
+       
+        // game move alice
+        debug!("prepare game move element alice");
+        let game_move_alice = GameMove {
+            owner: agent_pubkey_alice.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_alice = fixt!(Element);
+        let create_header_3 = fixt!(Create);
+        *element_with_game_move_alice.as_header_mut() = Header::Create(create_header_3.clone());
+        *element_with_game_move_alice.as_entry_mut() =
+            ElementEntry::Present(game_move_alice.try_into().unwrap());
+        let move_alice_round1_entry_hash = Header::Create(create_header_3.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_alice_header_hash_closure = element_with_game_move_alice.header_address().clone();
+
+
+        // game move bob
+        debug!("prepare game move element bob");
+        let game_move_bob = GameMove {
+            owner: agent_pubkey_bob.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 100,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_bob = fixt!(Element);
+        let create_header_4 = fixt!(Create);
+        *element_with_game_move_bob.as_header_mut() = Header::Create(create_header_4.clone());
+        *element_with_game_move_bob.as_entry_mut() =
+            ElementEntry::Present(game_move_bob.try_into().unwrap());
+        let move_bob_round1_entry_hash = Header::Create(create_header_4.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_bob_header_hash_closure = element_with_game_move_bob.header_address().clone();
+
+
+        // links
+        debug!("prepare game move links");
+        let move_alice_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_alice_round1 = Link {
+            target: move_alice_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_alice_round1_link_header_hash.into(),
+        };
+
+        let move_bob_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_bob_round1 = Link {
+            target: move_bob_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_bob_round1_link_header_hash.into(),
+        };
+        let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();
+
+
+        let header_hash_closure = element_with_game_round.header_address().clone();
+
+        debug!("mock get game round");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_round.header_address().clone().into(),
+            GetOptions::latest(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+
+        debug!("mock get game session");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_session.header_address().clone().into(),
+            GetOptions::content(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+
+        debug!("mock get links");
+        mock_hdk
+            .expect_get_links()
+            .times(1)
+            .return_once(move |_| Ok(game_moves));
+        
+        debug!("mock get game move alice");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_alice_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+
+        debug!("mock get game move bob");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_bob_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+
+
+        let game_session_update_header_hash = fixt!(HeaderHash);
+        let game_session_update_header_hash_closure = game_session_update_header_hash.clone();
+        debug!("mock update game session");
+        mock_hdk
+            .expect_update()
+            .times(1)
+            .return_once(move |_| Ok(game_session_update_header_hash_closure));
+        
+
+        debug!("mock signaling game ended");
+        mock_hdk
+            .expect_remote_signal()
+            .times(1)
+            .return_once(move |_| Ok(()));          
+        
+        hdk::prelude::set_hdk(mock_hdk);
+        let result = try_to_close_round(game_round_header_hash_closure.clone());
+        assert_eq!(result.unwrap(), game_session_update_header_hash);
+    }
+
+
+    #[test]
+    fn test_try_to_close_round_end_game_all_rounds_played(){
+        // clear && cargo test --features "mock" --package tragedy_of_commons --lib -- game_round::tests::test_try_to_close_round_end_game_all_rounds_played --exact --nocapture
+
+        enable_tracing(tracing::Level::DEBUG);
+
+        let agent_pubkey_alice = fixt!(AgentPubKey);
+        let agent_pubkey_bob = fixt!(AgentPubKey);
+        let players = vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()];
+
+        let mut mock_hdk = hdk::prelude::MockHdkT::new();
+        
+        debug!("prepare game session element");
+        // mock game session element
+        let game_params = GameParams {
+            regeneration_factor: 1.0,
+            start_amount: 100,
+            num_rounds: 3,
+            resource_coef: 3,
+            reputation_coef: 2,
+        };
+        let game_session = GameSession {
+            owner: agent_pubkey_alice.clone(),
+            // status: SessionState::InProgress,
+            game_params,
+            players: players.clone(),
+            status: crate::game_session::SessionState::InProgress,
+            scores: PlayerStats::new(),
+        };
+        let mut element_with_game_session: Element = fixt!(Element);
+        let create_header_1 = fixt!(Create);
+        *element_with_game_session.as_header_mut() = Header::Create(create_header_1.clone());
+        *element_with_game_session.as_entry_mut() = ElementEntry::Present(game_session.clone().try_into().unwrap());
+        let game_session_header_hash_closure = element_with_game_session.header_address().clone();
+
+        // Game round three (of 3 rounds specified in game params)
+        let game_round_three = GameRound {
+            round_num: 3,
+            round_state: RoundState{
+                resource_amount: 100,
+                player_stats: new_player_stats(&players),
+            },
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+        debug!("prepare game round element");
+        let mut element_with_game_round: Element = fixt!(Element);
+        let create_header_2 = fixt!(Create);
+        let game_round_header_hash_closure = element_with_game_round.header_address().clone();
+        *element_with_game_round.as_header_mut() = Header::Create(create_header_2.clone());
+        *element_with_game_round.as_entry_mut() = ElementEntry::Present(game_round_three.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round.header_address().clone());
+
+        // Game round one - update
+        let game_round_three_update = GameRound {
+            round_num: 3,
+            round_state: RoundState{
+                resource_amount: 100,
+                player_stats: new_player_stats(&players),
+            },
+            session: element_with_game_session.header_address().clone(),
+            game_moves: vec![],
+        };
+
+
+        debug!("prepare game round element");
+        let mut element_with_game_round_update: Element = fixt!(Element);
+        let update_header_1 = fixt!(Update);
+        let game_round_update_header_hash_closure = element_with_game_round_update.header_address().clone();
+        *element_with_game_round_update.as_header_mut() = Header::Update(update_header_1.clone());
+        *element_with_game_round_update.as_entry_mut() = ElementEntry::Present(game_round_three_update.clone().try_into().unwrap());
+        debug!("game round header hash: {:?}", element_with_game_round_update.header_address().clone());
+
+        // Game round two
+        // let game_scores = GameScores {
+        //     session: HeaderHashB64::from(element_with_game_session.header_address().clone()),
+        //     //resources_left: 50,
+        //     stats: new_player_stats(vec![agent_pubkey_alice.clone(), agent_pubkey_bob.clone()]), // TODO alter stats
+        //     // player_moves: vec![],  // TODO add moves
+        // };
+
+        // debug!("prepare game scores element");
+
+        // let mut element_with_game_scores: Element = fixt!(Element);
+        // let create_header_game_scores = fixt!(Create);
+        // *element_with_game_scores.as_header_mut() = Header::Create(create_header_game_scores.clone());
+        // *element_with_game_scores.as_entry_mut() = ElementEntry::Present(game_scores.clone().try_into().unwrap());
+        // let game_scores_header_hash_closure = element_with_game_scores.header_address().clone();
+        // let game_scores_header_hash_closure2 = element_with_game_scores.header_address().clone();
+        // let game_scores_entry_hash_closure = element_with_game_scores.header().entry_hash().clone().unwrap().clone();
+        // debug!("game round header hash: {:?}", element_with_game_scores.header_address().clone());
+        
+        
+        // game move alice
+        debug!("prepare game move element alice");
+        let game_move_alice = GameMove {
+            owner: agent_pubkey_alice.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_alice = fixt!(Element);
+        let create_header_3 = fixt!(Create);
+        *element_with_game_move_alice.as_header_mut() = Header::Create(create_header_3.clone());
+        *element_with_game_move_alice.as_entry_mut() =
+            ElementEntry::Present(game_move_alice.try_into().unwrap());
+        let move_alice_round1_entry_hash = Header::Create(create_header_3.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_alice_header_hash_closure = element_with_game_move_alice.header_address().clone();
+
+
+        // game move bob
+        debug!("prepare game move element bob");
+        let game_move_bob = GameMove {
+            owner: agent_pubkey_bob.clone().into(),
+            //previous_round: prev_round_entry_hash.clone().into(),
+            resources: 10,
+            round: element_with_game_round.header_address().clone(),
+        };
+        let mut element_with_game_move_bob = fixt!(Element);
+        let create_header_4 = fixt!(Create);
+        *element_with_game_move_bob.as_header_mut() = Header::Create(create_header_4.clone());
+        *element_with_game_move_bob.as_entry_mut() =
+            ElementEntry::Present(game_move_bob.try_into().unwrap());
+        let move_bob_round1_entry_hash = Header::Create(create_header_4.clone()).entry_hash().unwrap().clone();
+        let element_with_game_move_bob_header_hash_closure = element_with_game_move_bob.header_address().clone();
+
+
+        // links
+        debug!("prepare game move links");
+        let move_alice_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_alice_round1 = Link {
+            target: move_alice_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_alice_round1_link_header_hash.into(),
+        };
+
+        let move_bob_round1_link_header_hash = HeaderHashB64::from(fixt!(HeaderHash));
+        let link_to_move_bob_round1 = Link {
+            target: move_bob_round1_entry_hash.clone(),
+            timestamp: Timestamp::from(chrono::offset::Utc::now()),
+            tag: LinkTag::new("game_move"),
+            create_link_hash: move_bob_round1_link_header_hash.into(),
+        };
+        let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();
+
+
+        let header_hash_closure = element_with_game_round.header_address().clone();
+
+        debug!("mock get game round");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_round.header_address().clone().into(),
+            GetOptions::latest(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+
+        debug!("mock get game session");
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            element_with_game_session.header_address().clone().into(),
+            GetOptions::content(),
+            )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+
+        debug!("mock get links");
+        mock_hdk
+            .expect_get_links()
+            .times(1)
+            .return_once(move |_| Ok(game_moves));
+        
+        debug!("mock get game move alice");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_alice_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+
+        debug!("mock get game move bob");   
+        mock_hdk
+        .expect_get()
+        .with(mockall::predicate::eq(GetInput::new(
+            move_bob_round1_entry_hash.clone().into(),
+            GetOptions::content(),
+        )))
+        .times(1)
+        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+
+        let game_session_update_header_hash = fixt!(HeaderHash);
+        let game_session_update_header_hash_closure = game_session_update_header_hash.clone();
+        debug!("mock update game session");
+        mock_hdk
+            .expect_update()
+            .times(1)
+            .return_once(move |_| Ok(game_session_update_header_hash_closure));
+
+        debug!("mock signal");
+        mock_hdk
+            .expect_remote_signal()
+            .times(1)
+            .return_once(move |_| Ok(()));          
+        
+        hdk::prelude::set_hdk(mock_hdk);
+        let result = try_to_close_round(game_round_header_hash_closure.clone());
+        assert_eq!(result.unwrap(), game_session_update_header_hash.clone());
+    }
+
+
 }

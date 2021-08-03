@@ -2,7 +2,7 @@ use crate::{
     game_round::{calculate_round_state, GameRound, RoundState},
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
-    utils::{convert_keys_from_b64, try_get_and_convert},
+    utils::{convert_keys_from_b64, entry_hash_from_element, try_get_and_convert},
 };
 use hdk::prelude::*;
 use holo_hash::AgentPubKeyB64;
@@ -14,7 +14,7 @@ pub struct GameMove {
     // retrospectively. And since all players are notified by the signal when they can make
     // a move, maybe we could pass that value from there, so that every player has it
     // when they're making a move
-    pub previous_round: EntryHash,
+    pub round: HeaderHash,
     pub resources: ResourceAmount,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
@@ -23,7 +23,7 @@ pub struct GameMoveInput {
     // NOTE: if we're linking all moves to the round, this can never be None
     // as we'll need a base for the link. Instead moves for the round 0 could be
     // linked directly from the game session.
-    pub previous_round: EntryHash,
+    pub previous_round: HeaderHash,
 }
 
 /*
@@ -44,19 +44,23 @@ for the context, here are notes on how we've made this decision:
         - NOTE: we'll have vulnerability
         - NOTE: update round closing rules to check that every AGENT made a move
 */
-#[hdk_extern]
-pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
+pub fn new_move(resource_amount: i32, round_header_hash: HeaderHash) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
-        resources: input.resource_amount,
-        previous_round: input.previous_round.clone(),
+        resources: resource_amount,
+        round: round_header_hash.clone(),
     };
     create_entry(&game_move);
     let entry_hash_game_move = hash_entry(&game_move)?;
 
+    let game_round_element = match get(round_header_hash.clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Round not found".into())),
+    };
+
     let header_hash_link = create_link(
-        input.previous_round.clone().into(),
+        entry_hash_from_element(&game_round_element)?.to_owned(),
         entry_hash_game_move.clone(),
         LinkTag::new("game_move"),
     )?;

@@ -1,4 +1,4 @@
-use crate::types::{new_player_stats, ResourceAmount};
+use crate::types::{new_player_stats, PlayerStats, ResourceAmount};
 use crate::{
     game_round::{GameRound, RoundState},
     types::ReputationAmount,
@@ -14,10 +14,10 @@ pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
     InProgress,
-    Lost { last_round: EntryHash },
+    //Lost { last_round: HeaderHash },
     // TODO: when validating things, check that last game round is finished to verify
     // that session itself is finished
-    Finished { last_round: EntryHash },
+    Finished, //{ last_round: HeaderHash },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Copy)]
@@ -37,6 +37,7 @@ pub struct GameSession {
     pub status: SessionState,      // how the game is going
     pub game_params: GameParams,   // what specific game are we playing
     pub players: Vec<AgentPubKey>, // who is playing
+    pub scores: PlayerStats,       // end scores
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
@@ -47,7 +48,7 @@ pub struct GameSessionInput {
 
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct SignalPayload {
-    pub game_session_entry_hash: EntryHash,
+    pub game_session_header_hash: HeaderHash,
     pub round_header_hash_update: HeaderHash,
 }
 
@@ -98,6 +99,7 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
         status: SessionState::InProgress,
         game_params: game_params,
         players: players.clone(),
+        scores: PlayerStats::new(),
     };
     let game_session_header_hash = create_entry(&game_session)?;
     let game_session_entry_hash = hash_entry(&game_session)?;
@@ -140,7 +142,7 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
     // TODO: create a link from session to game round entry to make the round discoverable
     let round_zero = GameRound::new(
         0,
-        game_session_entry_hash.clone(),
+        game_session_header_hash.clone(),
         RoundState::new(
             game_session.game_params.start_amount,
             new_player_stats(&players),
@@ -157,7 +159,7 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
     // that players need to make their moves
     // WARNING: remote_signal is fire and forget, no error if it fails, might be a weak point if this were production happ
     let signal_payload = SignalPayload {
-        game_session_entry_hash,
+        game_session_header_hash: game_session_header_hash.clone(),
         round_header_hash_update: header_hash_round_zero.clone(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
@@ -244,13 +246,14 @@ mod tests {
             status: SessionState::InProgress,
             game_params: game_params.clone(),
             players: players.clone(),
+            scores: PlayerStats::new(),
         };
 
         // round zero
         let round_zero = GameRound {
             game_moves: vec![],
             round_num: 0,
-            session: game_session_entry_hash.clone(),
+            session: game_session_header_hash.clone(),
             round_state: RoundState{
                 player_stats: new_player_stats(&players),
                 resource_amount: 100,
@@ -292,9 +295,6 @@ mod tests {
             .times(1)
             .return_once(move |_| Ok(fixt!(HeaderHash)));
         
-            println!("here");
-
-
         mock_hdk
             .expect_create()
             // .with(mockall::predicate::eq(

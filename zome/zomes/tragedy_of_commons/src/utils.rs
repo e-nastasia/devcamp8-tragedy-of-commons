@@ -67,3 +67,11 @@ pub fn entry_hash_from_element(element: &Element) -> ExternResult<&EntryHash> {
         }
     }
 }
+
+pub fn enable_tracing(level: tracing::Level) {
+    // i have no idea where to put the tracing config, as all examples suggest main
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_max_level(level)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+}

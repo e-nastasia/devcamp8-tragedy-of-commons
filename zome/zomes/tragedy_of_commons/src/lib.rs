@@ -3,6 +3,8 @@ use game_session::GameParams;
 use hdk::prelude::*;
 #[allow(unused)]
 use holo_hash::*;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 use utils::convert_keys_from_b64;
 
 #[allow(unused_imports)]
@@ -53,6 +55,16 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
         access: ().into(), // empty access converts to unrestricted
         functions,
     })?;
+
+    // i have no idea where to put the tracing config, as all examples suggest main
+    let subscriber = FmtSubscriber::builder()
+        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+        // will be written to stdout.
+        .with_max_level(Level::TRACE)
+        // completes the builder.
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     Ok(InitCallbackResult::Pass)
 }
@@ -125,7 +137,7 @@ pub fn get_all_my_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
-    game_move::new_move(input)
+    game_move::new_move(input.resource_amount, input.previous_round)
 }
 
 /// Function to call from the UI on a regular basis to try and close the currently
