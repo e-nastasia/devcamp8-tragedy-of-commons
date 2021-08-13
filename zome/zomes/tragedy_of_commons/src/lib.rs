@@ -105,7 +105,8 @@ pub fn get_all_my_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession
 }
 
 /// Function to list all active sessions where caller is either owner or participant
-pub fn get_my_active_sessions() -> ExternResult<Vec<EntryHashB64>> {
+#[hdk_extern]
+pub fn get_my_active_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
     game_session::get_sessions_with_status(SessionState::InProgress)
 }
 
