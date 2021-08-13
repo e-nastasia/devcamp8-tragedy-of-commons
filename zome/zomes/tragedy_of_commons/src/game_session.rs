@@ -188,15 +188,13 @@ pub fn new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
     Ok(header_hash_round_zero)
 }
 
-pub fn get_sessions_with_tags(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+pub fn get_sessions_with_tags(
+    link_tags: Vec<&str>,
+) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
     let agent_key: EntryHash = agent_info()?.agent_latest_pubkey.into();
     let mut results_tmp: Vec<Link> = vec![];
     for lt in link_tags {
-        let mut links = get_links(
-            agent_key.clone(),
-            Some(LinkTag::new(lt)),
-        )?
-        .into_inner();
+        let mut links = get_links(agent_key.clone(), Some(LinkTag::new(lt)))?.into_inner();
         results_tmp.append(&mut links);
     }
 
@@ -211,7 +209,9 @@ pub fn get_sessions_with_tags(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHa
     Ok(results)
 }
 
-pub fn get_sessions_with_status(target_state: SessionState) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+pub fn get_sessions_with_status(
+    target_state: SessionState,
+) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
     let all_sessions = get_sessions_with_tags(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])?;
 
     let results = all_sessions
