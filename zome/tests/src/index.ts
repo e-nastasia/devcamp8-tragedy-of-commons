@@ -144,6 +144,9 @@ orchestrator.registerScenario(
     
     await sleep(2000);
 
+    // NOTE(e-nastasia): checking that GameSession get fns work as expected
+    // maybe should be done in a separate test instead of making thins one 
+    // a single super test case, but for speed reasons I'm keeping it here for now
     let alice_owned_games = await alice_common.cells[0].call(
       ZOME_NAME,
       "get_my_owned_sessions",
@@ -185,6 +188,20 @@ orchestrator.registerScenario(
       null
     );
     t.ok(bob_all_games.length == 1);
+
+    let alice_active_games = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_active_sessions",
+      null
+    );
+    t.ok(alice_active_games.length == 1);
+
+    let bob_active_games = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_active_sessions",
+      null
+    );
+    t.ok(bob_active_games.length == 1);
 
     // CHECK  TO CLOSE GAME
     let close_game_round_1_bob = await bob_common.cells[0].call(
