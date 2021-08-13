@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        background: #fafafa;
+        display: flex;
+        font-family: 'Roboto', sans-serif;
+      }
+      :root {
+        --mdc-theme-primary: #5d4037;
+        --mdc-theme-secondary: #ff4081;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <chess-app style="flex: 1"></chess-app>
+
+    <script type="module">
+      import { ChessApp } from './src/index.ts';
+
+      customElements.define('chess-app', ChessApp);
+    </script>
+  </body>
+</html>
