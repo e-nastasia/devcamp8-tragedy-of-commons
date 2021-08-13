@@ -6,7 +6,10 @@ use holo_hash::{AgentPubKeyB64, EntryHashB64};
 #[allow(unused_imports)]
 use crate::{
     game_move::GameMoveInput,
-    game_session::{GameSessionInput, GameSession, GameSignal, SignalPayload, OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG, SessionState},
+    game_session::{
+        GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload, OWNER_SESSION_TAG,
+        PARTICIPANT_SESSION_TAG,
+    },
 };
 #[allow(unused_imports)]
 #[allow(dead_code)]
@@ -85,7 +88,7 @@ pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 /// Function to list all game sessions that the caller has created
 #[hdk_extern]
 pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-     game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG])
+    game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG])
 }
 
 /// Function to list game sessions in which caller has been a participant.
