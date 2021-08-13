@@ -127,14 +127,14 @@ orchestrator.registerScenario(
     // Alice makes 1 move
     let game_move_round_1_alice = await alice_common.cells[0].call(
       ZOME_NAME,
-      "new_move",
+      "make_new_move",
       {resource_amount: 5, previous_round: prev_round_hash},
     );
 
     // Bob makes 1 move
     let game_move_round_1_bob = await bob_common.cells[0].call(
       ZOME_NAME,
-      "new_move",
+      "make_new_move",
       {resource_amount: 125, previous_round: prev_round_hash},
     );
     console.log(game_move_round_1_alice);
@@ -143,6 +143,65 @@ orchestrator.registerScenario(
     t.ok(game_move_round_1_bob);
     
     await sleep(2000);
+
+    // NOTE(e-nastasia): checking that GameSession get fns work as expected
+    // maybe should be done in a separate test instead of making thins one 
+    // a single super test case, but for speed reasons I'm keeping it here for now
+    let alice_owned_games = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_owned_sessions",
+      null
+    );
+    t.ok(alice_owned_games.length == 1);
+
+    let bob_owned_games = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_owned_sessions",
+      null
+    );
+    t.ok(bob_owned_games.length == 0);
+
+    let alice_part_games = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_played_sessions",
+      null
+    );
+    t.ok(alice_part_games.length == 0);
+
+    let bob_part_games = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_played_sessions",
+      null
+    );
+    t.ok(bob_part_games.length == 1);
+
+    let alice_all_games = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_all_my_sessions",
+      null
+    );
+    t.ok(alice_all_games.length == 1);
+
+    let bob_all_games = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "get_all_my_sessions",
+      null
+    );
+    t.ok(bob_all_games.length == 1);
+
+    let alice_active_games = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_active_sessions",
+      null
+    );
+    t.ok(alice_active_games.length == 1);
+
+    let bob_active_games = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "get_my_active_sessions",
+      null
+    );
+    t.ok(bob_active_games.length == 1);
 
     // CHECK  TO CLOSE GAME
     let close_game_round_1_bob = await bob_common.cells[0].call(
