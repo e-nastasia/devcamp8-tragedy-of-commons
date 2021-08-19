@@ -1,7 +1,11 @@
+use game_session::GameParams;
 // use game_session::GameSession;
 use hdk::prelude::*;
 #[allow(unused)]
-use holo_hash::{AgentPubKeyB64, EntryHashB64};
+use holo_hash::*;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
+use utils::convert_keys_from_b64;
 
 #[allow(unused_imports)]
 use crate::{
@@ -11,6 +15,7 @@ use crate::{
         PARTICIPANT_SESSION_TAG,
     },
 };
+mod error;
 #[allow(unused_imports)]
 #[allow(dead_code)]
 #[allow(unused)]
@@ -51,6 +56,16 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
         functions,
     })?;
 
+    // i have no idea where to put the tracing config, as all examples suggest main
+    let subscriber = FmtSubscriber::builder()
+        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+        // will be written to stdout.
+        .with_max_level(Level::TRACE)
+        // completes the builder.
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
     Ok(InitCallbackResult::Pass)
 }
 
@@ -69,7 +84,15 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
 pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
-    game_session::start_dummy_session(player_list)
+    let game_params = GameParams {
+        regeneration_factor: 1.1,
+        start_amount: 100,
+        num_rounds: 3,
+        resource_coef: 3,
+        reputation_coef: 2,
+    };
+    let players = convert_keys_from_b64(&player_list);
+    game_session::new_session(players, game_params)
 }
 
 /// Function to call when player wants to start a new game and has already selected
@@ -81,7 +104,9 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<Hea
 /// Function to call by the invite zome once all invites are taken care of
 /// and we can actually create the GameSession and start playing
 pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
-    game_session::new_session(input)
+    let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
+    let game_params = input.game_params;
+    game_session::new_session(players, game_params)
 }
 
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
@@ -113,15 +138,19 @@ pub fn get_my_active_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSess
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
-    game_move::new_move(input)
+    game_move::new_move(input.resource_amount, input.previous_round)
 }
 
 /// Function to call from the UI on a regular basis to try and close the currently
 /// active GameRound. It will check the currently available GameRound state and then
 /// will close it if it's possible. If not, it will return None
-pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<EntryHash> {
+pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<HeaderHashB64> {
     // TODO: this should probably go to the game_round.rs instead
-    game_move::try_to_close_round(prev_round_hash)
+    let x = game_round::try_to_close_round(prev_round_hash.into());
+    match x {
+        Ok(hash) => Ok(HeaderHashB64::from(hash)),
+        Err(error) => Err(error),
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
