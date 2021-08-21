@@ -44,7 +44,7 @@ for the context, here are notes on how we've made this decision:
         - NOTE: we'll have vulnerability
         - NOTE: update round closing rules to check that every AGENT made a move
 */
-pub fn new_move(resource_amount: i32, round_header_hash: HeaderHash) -> ExternResult<HeaderHash> {
+pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
