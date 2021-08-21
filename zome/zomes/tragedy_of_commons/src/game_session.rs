@@ -218,8 +218,8 @@ mod tests {
     use hdk::prelude::*;
     use std::vec;
     use super::*;
-    use mockall::predicate::*;
-    use mockall::mock;
+    use ::mockall::predicate::*;
+    use ::mockall::mock;
 
     #[test]
     fn test_new_session() {

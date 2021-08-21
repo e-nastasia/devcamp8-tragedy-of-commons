@@ -10,6 +10,7 @@ slots:
     dna:
       bundled: "../dna/sample.dna"
       properties: ~
-      uuid: ~
+      uid: ~
       version: ~
-      clone_limit: 0
+      clone_limit: 10
+

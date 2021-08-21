@@ -8,74 +8,40 @@ import {
 import { ScenarioApi } from "@holochain/tryorama/lib/api";
 import path from "path";
 
-const conductorConfig = Config.gen({});
+const conductorConfig = Config.gen({
+  // "passphrase_service": {
+  //   "type": "danger_insecure_from_config",
+  //   "passphrase": "default-insecure-passphrase",
+  // }
+}
+);
+console.log('==================');
+console.log(conductorConfig);
+console.log('==================');
 
 // Construct proper paths for your DNAs
 const dnaPath = path.join(__dirname, "../../workdir/dna/sample.dna");
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
+const sleep = (ms) => new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
 
 const orchestrator = new Orchestrator();
 
 // create an InstallAgentsHapps array with your DNAs to tell tryorama what
 // to install into the conductor.
 const installation: InstallAgentsHapps = [
-  // agent 0
-  [
-    // happ 0
-    [dnaPath],
-  ],
-    // agent 1
-  [
-    // happ 0
-    [dnaPath],
-  ],
+  [[dnaPath]],  // agent 0 - happ 0
+  [[dnaPath]],  // agent 1 - happ 0
 ];
-
-// orchestrator.registerScenario(
-//   "create and get a calendar event",
-//   async (s, t) => {
-//     const [player]: Player[] = await s.players([conductorConfig]);
-//     const [[alice_happ], [bob_happ]] = await player.installAgentsHapps(
-//       installation
-//     );
-
-//     const alice_calendar = alice_happ.cells[0];
-//     const bob_calendar = bob_happ.cells[0];
-
-//     let calendarEvent = await alice_calendar.call(
-//       "tragedy_of_commons",
-//       "create_calendar_event",
-//       {
-//         title: "Event 1",
-//         start_time: [Math.floor(Date.now() / 1000), 0],
-//         end_time: [Math.floor(Date.now() / 1000) + 1000, 0],
-//         location: { Custom: "hiii" },
-//         invitees: [],
-//       }
-//     );
-//     t.ok(calendarEvent);
-
-//     await sleep(10);
-
-//     let calendarEvents = await alice_calendar.call(
-//       "tragedy_of_commons",
-//       "get_all_calendar_events",
-//       null
-//     );
-//     t.equal(calendarEvents.length, 1);
-
-//   }
-// );
 
 orchestrator.registerScenario(
   "start new game session with 2 players",
   async (s: ScenarioApi, t) => {
     // SETUP
     const ZOME_NAME = "tragedy_of_commons";
+     
     const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
     const [[alice_common]] = await alice.installAgentsHapps(installation);
-    await sleep(2000)
+    await sleep(2000);
     const [[bob_common]] = await bob.installAgentsHapps(installation);
 
     await s.shareAllNodes([alice, bob])

@@ -308,9 +308,9 @@ mod tests {
     use super::*;
     use ::fixt::prelude::*;
     use hdk::prelude::*;
-    use mockall::mock;
+    use ::mockall::mock;
     use std::vec;
-    use holochain_types::prelude::ElementFixturator;
+    use ::holochain_types::prelude::ElementFixturator;
 
 
     #[test]
@@ -481,36 +481,36 @@ mod tests {
 
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_round.header_address().clone().into(),
             GetOptions::latest(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_round.clone())]));
         
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_session.header_address().clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_session.clone())]));
 
 
         mock_hdk
         .expect_get_links()
         .times(1)
-        .return_once(move |_| Ok(game_moves));
+        .return_once(move |_| Ok(vec![game_moves]));
         
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_alice_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_alice)]));
 
         // let header_hash_final_round = fixt!(HeaderHash);
         
@@ -655,48 +655,48 @@ mod tests {
         debug!("mock get game round");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_round.header_address().clone().into(),
             GetOptions::latest(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_round.clone())]));
 
         debug!("mock get game session");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_session.header_address().clone().into(),
             GetOptions::content(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_session.clone())]));
 
         debug!("mock get links");
         mock_hdk
             .expect_get_links()
             .times(1)
-            .return_once(move |_| Ok(game_moves));
+            .return_once(move |_| Ok(vec![game_moves]));
         
         debug!("mock get game move alice");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_alice_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_alice)]));
 
         debug!("mock get game move bob");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_bob_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_bob)]));
 
         debug!("mock update game round chain to contain game round 1");
         let game_round_1_header_hash = fixt!(HeaderHash);
@@ -845,48 +845,48 @@ mod tests {
         debug!("mock get game round");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_round.header_address().clone().into(),
             GetOptions::latest(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_round.clone())]));
 
         debug!("mock get game session");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_session.header_address().clone().into(),
             GetOptions::content(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_session.clone())]));
 
         debug!("mock get links");
         mock_hdk
             .expect_get_links()
             .times(1)
-            .return_once(move |_| Ok(game_moves));
+            .return_once(move |_| Ok(vec![game_moves]));
         
         debug!("mock get game move alice");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_alice_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_alice)]));
 
         debug!("mock get game move bob");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_bob_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_bob)]));
 
 
         let game_session_update_header_hash = fixt!(HeaderHash);
@@ -1063,48 +1063,48 @@ mod tests {
         debug!("mock get game round");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_round.header_address().clone().into(),
             GetOptions::latest(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_round.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_round.clone())]));
 
         debug!("mock get game session");
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             element_with_game_session.header_address().clone().into(),
             GetOptions::content(),
-            )))
+            )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_session.clone())));
+        .return_once(move |_| Ok(vec![Some(element_with_game_session.clone())]));
 
         debug!("mock get links");
         mock_hdk
             .expect_get_links()
             .times(1)
-            .return_once(move |_| Ok(game_moves));
+            .return_once(move |_| Ok(vec![game_moves]));
         
         debug!("mock get game move alice");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_alice_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_alice)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_alice)]));
 
         debug!("mock get game move bob");   
         mock_hdk
         .expect_get()
-        .with(mockall::predicate::eq(GetInput::new(
+        .with(mockall::predicate::eq(vec![GetInput::new(
             move_bob_round1_entry_hash.clone().into(),
             GetOptions::content(),
-        )))
+        )]))
         .times(1)
-        .return_once(move |_| Ok(Some(element_with_game_move_bob)));
+        .return_once(move |_| Ok(vec![Some(element_with_game_move_bob)]));
 
         let game_session_update_header_hash = fixt!(HeaderHash);
         let game_session_update_header_hash_closure = game_session_update_header_hash.clone();

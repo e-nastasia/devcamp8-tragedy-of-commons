@@ -81,6 +81,16 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
     }
 }
 
+#[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
+pub struct ZomeInput {
+    number: i32,
+}
+
+#[hdk_extern]
+pub fn start_test_fn(_z: ZomeInput) -> ExternResult<i32> {
+    Ok(42)
+}
+
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
 pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {

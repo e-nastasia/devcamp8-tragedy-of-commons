@@ -1,7 +1,7 @@
 ---
 manifest_version: "1"
 name: sample
-uuid: 00000000-0000-0000-0000-000000000000
+uid: 00000000-0000-0000-0000-000000000000
 properties: ~
 zomes:
   - name: tragedy_of_commons

@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "TRYORAMA_LOG_LEVEL=info RUST_LOG=error RUST_BACKTRACE=1 TRYORAMA_HOLOCHAIN_PATH=\"holochain\" ts-node src/index.ts"
+    "test": "TRYORAMA_LOG_LEVEL=debug RUST_LOG=error RUST_BACKTRACE=1 TRYORAMA_HOLOCHAIN_PATH=\"holochain\" ts-node src/index.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@holochain/tryorama": "0.4.3",
+    "@holochain/tryorama": "holochain/tryorama#bump-hc-0-0-103",
     "@types/lodash": "^4.14.158",
     "@types/node": "^14.0.14",
     "lodash": "^4.17.19",

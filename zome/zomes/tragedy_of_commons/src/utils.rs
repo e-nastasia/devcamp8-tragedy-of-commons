@@ -68,6 +68,7 @@ pub fn entry_hash_from_element(element: &Element) -> ExternResult<&EntryHash> {
     }
 }
 
+#[allow(dead_code)]
 pub fn enable_tracing(level: tracing::Level) {
     // i have no idea where to put the tracing config, as all examples suggest main
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
