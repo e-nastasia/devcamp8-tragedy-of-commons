@@ -81,7 +81,7 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
     let consumed_resources_in_round: i32 = player_moves.iter().map(|x| x.resources).sum();
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
-    // player stats
+    // player stats dd
     let mut stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
     for p in player_moves.iter() {
         let a = p.owner.clone();
@@ -166,26 +166,16 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
         moves.push(game_move);
     }
 
-    info!("checking number of moves");
-    debug!("moves list #{:?}", moves);
-    if &moves.len() < &game_session.players.len() {
-        // TODO: implement check to verify that each player has made a single move
-        // Since we're not validating that every player has only made one move, we need to make
-        // this check here, otherwise game would be broken.
-        info!("Cannot close round: wait until all moves are made");
-        debug!(
-            "number of moves found: #{:?}",
-            &game_session.players.len() - &moves.len()
-        );
+    let b = missing_moves(&moves, game_session.players.len());
+    if (b) {
         return Err(WasmError::Guest(
             format!(
                 "Still waiting on {} player(s)",
-                &game_session.players.len() - &moves.len()
+                game_session.players.len() - &moves.len()
             )
             .into(),
         ));
-    };
-
+    }
     info!("all players made their moves: calculating round state");
     let round_state = calculate_round_state(&game_session.game_params, moves);
 
@@ -208,6 +198,23 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
             &round_state,
         );
     }
+}
+
+fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
+    info!("checking number of moves");
+    debug!("moves list #{:?}", moves);
+    if moves.len() < number_of_players {
+        // TODO: implement check to verify that each player has made a single move
+        // Since we're not validating that every player has only made one move, we need to make
+        // this check here, otherwise game would be broken.
+        info!("Cannot close round: wait until all moves are made");
+        debug!(
+            "number of moves found: #{:?}",
+            number_of_players - moves.len()
+        );
+        return true;
+    };
+    false
 }
 
 fn start_new_round(
