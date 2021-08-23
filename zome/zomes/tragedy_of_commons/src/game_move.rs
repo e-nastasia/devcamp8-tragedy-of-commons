@@ -48,13 +48,13 @@ pub fn new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
-        resources: resource_amount,
-        round: round_header_hash.clone(),
+        resources: input.resource_amount,
+        round: input.previous_round.clone(),
     };
     create_entry(&game_move);
     let entry_hash_game_move = hash_entry(&game_move)?;
 
-    let game_round_element = match get(round_header_hash.clone(), GetOptions::content())? {
+    let game_round_element = match get(input.previous_round.clone(), GetOptions::content())? {
         Some(element) => element,
         None => return Err(WasmError::Guest("Round not found".into())),
     };
