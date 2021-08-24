@@ -148,7 +148,7 @@ pub fn get_my_active_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSess
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
-    //TODO convert 
+    //TODO convert
     game_move::new_move(input.resource_amount, input.previous_round)
 }
 

@@ -8,13 +8,7 @@ import {
 import { ScenarioApi } from "@holochain/tryorama/lib/api";
 import path from "path";
 
-const conductorConfig = Config.gen({
-  // "passphrase_service": {
-  //   "type": "danger_insecure_from_config",
-  //   "passphrase": "default-insecure-passphrase",
-  // }
-}
-);
+const conductorConfig = Config.gen({});
 console.log('==================');
 console.log(conductorConfig);
 console.log('==================');
