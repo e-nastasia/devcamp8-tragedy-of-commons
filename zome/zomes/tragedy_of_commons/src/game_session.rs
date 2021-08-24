@@ -5,6 +5,7 @@ use crate::{
     utils::convert_keys_from_b64,
 };
 
+use hdk::prelude::holo_hash::HeaderHashB64;
 use hdk::prelude::*;
 use holo_hash::{AgentPubKeyB64, EntryHashB64};
 use std::{collections::HashMap, time::SystemTime};
@@ -49,8 +50,8 @@ pub struct GameSessionInput {
 
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct SignalPayload {
-    pub game_session_header_hash: HeaderHash,
-    pub round_header_hash_update: HeaderHash,
+    pub game_session_header_hash: HeaderHashB64,
+    pub round_header_hash_update: HeaderHashB64,
 }
 
 #[hdk_entry(id = "game_scores", visibility = "public")]
@@ -160,8 +161,8 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
     // that players need to make their moves
     // WARNING: remote_signal is fire and forget, no error if it fails, might be a weak point if this were production happ
     let signal_payload = SignalPayload {
-        game_session_header_hash: game_session_header_hash.clone(),
-        round_header_hash_update: header_hash_round_zero.clone(),
+        game_session_header_hash: game_session_header_hash.clone().into(),
+        round_header_hash_update: header_hash_round_zero.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts

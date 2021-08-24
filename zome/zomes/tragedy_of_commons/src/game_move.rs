@@ -5,7 +5,7 @@ use crate::{
     utils::{convert_keys_from_b64, entry_hash_from_element, try_get_and_convert},
 };
 use hdk::prelude::*;
-use holo_hash::AgentPubKeyB64;
+use holo_hash::*;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
@@ -23,7 +23,7 @@ pub struct GameMoveInput {
     // NOTE: if we're linking all moves to the round, this can never be None
     // as we'll need a base for the link. Instead moves for the round 0 could be
     // linked directly from the game session.
-    pub previous_round: HeaderHash,
+    pub previous_round: HeaderHashB64,
 }
 
 /*

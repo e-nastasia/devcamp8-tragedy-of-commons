@@ -246,8 +246,8 @@ fn create_new_round(
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
     let signal_payload = SignalPayload {
-        game_session_header_hash: last_round.session.clone(),
-        round_header_hash_update: round_header_hash_update.clone(),
+        game_session_header_hash: last_round.session.clone().into(),
+        round_header_hash_update: round_header_hash_update.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     remote_signal(signal, game_session.players.clone())?;
@@ -288,8 +288,8 @@ fn end_game(
 
     info!("signaling player game has ended");
     let signal_payload = SignalPayload {
-        game_session_header_hash: game_session_header_hash_update.clone(),
-        round_header_hash_update: last_round_header_hash.clone(),
+        game_session_header_hash: game_session_header_hash_update.clone().into(),
+        round_header_hash_update: last_round_header_hash.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::GameOver(signal_payload))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts

@@ -41,7 +41,9 @@ orchestrator.registerScenario(
     await s.shareAllNodes([alice, bob])
 
     await sleep(1000)
-
+    console.debug('***********');
+    console.log(bob);
+    console.log(bob_common);
 
     // SIGNAL HANDLERS
     let prev_round_hash;
@@ -49,7 +51,7 @@ orchestrator.registerScenario(
       let payload = signal.data.payload
       t.ok(payload);
       console.log("Alice received Signal:", signal.data.payload);
-      prev_round_hash = signal.data.payload.signal_payload.previous_round_entry_hash;
+      prev_round_hash = signal.data.payload.signal_payload.round_header_hash_update;
       resolve();
     }));
     // .then(function(data) {
@@ -61,7 +63,7 @@ orchestrator.registerScenario(
     let signalPromiseBob = new Promise<void>((resolve) => bob.setSignalHandler((signal) => {
       let payload = signal.data.payload
       t.ok(payload);
-      console.log("Bob received Signal:");
+      console.log("Bob received Signal: {}", payload);
       resolve();
     }));
 
@@ -80,7 +82,7 @@ orchestrator.registerScenario(
     await signalPromiseAlice;
     await signalPromiseBob;
 
-    await sleep(2000);
+    await sleep(5000);
     console.log("prev_round_hash", prev_round_hash);
 
     // ROUND 1

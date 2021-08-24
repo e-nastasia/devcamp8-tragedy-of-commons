@@ -93,7 +93,7 @@ pub fn start_test_fn(_z: ZomeInput) -> ExternResult<i32> {
 
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
-pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<HeaderHash> {
+pub fn start_dummy_session(player_list: Vec<AgentPubKey>) -> ExternResult<HeaderHashB64> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
@@ -101,8 +101,12 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<Hea
         resource_coef: 3,
         reputation_coef: 2,
     };
-    let players = convert_keys_from_b64(&player_list);
-    game_session::new_session(players, game_params)
+    let players = player_list; //convert_keys_from_b64(&player_list);
+    let result = game_session::new_session(players, game_params);
+    match result {
+        Ok(hash) => Ok(HeaderHashB64::from(hash)),
+        Err(error) => Err(error),
+    }
 }
 
 /// Function to call when player wants to start a new game and has already selected
@@ -113,10 +117,10 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKeyB64>) -> ExternResult<Hea
 
 /// Function to call by the invite zome once all invites are taken care of
 /// and we can actually create the GameSession and start playing
-pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
+pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
     let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
     let game_params = input.game_params;
-    game_session::new_session(players, game_params)
+    convert(game_session::new_session(players, game_params))
 }
 
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
@@ -147,20 +151,27 @@ pub fn get_my_active_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSess
 
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
-pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
+pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
     //TODO convert
-    game_move::new_move(input.resource_amount, input.previous_round)
+    convert(game_move::new_move(
+        input.resource_amount,
+        input.previous_round.into(),
+    ))
 }
 
 /// Function to call from the UI on a regular basis to try and close the currently
 /// active GameRound. It will check the currently available GameRound state and then
 /// will close it if it's possible. If not, it will return None
+#[hdk_extern]
 pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<HeaderHashB64> {
     // TODO: this should probably go to the game_round.rs instead
-    let x = game_round::try_to_close_round(prev_round_hash.into());
-    match x {
-        Ok(hash) => Ok(HeaderHashB64::from(hash)),
-        Err(error) => Err(error),
+    convert(game_round::try_to_close_round(prev_round_hash.into()))
+}
+
+fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHashB64> {
+    match result {
+        Ok(hash) => return Ok(HeaderHashB64::from(hash)),
+        Err(error) => return Err(error),
     }
 }
 
