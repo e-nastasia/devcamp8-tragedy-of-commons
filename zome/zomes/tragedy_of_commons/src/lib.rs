@@ -36,11 +36,13 @@ pub fn err(reason: &str) -> WasmError {
 }
 
 entry_defs![
+    Anchor::entry_def(),
     Path::entry_def(),
     game_session::GameSession::entry_def(),
     game_round::GameRound::entry_def(),
     game_move::GameMove::entry_def(),
-    game_session::GameScores::entry_def()
+    game_session::GameScores::entry_def(),
+    PlayerProfile::entry_def()
 ];
 
 // give unrestricted access to recv_remote_signal, which is needed for sending remote signals
@@ -81,19 +83,60 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
     }
 }
 
-#[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
-pub struct ZomeInput {
-    number: i32,
+#[hdk_entry(id = "player_profile", visibility = "public")]
+#[derive(Clone)]
+pub struct PlayerProfile {
+    pub player_id: AgentPubKey,
+    pub nickname: String,
 }
 
 #[hdk_extern]
-pub fn start_test_fn(_z: ZomeInput) -> ExternResult<i32> {
-    Ok(42)
+pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryHashB64> {
+    let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
+    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
+}
+
+#[hdk_extern]
+pub fn join_game_with_code(player_profile: PlayerProfileInput) -> ExternResult<EntryHashB64> {
+    let anchor = anchor("GAME_CODES".into(), player_profile.game_code)?;
+    let player_profile = PlayerProfile {
+        player_id: agent_info()?.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
+        nickname: player_profile.nickname,
+    };
+    create_entry(&player_profile)?;
+    let player_profile_entry_hash = hash_entry(&player_profile)?;
+    create_link(anchor.clone().into(), player_profile_entry_hash.into(), ())?;
+    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
+}
+
+pub fn get_player_profiles_for_game_code(
+    anchor_entry_hash: EntryHash,
+) -> ExternResult<Vec<PlayerProfile>> {
+    let links: Links = get_links(anchor_entry_hash, None)?;
+
+    let mut players = vec![];
+    for link in links.into_inner() {
+        let element: Element = get(link.target, GetOptions::default())?
+            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+        let entry_option = element.entry().to_app_option()?;
+        let entry: PlayerProfile = entry_option.ok_or(WasmError::Guest(
+            "The targeted entry is not agent pubkey".into(),
+        ))?;
+        players.push(entry);
+    }
+
+    Ok(players) // or more Rust like: anchor.into())
 }
 
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
-pub fn start_dummy_session(player_list: Vec<AgentPubKey>) -> ExternResult<HeaderHashB64> {
+pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
+    let anchor = anchor("GAME_CODES".into(), game_code)?;
+    let players = get_player_profiles_for_game_code(anchor)?;
+    start_default_session(players)
+}
+
+pub fn start_default_session(player_list: Vec<PlayerProfile>) -> ExternResult<HeaderHashB64> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
@@ -101,7 +144,7 @@ pub fn start_dummy_session(player_list: Vec<AgentPubKey>) -> ExternResult<Header
         resource_coef: 3,
         reputation_coef: 2,
     };
-    let players = player_list; //convert_keys_from_b64(&player_list);
+    let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
     let result = game_session::new_session(players, game_params);
     match result {
         Ok(hash) => Ok(HeaderHashB64::from(hash)),
@@ -179,4 +222,10 @@ fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHashB64> {
 pub struct SignalTest {
     pub content: String,
     pub value: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
+pub struct PlayerProfileInput {
+    pub game_code: String,
+    pub nickname: String,
 }

@@ -1,4 +1,5 @@
 use crate::types::{new_player_stats, PlayerStats, ResourceAmount};
+use crate::PlayerProfile;
 use crate::{
     game_round::{GameRound, RoundState},
     types::ReputationAmount,

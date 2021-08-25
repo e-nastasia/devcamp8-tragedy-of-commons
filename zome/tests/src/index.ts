@@ -69,11 +69,40 @@ orchestrator.registerScenario(
 
 
     // START GAME
+
+    // alice gets a game code
+    let game_code_anchor_entry_hash = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "create_game_code_anchor",
+      "ABCDE"
+    );
+    console.log(game_code_anchor_entry_hash);
+    t.ok(game_code_anchor_entry_hash);
+
+    // alice joins with game code
+    let game_code_anchor_entry_hash_alice = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "join_game_with_code",
+      {game_code:"ABCDE", nickname: "Alice"}
+    );
+    console.log(game_code_anchor_entry_hash);
+    t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_alice);
+    // bob joins with game code
+    let game_code_anchor_entry_hash_bob = await bob_common.cells[0].call(
+      ZOME_NAME,
+      "join_game_with_code",
+      {game_code:"ABCDE", nickname: "Bob"}
+    );
+    console.log(game_code_anchor_entry_hash);
+    t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_bob);
+
+    await sleep(5000); // wait until all links have propagated
+
     //Alice starts a new game (session) with bob and herself
     let session_header_hash = await alice_common.cells[0].call(
       ZOME_NAME,
-      "start_dummy_session",
-      [bob_common.agent, alice_common.agent]
+      "start_game_session_with_code",
+      "ABCDE"
     );
     console.log(session_header_hash);
     t.ok(session_header_hash);
