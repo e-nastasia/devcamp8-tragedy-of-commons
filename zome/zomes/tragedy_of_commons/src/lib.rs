@@ -170,7 +170,8 @@ pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64
 /// Function to list all game sessions that the caller has created
 #[hdk_extern]
 pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-    game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG])
+    //game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG])
+    game_session::get_my_own_sessions_via_source_query()
 }
 
 /// Function to list game sessions in which caller has been a participant.

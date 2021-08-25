@@ -1,4 +1,6 @@
+use crate::error::Error;
 use crate::types::{new_player_stats, PlayerStats, ResourceAmount};
+use crate::utils::{entry_from_element_create_or_update, entry_hash_from_element};
 use crate::PlayerProfile;
 use crate::{
     game_round::{GameRound, RoundState},
@@ -193,6 +195,25 @@ pub fn get_sessions_with_tags(
         .collect::<ExternResult<Vec<(EntryHashB64, GameSession)>>>()?;
 
     Ok(results)
+}
+
+pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+    let filter = ChainQueryFilter::new()
+        .include_entries(true)
+        .entry_type(EntryType::App(AppEntryType::new(
+            entry_def_index!(GameSession)?,
+            zome_info()?.zome_id,
+            EntryVisibility::Public,
+        )));
+
+    let list_of_elements = query(filter)?;
+    let mut list_of_tuples: Vec<(EntryHashB64, GameSession)> = vec![];
+    for el in list_of_elements {
+        let gs: GameSession = entry_from_element_create_or_update(&el)?;
+        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
+        list_of_tuples.push((EntryHashB64::from(gs_entry_hash), gs));
+    }
+    Ok(list_of_tuples)
 }
 
 pub fn get_sessions_with_status(
