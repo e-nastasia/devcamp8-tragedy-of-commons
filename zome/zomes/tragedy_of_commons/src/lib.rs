@@ -1,3 +1,4 @@
+use game_move::GameMove;
 use game_session::GameParams;
 // use game_session::GameSession;
 use hdk::prelude::*;
@@ -5,7 +6,7 @@ use hdk::prelude::*;
 use holo_hash::*;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use utils::convert_keys_from_b64;
+use utils::{convert_keys_from_b64, entry_from_element_create_or_update};
 
 #[allow(unused_imports)]
 use crate::{
@@ -229,4 +230,34 @@ pub struct SignalTest {
 pub struct PlayerProfileInput {
     pub game_code: String,
     pub nickname: String,
+}
+
+#[hdk_extern]
+pub fn validate(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    // Ok(ValidateCallbackResult::Invalid("computer says no")
+    // Ok(ValidateCallbackResult::UnresolvedDependencies("something is missing"))
+    info!("validate general");
+    Ok(ValidateCallbackResult::Valid)
+}
+
+#[hdk_extern]
+pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    // all creates are valid
+    info!("validate create");
+    Ok(ValidateCallbackResult::Valid)
+}
+
+#[hdk_extern]
+pub fn validate_create_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    info!("validating game move");
+    let x: GameMove = entry_from_element_create_or_update(&validate_data.element)?;
+    debug!("resources {}", x.resources);
+    if x.resources < 0 {
+        return Ok(ValidateCallbackResult::Invalid(
+            "You cannot insert resources back".into(),
+        ));
+    }
+    Ok(ValidateCallbackResult::Valid)
 }

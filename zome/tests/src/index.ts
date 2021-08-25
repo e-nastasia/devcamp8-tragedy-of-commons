@@ -121,6 +121,14 @@ orchestrator.registerScenario(
       "make_new_move",
       {resource_amount: 5, previous_round: prev_round_hash},
     );
+    
+    // test VALIDATION no negative resource amounts in moves
+    // let game_move_round_1_alice = await alice_common.cells[0].call(
+    //   ZOME_NAME,
+    //   "make_new_move",
+    //   {resource_amount: -50, previous_round: prev_round_hash},
+    // );
+
 
     // Bob makes 1 move
     let game_move_round_1_bob = await bob_common.cells[0].call(
