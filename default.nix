@@ -1,21 +1,17 @@
-let 
-  holonixPath = builtins.fetchTarball {
-    url = "https://github.com/holochain/holonix/archive/014d28000c8ed021eb84000edfe260c22e90af8c.tar.gz";
-    sha256 = "sha256:0hl5xxxjg2a6ymr44rf5dfvsb0c33dq4s6vibva6yb76yvl6gwfi";
-  };
+{ 
+  # https://github.com/holochain/holonix/commit/55a5eef58979fb6bc476d8c3e0c028cdeb1b5421
+  # holochain 0.0.103
+  holonixPath ?  builtins.fetchTarball { url = "https://github.com/holochain/holonix/archive/55a5eef58979fb6bc476d8c3e0c028cdeb1b5421.tar.gz"; }
+}:
+
+let
   holonix = import (holonixPath) {
-    includeHolochainBinaries = true;
-    holochainVersionId = "custom";
-    
-    holochainVersion = { 
-     rev = "f3d17d993ad8d988402cc01d73a0095484efbabb";  
-     sha256 = "sha256:1z0y1bl1j2cfv4cgr4k7y0pxnkbiv5c0xv89y8dqnr32vli3bld7";
-     cargoSha256 = "sha256:1rf8vg832qyymw0a4x247g0iikk6kswkllfrd5fqdr0qgf9prc31";
-     bins = {
-       holochain = "holochain";
-       hc = "hc";
-     };
+    include = {
+        # making this explicit even though it's the default
+        holochainBinaries = true;
     };
-    holochainOtherDepsNames = ["lair-keystore"];
+    #just using default holochain version in this holonix setup
+    holochainVersionId = "main";
   };
+
 in holonix.main
