@@ -1,0 +1,245 @@
+<!-- MVP.css quickstart template: https://github.com/andybrewer/mvp/ -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" href="https://holochain.org/img/favicon.ico">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/fontawesome.min.css"
+        integrity="sha384-jLKHWM3JRmfMU0A5x5AkjWkw/EYfGUAGagvnfryNV3F9VqM98XiIH7VBGVoxVSc7" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="description" content="My description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+    <title>Devcamp n°8 | september 2021 </title>
+</head>
+
+<body onload="init()">
+    <header>
+        <nav style="padding-bottom: 0rem; margin-bottom: 0rem;">
+            <div>
+
+                <a href="/"><img alt="Logo" src="https://holochain.org/img/logo-2x.png" height="35"></a><sup>community</sup>
+            </div>
+                <ul>
+                <li><h2>Devcamp n°8 | 2021</h2> </li>
+                <li><a href="#">Forum</a></li>
+                <li><a href="#">Documentation</a>
+                    <ul>
+                        <li><a href="#">Sublink with a long name</a></li>
+                        <li><a href="#">Short sublink</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <main style="padding-top: 0rem;">
+        <section>
+            <!-- <header>
+                <h2>Game code</h2>
+                <p id="gamecode"></p>
+            </header> -->
+            <aside>
+                <h3>Your nickname</h3>
+                <p id="nickname" style="font-size: 4rem !important;"></p>
+            </aside>
+            <aside>
+                <h3>Game code</h3>
+                <p style="font-size: 4rem !important;" id="gamecode"></p>
+
+            </aside>
+
+            <aside>
+                <h3>Players</h3>
+                <p style="font-size: 4rem !important;" id="playercount">1</p>
+            </aside>
+
+        </section>
+        <hr />
+
+
+        <section>
+            <aside style="width: 70%;">
+                <h2>Players</h2>
+                <ul>
+                    <li>Tixel (3216549879654321654)</li>
+                    <li>E-nastasia (3216549879654321654)</li>
+                </ul>
+                <a style="float: right; " href="#">refresh</a>
+            </aside>
+            <aside style="width: 70%;">
+                    <h2>Round 1</h2>
+                    <ul>
+                        <li>Tixel (3216549879654321654)</li>
+                        <li>E-nastasia (3216549879654321654)</li>
+                    </ul>
+                    <a style="float: right; " href="#">refresh</a>
+                </aside>
+
+                <form >
+                    <h1>Make your move</h1>
+                    <label for="input_join_nick">Total resources: 100</label>
+                    <p>Take all the resources you need</p>
+
+                    <label for="input_take_resources">Resources:</label>
+                    <input type="text" id="input_take_resources" size="20" placeholder="">
+                    <button type="submit">Submit</button>
+                </form>
+
+                <aside style="width: 70%;">
+                    <h2>Round 2</h2>
+                    <ul>
+                        <li>Tixel (3216549879654321654)</li>
+                        <li>E-nastasia (3216549879654321654)</li>
+                    </ul>
+                    <a style="float: right; " href="#">refresh</a>
+                </aside>
+                <aside style="width: 70%;">
+                    <h2>Round 3</h2>
+                    <ul>
+                        <li>Tixel (3216549879654321654)</li>
+                        <li>E-nastasia (3216549879654321654)</li>
+                    </ul>
+                    <a style="float: right; " href="#">refresh</a>
+                </aside>
+                <aside style="width: 70%; background-color: lavender;">
+                    <h2>Game scores</h2>
+                    <ul>
+                        <li>Tixel (3216549879654321654)</li>
+                        <li>E-nastasia (3216549879654321654)</li>
+                    </ul>
+                </aside>
+
+        </section>
+
+        <button style="width: 100%; font-size: 1.5rem; margin-top:5rem;"> Play!</button>
+
+
+
+        <hr>
+        <section>
+            
+            <blockquote>
+                ... another popular solution to overcoming the tragedy of the commons, that of co-operative collective action as described by economists led by Nobelist Elinor Ostrom. Before the English enclosures laws, customary arrangements among rural villagers and aristocratic (or feudal) lords included common access to most grazing and farm lands and managed their use and conservation. By limiting use to local farmers and herders, managing use through practices such as crop rotation and seasonal grazing, and providing enforceable sanctions against overuse and abuse of the resource, these collective action arrangements readily overcame the tragedy of the commons... "
+                <footer><i>- <a href="https://www.investopedia.com/terms/t/tragedy-of-the-commons.asp"
+                    target="_blank">investopedia</a> -</i></footer>
+            </blockquote>
+        </section>
+        <!-- <hr>
+        <section>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Col A</th>
+                        <th>Col B</th>
+                        <th>Col C</th>
+                    </tr>
+                </thead>
+                <tr>
+                    <td>Row 1</td>
+                    <td>Cell A1</td>
+                    <td>Cell B1</td>
+                    <td>Cell C1</td>
+                </tr>
+                <tr>
+                    <td>Row 2</td>
+                    <td>Cell A2</td>
+                    <td>Cell B2</td>
+                    <td>Cell C2</td>
+                </tr>
+            </table>
+        </section>
+        <hr>
+        <article>
+            <h2>Left-aligned header</h2>
+            <p>Left-aligned paragraph</p>
+            <aside>
+                <p>Article callout</p>
+            </aside>
+            <ul>
+                <li>List item 1</li>
+                <li>List item 2</li>
+            </ul>
+            <figure>
+                <img alt="Stock photo" src="https://via.placeholder.com/1080x500?text=Amazing+stock+photo">
+                <figcaption><i>Image caption</i></figcaption>
+            </figure>
+        </article>
+        <hr>
+        <div>
+            <details>
+                <summary>Expandable title</summary>
+                <p>Revealed content</p>
+            </details>
+            <details>
+                <summary>Another expandable title</summary>
+                <p>More revealed content</p>
+            </details>
+            <br>
+            <p>Inline <code>code</code> snippets</p>
+            <pre>
+                <code>
+// preformatted code block
+                </code>
+            </pre>
+        </div> -->
+
+    </main>
+    <footer>
+        <hr>
+        <p>
+            <small>Contact info</small>
+        </p>
+    </footer>
+</body>
+
+<!-- Usage -->
+<script>
+
+    function init() {
+        parseParams()
+    }
+
+    var nickname;
+    var gamecode;
+    var action;
+
+    function parseParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        nickname = urlParams.get('nickname');
+        gamecode = urlParams.get('gamecode');
+        document.getElementById("nickname").innerHTML = nickname;
+        document.getElementById("gamecode").innerHTML = gamecode;
+
+        action = urlParams.get('action');
+    }
+
+    function generateGameCode() {
+        let code = Math.random().toString(36).substr(2, 6).toUpperCase();
+        document.getElementById("gamecode").innerHTML = code;
+    }
+
+    // interact with holochain conductor
+    var port = 8888;
+    var host = "ws://localhost:" + port;
+    console.log("Connecting to: " + host);
+    var ws = new WebSocket(host);
+
+    function sendMessageFromForm(event, id) {
+        event.preventDefault()
+        var input = document.getElementById(id)
+        ws.send(input.value)
+        input.value = ''
+    }
+
+    function sendMessageWPrefix(event, prefix, id) {
+        event.preventDefault()
+        var input = document.getElementById(id)
+        ws.send("".concat(prefix, " ", input.value))
+        input.value = ''
+    }
+</script>
+
+</html>

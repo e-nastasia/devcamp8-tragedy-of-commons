@@ -9,18 +9,26 @@
     <meta charset="utf-8">
     <meta name="description" content="My description">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css">
 
     <title>Devcamp n°8 | september 2021 </title>
 </head>
 
-<body>
+<body onload="init();">
     <header>
-        <nav>
-            <a href="/"><img alt="Logo" src="https://holochain.org/img/logo-2x.png" height="35"></a>
+        <nav style="padding-bottom: 0rem; margin-bottom: 0rem;">
+            <div>
+
+                <a href="/"><img alt="Logo" src="https://holochain.org/img/logo-2x.png"
+                        height="35"></a><sup>community</sup>
+            </div>
             <ul>
-                <li>Menu Item 1</li>
-                <li><a href="#">Menu Item 2</a></li>
-                <li><a href="#">Dropdown Menu Item</a>
+
+                <li>
+                    <h2>Devcamp n°8 | 2021</h2>
+                </li>
+                <li><a href="#">Forum</a></li>
+                <li><a href="#">Documentation</a>
                     <ul>
                         <li><a href="#">Sublink with a long name</a></li>
                         <li><a href="#">Short sublink</a></li>
@@ -31,120 +39,41 @@
     </header>
     <main>
         <section>
-            <form>
-                <button type="submit" onclick="generateGameCode()">Generate code</button>
-                <label id="gamecode">10</label>
+            <form action="game.html" style="margin-right: 50px;">
+                <h1>New game</h1>
+                <p>Play a new game with others</p>
+                <label for="input_start_nick">Nickname:</label>
+                <input type="text" id="input_start_nick" name="nickname" size="20" placeholder="">
+                <input type="hidden" id="input_start_gamecode" name="gamecode" />
+                <input type="hidden" name="action" value="start" />
+                <button type="submit">Start</button>
+            </form>
+            <form action="game.html">
+                <h1>Join game</h1>
+                <p>Join a game with a game code</p>
+                <label for="input_join_nick">Nickname:</label>
+                <input type="text" id="input_join_nick" size="20" placeholder="">
+                <label for="input_join_game_code">Game code:</label>
+                <input type="text" id="input_join_game_code" size="20" placeholder="">
+                <input type="hidden" id="input_join_gamecode" name="gamecode" />
+                <input type="hidden" name="action" value="join" />
+                <button type="submit">Join</button>
             </form>
         </section>
-        <hr/>
-        
-        <section>
-            <form>
-                <header>
-                    <h2>Form title</h2>
-                </header>
-                <label for="input1">Nickname label:</label>
-                <input type="text" id="input1" name="input1" size="20" placeholder="Input1">
-                <label for="select1">Select label:</label>
-                <select id="select1">
-                    <option value="option1">option1</option>
-                    <option value="option2">option2</option>
-                </select>
-                <label for="textarea1">Textarea label:</label>
-                <textarea cols="40" rows="5" id="textarea1"></textarea>
-                <button type="submit">Submit</button>
-            </form>
-        </section>
+
         <hr>
 
-
-
-
-        <section>
-            <header>
-                <h2>Section Heading</h2>
-                <p>Section Subheading</p>
-            </header>
-            <aside>
-                <h3>Card heading</h3>
-                <p>Card content*</p>
-                <p><small>*with small content</small></p>
-            </aside>
-            <aside>
-                <h3>Card heading</h3>
-                <p>Card content <sup>with notification</sup></p>
-            </aside>
-            <aside>
-                <h3>Card heading</h3>
-                <p>Card content</p>
-            </aside>
-        </section>
-        <hr>
         <section>
             <blockquote>
-                "Quote"
-                <footer><i>- Attribution</i></footer>
+                "The tragedy of the commons is an economics problem in which every individual has an incentive to
+                consume a resource, but at the expense of every other individual -- with no way to exclude anyone from
+                consuming. Initially it was formulated by asking what would happen if every shepherd, acting in their
+                own self-interest, allowed their flock to graze on the common field."
+                <footer><i>- <a href="https://www.investopedia.com/terms/t/tragedy-of-the-commons.asp"
+                            target="_blank">investopedia</a> -</i></footer>
             </blockquote>
         </section>
-        <hr>
-        <section>
-            <table>
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Col A</th>
-                        <th>Col B</th>
-                        <th>Col C</th>
-                    </tr>
-                </thead>
-                <tr>
-                    <td>Row 1</td>
-                    <td>Cell A1</td>
-                    <td>Cell B1</td>
-                    <td>Cell C1</td>
-                </tr>
-                <tr>
-                    <td>Row 2</td>
-                    <td>Cell A2</td>
-                    <td>Cell B2</td>
-                    <td>Cell C2</td>
-                </tr>
-            </table>
-        </section>
-        <hr>
-        <article>
-            <h2>Left-aligned header</h2>
-            <p>Left-aligned paragraph</p>
-            <aside>
-                <p>Article callout</p>
-            </aside>
-            <ul>
-                <li>List item 1</li>
-                <li>List item 2</li>
-            </ul>
-            <figure>
-                <img alt="Stock photo" src="https://via.placeholder.com/1080x500?text=Amazing+stock+photo">
-                <figcaption><i>Image caption</i></figcaption>
-            </figure>
-        </article>
-        <hr>
-        <div>
-            <details>
-                <summary>Expandable title</summary>
-                <p>Revealed content</p>
-            </details>
-            <details>
-                <summary>Another expandable title</summary>
-                <p>More revealed content</p>
-            </details>
-            <br>
-            <p>Inline <code>code</code> snippets</p>
-            <pre>
-                <code>
-// preformatted code block
-                </code>
-            </pre>
-        </div>
+
 
     </main>
     <footer>
@@ -157,501 +86,16 @@
 
 <!-- Usage -->
 <script>
-    function generateGameCode(){
-        let code = Math.random().toString(36).substr(2,6).toUpperCase();
-        document.getElementById("gamecode").innerHTML = code;
-    }
- 
-    // interact with holochain conductor
-    var port = 8888;
-    var host = "ws://localhost:" + port;
-    console.log("Connecting to: " + host);
-    var ws = new WebSocket(host);
 
-    function sendMessageFromForm(event, id) {
-        event.preventDefault()
-        var input = document.getElementById(id)
-        ws.send(input.value)
-        input.value = ''
+    function init() {
+        generateGameCode()
+    }
+    function generateGameCode(event, id) {
+        let code = Math.random().toString(36).substr(2, 6).toUpperCase();
+        document.getElementById("input_start_gamecode").value = code;
     }
 
-    function sendMessageWPrefix(event, prefix, id) {
-        event.preventDefault()
-        var input = document.getElementById(id)
-        ws.send("".concat(prefix, " ", input.value))
-        input.value = ''
-    }
 </script>
-<style>
-    /* MVP.css v1.7.4 - https://github.com/andybrewer/mvp */
 
-    :root {
-        --border-radius: 5px;
-        --box-shadow: 2px 2px 10px;
-        --color: #118bee;
-        --color-accent: #118bee15;
-        --color-bg: #fff;
-        --color-bg-secondary: #e9e9e9;
-        --color-secondary: #920de9;
-        --color-secondary-accent: #920de90b;
-        --color-shadow: #f4f4f4;
-        --color-text: #000;
-        --color-text-secondary: #999;
-        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-        --hover-brightness: 1.2;
-        --justify-important: center;
-        --justify-normal: left;
-        --line-height: 1.5;
-        --width-card: 285px;
-        --width-card-medium: 460px;
-        --width-card-wide: 800px;
-        --width-content: 1080px;
-    }
-
-    /*
-@media (prefers-color-scheme: dark) {
-    :root {
-        --color: #0097fc;
-        --color-accent: #0097fc4f;
-        --color-bg: #333;
-        --color-bg-secondary: #555;
-        --color-secondary: #e20de9;
-        --color-secondary-accent: #e20de94f;
-        --color-shadow: #bbbbbb20;
-        --color-text: #f7f7f7;
-        --color-text-secondary: #aaa;
-    }
-}
-*/
-
-    /* Layout */
-    article aside {
-        background: var(--color-secondary-accent);
-        border-left: 4px solid var(--color-secondary);
-        padding: 0.01rem 0.8rem;
-    }
-
-    body {
-        background: var(--color-bg);
-        color: var(--color-text);
-        font-family: var(--font-family);
-        line-height: var(--line-height);
-        margin: 0;
-        overflow-x: hidden;
-        padding: 0;
-    }
-
-    footer,
-    header,
-    main {
-        margin: 0 auto;
-        max-width: var(--width-content);
-        padding: 3rem 1rem;
-    }
-
-    hr {
-        background-color: var(--color-bg-secondary);
-        border: none;
-        height: 1px;
-        margin: 4rem 0;
-        width: 100%;
-    }
-
-    section {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: var(--justify-important);
-    }
-
-    section img,
-    article img {
-        max-width: 100%;
-    }
-
-    section pre {
-        overflow: auto;
-    }
-
-    section aside {
-        border: 1px solid var(--color-bg-secondary);
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow) var(--color-shadow);
-        margin: 1rem;
-        padding: 1.25rem;
-        width: var(--width-card);
-    }
-
-    section aside:hover {
-        box-shadow: var(--box-shadow) var(--color-bg-secondary);
-    }
-
-    [hidden] {
-        display: none;
-    }
-
-    /* Headers */
-    article header,
-    div header,
-    main header {
-        padding-top: 0;
-    }
-
-    header {
-        text-align: var(--justify-important);
-    }
-
-    header a b,
-    header a em,
-    header a i,
-    header a strong {
-        margin-left: 0.5rem;
-        margin-right: 0.5rem;
-    }
-
-    header nav img {
-        margin: 1rem 0;
-    }
-
-    section header {
-        padding-top: 0;
-        width: 100%;
-    }
-
-    /* Nav */
-    nav {
-        align-items: center;
-        display: flex;
-        font-weight: bold;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-    }
-
-    nav ul {
-        list-style: none;
-        padding: 0;
-    }
-
-    nav ul li {
-        display: inline-block;
-        margin: 0 0.5rem;
-        position: relative;
-        text-align: left;
-    }
-
-    /* Nav Dropdown */
-    nav ul li:hover ul {
-        display: block;
-    }
-
-    nav ul li ul {
-        background: var(--color-bg);
-        border: 1px solid var(--color-bg-secondary);
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow) var(--color-shadow);
-        display: none;
-        height: auto;
-        left: -2px;
-        padding: .5rem 1rem;
-        position: absolute;
-        top: 1.7rem;
-        white-space: nowrap;
-        width: auto;
-        z-index: 1;
-    }
-
-    nav ul li ul::before {
-        /* fill gap above to make mousing over them easier */
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: -0.5rem;
-        height: 0.5rem;
-    }
-
-    nav ul li ul li,
-    nav ul li ul li a {
-        display: block;
-    }
-
-    /* Typography */
-    code,
-    samp {
-        background-color: var(--color-accent);
-        border-radius: var(--border-radius);
-        color: var(--color-text);
-        display: inline-block;
-        margin: 0 0.1rem;
-        padding: 0 0.5rem;
-    }
-
-    details {
-        margin: 1.3rem 0;
-    }
-
-    details summary {
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        line-height: var(--line-height);
-    }
-
-    mark {
-        padding: 0.1rem;
-    }
-
-    ol li,
-    ul li {
-        padding: 0.2rem 0;
-    }
-
-    p {
-        margin: 0.75rem 0;
-        padding: 0;
-    }
-
-    pre {
-        margin: 1rem 0;
-        max-width: var(--width-card-wide);
-        padding: 1rem 0;
-    }
-
-    pre code,
-    pre samp {
-        display: block;
-        max-width: var(--width-card-wide);
-        padding: 0.5rem 2rem;
-        white-space: pre-wrap;
-    }
-
-    small {
-        color: var(--color-text-secondary);
-    }
-
-    sup {
-        background-color: var(--color-secondary);
-        border-radius: var(--border-radius);
-        color: var(--color-bg);
-        font-size: xx-small;
-        font-weight: bold;
-        margin: 0.2rem;
-        padding: 0.2rem 0.3rem;
-        position: relative;
-        top: -2px;
-    }
-
-    /* Links */
-    a {
-        color: var(--color);
-        display: inline-block;
-        font-weight: bold;
-        text-decoration: none;
-    }
-
-    a:hover {
-        filter: brightness(var(--hover-brightness));
-        text-decoration: underline;
-    }
-
-    a b,
-    a em,
-    a i,
-    a strong,
-    button {
-        border-radius: var(--border-radius);
-        display: inline-block;
-        font-size: medium;
-        font-weight: bold;
-        line-height: var(--line-height);
-        margin: 0.5rem 0;
-        padding: 1rem 2rem;
-    }
-
-    button {
-        font-family: var(--font-family);
-    }
-
-    button:hover {
-        cursor: pointer;
-        filter: brightness(var(--hover-brightness));
-    }
-
-    a b,
-    a strong,
-    button {
-        background-color: var(--color);
-        border: 2px solid var(--color);
-        color: var(--color-bg);
-    }
-
-    a em,
-    a i {
-        border: 2px solid var(--color);
-        border-radius: var(--border-radius);
-        color: var(--color);
-        display: inline-block;
-        padding: 1rem 2rem;
-    }
-
-    article aside a {
-        color: var(--color-secondary);
-    }
-
-    /* Images */
-    figure {
-        margin: 0;
-        padding: 0;
-    }
-
-    figure img {
-        max-width: 100%;
-    }
-
-    figure figcaption {
-        color: var(--color-text-secondary);
-    }
-
-    /* Forms */
-
-    button:disabled,
-    input:disabled {
-        background: var(--color-bg-secondary);
-        border-color: var(--color-bg-secondary);
-        color: var(--color-text-secondary);
-        cursor: not-allowed;
-    }
-
-    button[disabled]:hover {
-        filter: none;
-    }
-
-    form {
-        border: 1px solid var(--color-bg-secondary);
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow) var(--color-shadow);
-        display: block;
-        max-width: var(--width-card-wide);
-        min-width: var(--width-card);
-        padding: 1.5rem;
-        text-align: var(--justify-normal);
-    }
-
-    form header {
-        margin: 1.5rem 0;
-        padding: 1.5rem 0;
-    }
-
-    input,
-    label,
-    select,
-    textarea {
-        display: block;
-        font-size: inherit;
-        max-width: var(--width-card-wide);
-    }
-
-    input[type="checkbox"],
-    input[type="radio"] {
-        display: inline-block;
-    }
-
-    input[type="checkbox"]+label,
-    input[type="radio"]+label {
-        display: inline-block;
-        font-weight: normal;
-        position: relative;
-        top: 1px;
-    }
-
-    input,
-    select,
-    textarea {
-        border: 1px solid var(--color-bg-secondary);
-        border-radius: var(--border-radius);
-        margin-bottom: 1rem;
-        padding: 0.4rem 0.8rem;
-    }
-
-    input[readonly],
-    textarea[readonly] {
-        background-color: var(--color-bg-secondary);
-    }
-
-    label {
-        font-weight: bold;
-        margin-bottom: 0.2rem;
-    }
-
-    /* Tables */
-    table {
-        border: 1px solid var(--color-bg-secondary);
-        border-radius: var(--border-radius);
-        border-spacing: 0;
-        display: inline-block;
-        max-width: 100%;
-        overflow-x: auto;
-        padding: 0;
-        white-space: nowrap;
-    }
-
-    table td,
-    table th,
-    table tr {
-        padding: 0.4rem 0.8rem;
-        text-align: var(--justify-important);
-    }
-
-    table thead {
-        background-color: var(--color);
-        border-collapse: collapse;
-        border-radius: var(--border-radius);
-        color: var(--color-bg);
-        margin: 0;
-        padding: 0;
-    }
-
-    table thead th:first-child {
-        border-top-left-radius: var(--border-radius);
-    }
-
-    table thead th:last-child {
-        border-top-right-radius: var(--border-radius);
-    }
-
-    table thead th:first-child,
-    table tr td:first-child {
-        text-align: var(--justify-normal);
-    }
-
-    table tr:nth-child(even) {
-        background-color: var(--color-accent);
-    }
-
-    /* Quotes */
-    blockquote {
-        display: block;
-        font-size: x-large;
-        line-height: var(--line-height);
-        margin: 1rem auto;
-        max-width: var(--width-card-medium);
-        padding: 1.5rem 1rem;
-        text-align: var(--justify-important);
-    }
-
-    blockquote footer {
-        color: var(--color-text-secondary);
-        display: block;
-        font-size: small;
-        line-height: var(--line-height);
-        padding: 1.5rem 0;
-    }
-</style>
 
 </html>
