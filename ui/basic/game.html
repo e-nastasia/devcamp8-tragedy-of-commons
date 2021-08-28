@@ -214,12 +214,27 @@
         document.getElementById("gamecode").innerHTML = gamecode;
 
         action = urlParams.get('action');
+        if (action == "start"){
+            startNewGame();
+        } else if (action == "join") {
+            joinExistingGame();
+        } else {
+            console.error("unknown action");
+        }
     }
 
-    function generateGameCode() {
-        let code = Math.random().toString(36).substr(2, 6).toUpperCase();
-        document.getElementById("gamecode").innerHTML = code;
+    function startNewGame(){
+
     }
+
+    function joinExistingGame(){
+        
+    }
+
+    function refreshPlayerList() {
+        // call happ with game code for list
+    }
+
 
     // interact with holochain conductor
     var port = 8888;
