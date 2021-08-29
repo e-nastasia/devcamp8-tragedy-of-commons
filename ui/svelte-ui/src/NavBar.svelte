@@ -26,6 +26,9 @@
 </navbar>
 
 <style>
+    nav{
+        margin-bottom: 0px;
+    }
     .container {
         display: flex;
         justify-content: space-around;

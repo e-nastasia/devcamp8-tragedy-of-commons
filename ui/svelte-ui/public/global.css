@@ -94,9 +94,12 @@ section aside {
     border: 1px solid var(--color-bg-secondary);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow) var(--color-shadow);
-    margin: 1rem;
+    /* margin: 1rem; */
     padding: 1.25rem;
     width: var(--width-card);
+}
+section aside + aside{
+	margin-left: 1rem;
 }
 
 section aside:hover {

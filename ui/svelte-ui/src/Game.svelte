@@ -1,85 +1,115 @@
 <script>
+    import GameMove from "./GameMove.svelte";
+    import GameResults from "./GameResults.svelte";
+    import GameRound from "./GameRound.svelte";
 
+    let nickname = "Tixel";
+    let gamecode = "3KL54M";
+    let playercount = 3;
+
+    let game_status = "WAITING_PLAYERS"  // "MAKE_MOVE" "WAIT_NEXT_ROUND" "GAME_LOST" "GAME_FINISHED"
+    function refreshPlayerList() {
+        alert("refreshing");
+    }
 </script>
 
-    <section>
-        <!-- <header>
-            <h2>Game code</h2>
-            <p id="gamecode"></p>
-        </header> -->
-        <aside>
-            <h3>Your nickname</h3>
-            <p id="nickname" style="font-size: 4rem !important;"></p>
-        </aside>
-        <aside>
-            <h3>Game code</h3>
-            <p style="font-size: 4rem !important;" id="gamecode"></p>
+<section>
+    <aside>
+        <h3>Your nickname</h3>
+        <span id="nickname" style="font-size: 4rem !important;">{nickname}</span
+        >
+    </aside>
+    <aside>
+        <h3>Game code</h3>
+        <p style="font-size: 4rem !important;" id="gamecode">{gamecode}</p>
+    </aside>
 
-        </aside>
+    <aside>
+        <h3>Players</h3>
+        <p style="font-size: 4rem !important;" id="playercount">
+            {playercount}
+        </p>
+    </aside>
+</section>
 
-        <aside>
-            <h3>Players</h3>
-            <p style="font-size: 4rem !important;" id="playercount">1</p>
-        </aside>
+<div class="playerlist">
+    <button>E-nastasia<br />(3216549879654321654)</button>
+    <button>Tixel<br />(3216549879654321654)</button>
+    <button>Bierlingm<br />(3216549879654321654)</button>
+    <button>E-nastasia<br />(3216549879654321654)</button>
+    <button>Tixel<br />(3216549879654321654)</button>
+    <button>Bierlingm<br />(3216549879654321654)</button>
+    <button>E-nastasia<br />(3216549879654321654)</button>
+    <button>Tixel<br />(3216549879654321654)</button>
+    <button>Bierlingm<br />(3216549879654321654)</button>
+</div>
 
-    </section>
-    <hr />
+<div class="gamerounds">
+    {#if game_status == "WAITING_PLAYERS"}
+    <div class="startgame">
+        <p>
+            Wait until all player joined the game.
+            <br />
+            <a href="#" on:click={refreshPlayerList}>Refresh</a>
+            <br />
+            <button class="startgamebutton">Play!</button>
+        </p>
+    </div>
+    {:else}
+ <!-- TODO for each list of rounds played-->
+    <GameRound />
+    <GameRound />
+    <GameRound />
 
 
-    <section>
-        <aside style="width: 70%;">
-            <h2>Players</h2>
-            <ul>
-                <li>Tixel (3216549879654321654)</li>
-                <li>E-nastasia (3216549879654321654)</li>
-            </ul>
-            <a style="float: right; " href="#">refresh</a>
-        </aside>
-        <aside style="width: 70%;">
-                <h2>Round 1</h2>
-                <ul>
-                    <li>Tixel (3216549879654321654)</li>
-                    <li>E-nastasia (3216549879654321654)</li>
-                </ul>
-                <a style="float: right; " href="#">refresh</a>
-            </aside>
-
-            <form >
-                <h1>Make your move</h1>
-                <label for="input_join_nick">Total resources: 100</label>
-                <p>Take all the resources you need</p>
-
-                <label for="input_take_resources">Resources:</label>
-                <input type="text" id="input_take_resources" size="20" placeholder="">
-                <button type="submit">Submit</button>
-            </form>
-
-            <aside style="width: 70%;">
-                <h2>Round 2</h2>
-                <ul>
-                    <li>Tixel (3216549879654321654)</li>
-                    <li>E-nastasia (3216549879654321654)</li>
-                </ul>
-                <a style="float: right; " href="#">refresh</a>
-            </aside>
-            <aside style="width: 70%;">
-                <h2>Round 3</h2>
-                <ul>
-                    <li>Tixel (3216549879654321654)</li>
-                    <li>E-nastasia (3216549879654321654)</li>
-                </ul>
-                <a style="float: right; " href="#">refresh</a>
-            </aside>
-            <aside style="width: 70%; background-color: lavender;">
-                <h2>Game scores</h2>
-                <ul>
-                    <li>Tixel (3216549879654321654)</li>
-                    <li>E-nastasia (3216549879654321654)</li>
-                </ul>
-            </aside>
-
-    </section>
+    <GameMove />
+    <!-- ONLY if game ended-->
+    <GameResults />
+    {/if}
+</div>
 
 <style>
+    .gamerounds {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-top: 1rem;
+    }
 
+    .startgame {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .startgamebutton {
+        text-align: center;
+        width: 30%;
+    }
+
+    .playerlistRefresh {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .playerlist {
+        padding-left: 10%;
+        padding-right: 10%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 1rem;
+    }
+
+    .playerlist button {
+        background-color: white;
+        color: #118bee;
+    }
+
+    .playerlist button + button {
+        margin-left: 1rem;
+    }
 </style>
