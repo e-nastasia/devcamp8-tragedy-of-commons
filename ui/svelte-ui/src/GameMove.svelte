@@ -3,11 +3,14 @@
 
     const dispatch = createEventDispatcher();
 
+
     function makeMove(event){
-        event.preventDefault();
-        dispatch('message', {
-			resources: '10'
+        // event.preventDefault();
+        let input = document.getElementById("input_take_resources").value;
+        dispatch('makeMove', {
+			resources: input
 		});
+        // dispatch('executeMove');
     }
 </script>
 
@@ -18,7 +21,7 @@
         <p>Take all the resources you need</p>
 
         <label for="input_take_resources">Resources:</label>
-        <input type="text" id="input_take_resources" size="20" placeholder="" />
+        <input type="number" id="input_take_resources" size="20" placeholder="" />
         <button type="submit" on:click="{makeMove}">Submit</button>
     </form>
 </section>

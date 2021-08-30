@@ -1,37 +1,101 @@
 <script>
-    import { each } from "svelte/internal";
-
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
 
-    let nickname = "Tixel";
-    let gamecode = "3KL54M";
-    let playercount = 3;
+    export let nickname = "Tixel";
+    export let gamecode = "3KL54M";
+    export const action = "GAME_BEGIN";
 
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "GAME_LOST" "GAME_FINISHED"
     function refreshPlayerList() {
-        alert("refreshing");
+        if (players.length == 0) {
+            players = [players_mock_repo[0], players_mock_repo[1]];
+        } else if (players.length == 2) {
+            players = players_mock_repo;
+        }
     }
+
+    function callZomeToGetPlayers(gamecode) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve("resolved");
+            }, 1000);
+        });
+    }
+
+    async function asyncCallZomeToGetPlayers() {
+        // call holochain conductor
+        // wait for response
+        // move to other screen
+        const result = await callZomeToGetPlayers();
+        refreshPlayerList();
+        status = "GAME_JOIN";
+    }
+
     function beginGame() {
         game_status = "MAKE_MOVE";
     }
     let rounds = [];
-    let _round_counter = 1;
+    let _round_counter = 0;
 
-    function makeMove() {
-        if (_round_counter == 2) {
-            game_status = "GAME_FINISHED";
-        } else {
-            _round_counter = _round_counter + 1;
-            rounds = [...rounds, { _round_counter }];
-            game_status = "WAIT_NEXT_ROUND";
-        }
+    function callZomeToMakeMove(resources) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve("resolved");
+                if (_round_counter == 2) {
+                    game_status = "GAME_FINISHED";
+                    return;
+                }
+            }, 2000);
+        });
+    }
+
+    // let last_round_state="IN PROGRESS";
+
+    async function asyncCallZomeToMakeMove(event) {
+        _round_counter = _round_counter + 1;
+        rounds = [...rounds, { num: _round_counter, hash: "round_hash" }];
+
+        game_status = "WAIT_NEXT_ROUND";
+        let _resources = event.detail.resources;
+        // call holochain conductor
+        // wait for response
+        // move to other screen
+        const result = await callZomeToMakeMove(_resources);
     }
 
     function roundComplete() {
+        if (game_status == "GAME_LOST" || game_status == "GAME_FINISHED") {
+            return;
+        }
         game_status = "MAKE_MOVE";
     }
+
+    let players = [];
+
+    let players_mock_repo = [
+        { nickname: "tixel", id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f" },
+        { nickname: "f00bar42", id: "4652cd28-4fc2-4c77-9709-234ca8adab81" },
+        { nickname: "harlan", id: "c6b4f8a6-224f-4a7e-9a87-63416e0cafaf" },
+        { nickname: "robot5x", id: "68472d6d-39d2-44cc-8c8c-5d21c8d75ae5" },
+        { nickname: "lchang", id: "81ded8af-dcf1-407c-922d-20b9d7e3a42e" },
+        {
+            nickname: "sidsthalekar",
+            id: "a5f78d5d-899e-458d-8b0e-98781c83d7ac",
+        },
+        {
+            nickname: "guillemcordoba",
+            id: "7ca195ac-71f3-4283-baa7-912d8a75e163",
+        },
+        {
+            nickname: "petersgrandadventure",
+            id: "ceef318d-4437-4485-8281-c47a018bc238",
+        },
+        { nickname: "nphias", id: "51797e5b-7306-4d6c-861b-a1a425112c37" },
+        { nickname: "alexoceann", id: "4a0656a7-223e-4260-a84b-2b975f77eb52" },
+        { nickname: "qubeo", id: "68ccf4f9-2ba3-42a1-87ca-9ffe562bca62" },
+    ];
 </script>
 
 <section>
@@ -48,21 +112,15 @@
     <aside>
         <h3>Players</h3>
         <p style="font-size: 4rem !important;" id="playercount">
-            {playercount}
+            {players.length}
         </p>
     </aside>
 </section>
 
 <div class="playerlist">
-    <button>E-nastasia<br />(3216549879654321654)</button>
-    <button>Tixel<br />(3216549879654321654)</button>
-    <button>Bierlingm<br />(3216549879654321654)</button>
-    <button>E-nastasia<br />(3216549879654321654)</button>
-    <button>Tixel<br />(3216549879654321654)</button>
-    <button>Bierlingm<br />(3216549879654321654)</button>
-    <button>E-nastasia<br />(3216549879654321654)</button>
-    <button>Tixel<br />(3216549879654321654)</button>
-    <button>Bierlingm<br />(3216549879654321654)</button>
+    {#each players as player, i}
+        <button>{player.nickname}<br />{player.id}</button>
+    {/each}
 </div>
 
 <div class="gamerounds">
@@ -71,20 +129,22 @@
             <p>
                 Wait until all player joined the game.
                 <br />
-                <a href="#" on:click={refreshPlayerList}>Refresh</a>
+                <a href="#" on:click={asyncCallZomeToGetPlayers}>Refresh</a>
                 <br />
-                <button class="startgamebutton" on:click={beginGame}
-                    >Play!</button
-                >
+                {#if players.length != 0}
+                    <button class="startgamebutton" on:click={beginGame}
+                        >Play!</button
+                    >
+                {/if}
             </p>
         </div>
     {:else}
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
-            <GameRound round={i} on:roundComplete={roundComplete} />
+            <GameRound {round} on:roundComplete={roundComplete} />
         {/each}
         {#if game_status == "MAKE_MOVE"}
-            <GameMove on:message={makeMove} />
+            <GameMove on:makeMove={asyncCallZomeToMakeMove} />
         {/if}
         {#if game_status == "WAIT_NEXT_ROUND"}
             <div style="text-align:center;">
@@ -96,14 +156,15 @@
         <!-- ONLY if game ended-->
         {#if game_status == "GAME_LOST" || game_status == "GAME_FINISHED"}
             {#if game_status == "GAME_LOST"}
-            <div style="text-align:center;"
-                We lost<br> What a tragedy...
-            </div>
+                <div style="text-align:center;">
+                    We lost<br />
+                    What a tragedy...
+                </div>
             {/if}
             {#if game_status == "GAME_FINISHED"}
-            <div style="text-align:center;">
-                Yes we made it... together.
-            </div>
+                <div style="text-align:center;">
+                    Yes we made it... together.
+                </div>
             {/if}
             <GameResults />
         {/if}
