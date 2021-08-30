@@ -260,12 +260,12 @@ sup {
     background-color: var(--color-secondary);
     border-radius: var(--border-radius);
     color: var(--color-bg);
-    font-size: xx-small;
+    font-size: small;
     font-weight: bold;
-    margin: 0.2rem;
+    margin: 0.5rem;
     padding: 0.2rem 0.3rem;
     position: relative;
-    top: -2px;
+    top: 10px;
 }
 
 /* Links */
