@@ -3,6 +3,10 @@
 	import StartMenu from "./StartMenu.svelte";
 	import Game from "./Game.svelte";
 
+	import { beforeUpdate, afterUpdate } from 'svelte';
+
+	const DELAY = 300;
+
 	let status = "START"; // "GAME_BEGIN"  "GAME_JOIN" "LOADING"
 	let nickname = "---";
 	let gamecode = "------";
@@ -23,7 +27,7 @@
 		return new Promise((resolve) => {
 			setTimeout(() => {
 				resolve("resolved");
-			}, 1000);
+			}, DELAY);
 		});
 	}
 
@@ -45,14 +49,14 @@
 		// call holochain conductor
 		// wait for response
 		// move to other screen
-		asyncCallZomeToJoinGame(gamecode)
+		asyncCallZomeToJoinGame(gamecode);
 	}
 
 	function callZomeToJoinGame(gamecode) {
 		return new Promise((resolve) => {
 			setTimeout(() => {
 				resolve("resolved");
-			}, 1000);
+			}, DELAY);
 		});
 	}
 
@@ -67,6 +71,14 @@
 	function generateGameCode() {
 		return Math.random().toString(36).substr(2, 6).toUpperCase();
 	}
+
+	beforeUpdate(() => {
+		// TODO scroll to bottom
+	});
+
+	afterUpdate(() => {
+	});
+
 </script>
 
 <NavBar />

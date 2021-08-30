@@ -7,7 +7,9 @@
     export let gamecode = "3KL54M";
     export const action = "GAME_BEGIN";
 
-    let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "GAME_LOST" "GAME_FINISHED"
+    const DELAY = 300;
+    let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
+    let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
     function refreshPlayerList() {
         if (players.length == 0) {
             players = [players_mock_repo[0], players_mock_repo[1]];
@@ -20,7 +22,7 @@
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve("resolved");
-            }, 1000);
+            }, DELAY);
         });
     }
 
@@ -37,25 +39,21 @@
         game_status = "MAKE_MOVE";
     }
     let rounds = [];
-    let _round_counter = 0;
+    let _max_round_counter = 0;
 
     function callZomeToMakeMove(resources) {
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve("resolved");
-                if (_round_counter == 2) {
-                    game_status = "GAME_FINISHED";
-                    return;
-                }
-            }, 2000);
+            }, DELAY);
         });
     }
 
     // let last_round_state="IN PROGRESS";
 
     async function asyncCallZomeToMakeMove(event) {
-        _round_counter = _round_counter + 1;
-        rounds = [...rounds, { num: _round_counter, hash: "round_hash" }];
+        _max_round_counter = _max_round_counter + 1;
+        rounds = [...rounds, { num: _max_round_counter, hash: "round_hash" }];
 
         game_status = "WAIT_NEXT_ROUND";
         let _resources = event.detail.resources;
@@ -66,13 +64,44 @@
     }
 
     function roundComplete() {
-        if (game_status == "GAME_LOST" || game_status == "GAME_FINISHED") {
+        if (_max_round_counter == 2) {
+            // MAX ROUNDS
+            game_status = "WAIT_GAME_SCORE";
+            return;
+        }
+        if (game_status == "GAME_OVER") {
             return;
         }
         game_status = "MAKE_MOVE";
     }
 
+    function callZomeToGetResults() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve("resolved");
+            }, DELAY);
+        });
+    }
+
+    async function getAsyncFinalResults() {
+        let result = await callZomeToGetResults();
+        let mock_results = {
+            total_score: 100,
+            stats: [
+                { nickname: "tixel", score: 10 },
+                { nickname: "f00bar42", score: 10 },
+                { nickname: "bierlitzm", score: 10 },
+            ],
+        };
+        game_score = { totalscore: 100 };
+        player_stats = mock_results.stats;
+        game_status = "GAME_OVER";
+        result_status = "GAME_LOST";
+    }
+
     let players = [];
+    let player_stats = [];
+    let game_score = {};
 
     let players_mock_repo = [
         { nickname: "tixel", id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f" },
@@ -125,7 +154,7 @@
 
 <div class="gamerounds">
     {#if game_status == "WAITING_PLAYERS"}
-        <div class="startgame">
+        <div class="columncentered">
             <p>
                 Wait until all player joined the game.
                 <br />
@@ -139,6 +168,9 @@
             </p>
         </div>
     {:else}
+        <div class="columncentered">
+                <a href="#" on:click={asyncCallZomeToGetPlayers}>Refresh player list</a>
+        </div>
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
             <GameRound {round} on:roundComplete={roundComplete} />
@@ -153,20 +185,34 @@
                 Click refresh
             </div>
         {/if}
+        {#if game_status == "WAIT_GAME_SCORE"}
+            <div class="columncentered">
+                <p>
+                    Calculating game scores...
+                    <br />
+                    <a href="#" on:click={getAsyncFinalResults}>Click refresh</a
+                    >
+                </p>
+            </div>
+        {/if}
+
         <!-- ONLY if game ended-->
-        {#if game_status == "GAME_LOST" || game_status == "GAME_FINISHED"}
-            {#if game_status == "GAME_LOST"}
+        {#if game_status == "GAME_OVER"}
+            {#if result_status == "GAME_LOST"}
                 <div style="text-align:center;">
-                    We lost<br />
-                    What a tragedy...
+                    <h1>
+                        We lost
+                        <br />
+                        What a tragedy...
+                    </h1>
                 </div>
             {/if}
-            {#if game_status == "GAME_FINISHED"}
+            {#if result_status == "GAME_WON"}
                 <div style="text-align:center;">
-                    Yes we made it... together.
+                    <h1>Yes we made it... together.</h1>
                 </div>
             {/if}
-            <GameResults />
+            <GameResults {player_stats} {game_score} />
         {/if}
     {/if}
 </div>
@@ -179,7 +225,7 @@
         margin-top: 1rem;
     }
 
-    .startgame {
+    .columncentered {
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -214,5 +260,17 @@
 
     .playerlist button + button {
         margin-left: 1rem;
+    }
+    .linkbutton {
+        float: right;
+        background: none !important;
+        border: none;
+        padding: 0 !important;
+        /*optional*/
+        font-family: arial, sans-serif;
+        /*input has OS specific font-family*/
+        color: #118bee;
+        text-decoration: underline;
+        cursor: pointer;
     }
 </style>

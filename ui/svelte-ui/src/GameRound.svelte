@@ -49,6 +49,9 @@
     let gameRoundState = "IN PROGRESS"; // COMPLETE
 
     function refreshGameRound() {
+        if (gameRoundState == "COMPLETE"){
+            return;
+        }
         if (moves.length < 2) {
             console.log("---------------> moves length {}", moves.length);
             moves = moves_complete;
