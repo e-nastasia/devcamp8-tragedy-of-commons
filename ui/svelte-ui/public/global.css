@@ -473,3 +473,17 @@ blockquote footer {
     line-height: var(--line-height);
     padding: 1.5rem 0;
 }
+
+/* Added */
+.linkbutton {
+	float: right;
+	background: none !important;
+	border: none;
+	padding: 0 !important;
+	/*optional*/
+	font-family: arial, sans-serif;
+	/*input has OS specific font-family*/
+	color: #118bee;
+	/* text-decoration: underline; */
+	cursor: pointer;
+}

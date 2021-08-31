@@ -2,8 +2,8 @@
 	import NavBar from "./NavBar.svelte";
 	import StartMenu from "./StartMenu.svelte";
 	import Game from "./Game.svelte";
-
-	import { beforeUpdate, afterUpdate } from 'svelte';
+	import { connection } from "./stores.js";
+	import { Connection, Zome } from "./zome.js";
 
 	const DELAY = 300;
 
@@ -71,14 +71,28 @@
 	function generateGameCode() {
 		return Math.random().toString(36).substr(2, 6).toUpperCase();
 	}
+	/****************************************/
 
-	beforeUpdate(() => {
-		// TODO scroll to bottom
-	});
+	let appHost = "localhost";
+	let appPort = 8888;
+	let appId = "tragedy";
 
-	afterUpdate(() => {
-	});
-
+	async function toggle() {
+		if (!$connection) {
+			$connection = new Connection(appHost, appPort, appId);
+			await $connection.open();
+			console.log("attaching...");
+			let zome = new Zome($connection, appId);
+			zome.attach();
+			console.log("zome is attached:{}", zome.attached());
+			// await $connection.joinSession();
+			// sessions = $connection.sessions;
+		} else {
+			// $connection.syn.clearState();
+			// sessions = undefined;
+			console.log("TODO disconnected");
+		}
+	}
 </script>
 
 <NavBar />
@@ -94,6 +108,32 @@
 {:else}
 	<Game action={status} {nickname} {gamecode} />
 {/if}
+<footer>
+	<div
+		style="display:flex; vertical-align:middle; justify-content:space-around;"
+	>
+		<div>
+			<label>Host</label><input bind:value={appHost} />
+		</div>
+		<div>
+			<label>Port</label>
+			<input bind:value={appPort} />
+		</div>
+		<div>
+			<label>AppId</label>
+			<input bind:value={appId} />
+		</div>
+	</div>
+		<div style="display:flex; justify-content:center;">
+			<button class="linkbutton" on:click={toggle}>
+				{#if $connection}
+					disconnect
+				{:else}
+					connect
+				{/if}
+			</button>
+		</div>
+</footer>
 
 <style>
 	h1 {
@@ -102,4 +142,5 @@
 		font-size: 4em;
 		font-weight: 100;
 	}
+	
 </style>

@@ -261,16 +261,5 @@
     .playerlist button + button {
         margin-left: 1rem;
     }
-    .linkbutton {
-        float: right;
-        background: none !important;
-        border: none;
-        padding: 0 !important;
-        /*optional*/
-        font-family: arial, sans-serif;
-        /*input has OS specific font-family*/
-        color: #118bee;
-        text-decoration: underline;
-        cursor: pointer;
-    }
+
 </style>
