@@ -2,33 +2,32 @@
 	import NavBar from "./NavBar.svelte";
 	import StartMenu from "./StartMenu.svelte";
 	import Game from "./Game.svelte";
-	import { connection } from "./stores.js";
-	import { Connection, Zome } from "./zome.js";
+	import { AppClient } from "./app-client";
+	import { onMount } from 'svelte';
 
 	const DELAY = 300;
 
 	let status = "START"; // "GAME_BEGIN"  "GAME_JOIN" "LOADING"
 	let nickname = "---";
 	let gamecode = "------";
+	let errorMessage = '';
 
-	function startNewGame(event) {
-		if (status == "LOADING") {
+	async function startNewGame(event) {
+		if (status === "LOADING") {
 			// prevent multiple clicks
 			return;
 		}
-		status = "LOADING";
 		nickname = event.detail.nickname;
 		gamecode = generateGameCode();
-
-		asyncCallZomeToStartNewGame();
-	}
-
-	function callZomeToStartNewGame() {
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				resolve("resolved");
-			}, DELAY);
-		});
+		try {
+			status = "LOADING";
+			const anchor = await window.appClient.startNewGame(gamecode);
+			console.log('anchor', anchor);
+			status = "GAME_BEGIN";
+		} catch (error) {
+			errorMessage = error.data?.data || error.message;
+			console.log('error', error);
+		}
 	}
 
 	async function asyncCallZomeToStartNewGame() {
@@ -40,7 +39,7 @@
 	}
 
 	function joinGame(event) {
-		if (status == "LOADING") {
+		if (status === "LOADING") {
 			return;
 		}
 		status = "LOADING";
@@ -73,31 +72,20 @@
 	}
 	/****************************************/
 
-	let appHost = "localhost";
-	let appPort = 8888;
-	let appId = "tragedy";
-
-	async function toggle() {
-		if (!$connection) {
-			$connection = new Connection(appHost, appPort, appId);
-			await $connection.open();
-			console.log("attaching...");
-			let zome = new Zome($connection, appId);
-			zome.attach();
-			console.log("zome is attached:{}", zome.attached());
-			// await $connection.joinSession();
-			// sessions = $connection.sessions;
-		} else {
-			// $connection.syn.clearState();
-			// sessions = undefined;
-			console.log("TODO disconnected");
+	onMount(async () => {
+		const appClient = new AppClient();
+		try {
+			await appClient.connect();
+			window.appClient = appClient;
+		} catch (error) {
+			errorMessage = error.data || error.message;
 		}
-	}
+	});
 </script>
 
 <NavBar />
 
-{#if status == "START"}
+{#if status === "START"}
 	<StartMenu on:startNewGame={startNewGame} on:joinGame={joinGame} />
 {:else if status == "LOADING"}
 	<div style="flex-flow:column; text-align: center;">
@@ -108,32 +96,9 @@
 {:else}
 	<Game action={status} {nickname} {gamecode} />
 {/if}
-<footer>
-	<div
-		style="display:flex; vertical-align:middle; justify-content:space-around;"
-	>
-		<div>
-			<label>Host</label><input bind:value={appHost} />
-		</div>
-		<div>
-			<label>Port</label>
-			<input bind:value={appPort} />
-		</div>
-		<div>
-			<label>AppId</label>
-			<input bind:value={appId} />
-		</div>
-	</div>
-		<div style="display:flex; justify-content:center;">
-			<button class="linkbutton" on:click={toggle}>
-				{#if $connection}
-					disconnect
-				{:else}
-					connect
-				{/if}
-			</button>
-		</div>
-</footer>
+{#if errorMessage}
+	<h3 style="color: red;">{errorMessage}</h3>	
+{/if}
 
 <style>
 	h1 {
