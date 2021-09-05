@@ -98,6 +98,15 @@ orchestrator.registerScenario(
 
     await sleep(5000); // wait until all links have propagated
 
+    let list_of_players = await alice_common.cells[0].call(
+      ZOME_NAME,
+      "get_players_for_game_code",
+      "ABCDE"
+    );
+    console.log("===========================");
+    console.log(list_of_players);
+    t.ok(list_of_players);
+
     //Alice starts a new game (session) with bob and herself
     let session_header_hash = await alice_common.cells[0].call(
       ZOME_NAME,

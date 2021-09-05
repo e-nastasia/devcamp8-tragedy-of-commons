@@ -9,7 +9,6 @@ crate-type = ["cdylib", "rlib"]
 name = "tragedy_of_commons"
 
 [dependencies]
-
 hdk = "0.0.103"
 derive_more = "0"
 paste = "*"

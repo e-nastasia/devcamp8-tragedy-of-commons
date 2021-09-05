@@ -1,6 +1,7 @@
 use game_move::GameMove;
 use game_session::GameParams;
 // use game_session::GameSession;
+#[allow(unused_imports)]
 use hdk::prelude::*;
 #[allow(unused)]
 use holo_hash::*;
@@ -97,26 +98,53 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
     Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }
 
+
+
+
 #[hdk_extern]
-pub fn join_game_with_code(player_profile: PlayerProfileInput) -> ExternResult<EntryHashB64> {
-    let anchor = anchor("GAME_CODES".into(), player_profile.game_code)?;
+pub fn join_game_with_code(input:JoinGameInfo) -> ExternResult<EntryHash> {
+    info!("input: {:?}", input);
+    info!("game code: {:?}", input.gamecode);
+    let anchor = anchor("GAME_CODES".into(), input.gamecode)?;
+    debug!("anchor created {:?}", &anchor);
+    let agent = agent_info()?;
+    debug!("agent {:?}", agent.clone());
     let player_profile = PlayerProfile {
-        player_id: agent_info()?.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
-        nickname: player_profile.nickname,
+        player_id: agent.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
+        nickname: input.nickname,
     };
     create_entry(&player_profile)?;
+    debug!("profile created");
     let player_profile_entry_hash = hash_entry(&player_profile)?;
+    debug!("profile entry hash {:?}", &player_profile_entry_hash);
     create_link(anchor.clone().into(), player_profile_entry_hash.into(), ())?;
-    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
+    debug!("link created");
+    Ok(anchor) // or more Rust like: anchor.into())
+}
+
+#[hdk_extern]
+pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<PlayerProfile>> {
+    // Ok(vec!["Anipur".into(), "Bob".into()]);
+
+    debug!("get profiles");
+    let player_profiles = get_player_profiles_for_game_code(short_unique_code)?;
+
+    // debug!("filter profiles to extract nickname");
+    // let players = player_profiles.iter().map(|x| x.nickname.clone()).collect();
+    Ok(player_profiles) // or more Rust like: anchor.into())
 }
 
 pub fn get_player_profiles_for_game_code(
-    anchor_entry_hash: EntryHash,
+    short_unique_code: String,
 ) -> ExternResult<Vec<PlayerProfile>> {
-    let links: Links = get_links(anchor_entry_hash, None)?;
 
+    let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
+    debug!("anchor: {:?}", anchor);
+    let links: Links = get_links(anchor, None)?;
+    debug!("links: {:?}", links);
     let mut players = vec![];
     for link in links.into_inner() {
+        debug!("link: {:?}", link);
         let element: Element = get(link.target, GetOptions::default())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
         let entry_option = element.entry().to_app_option()?;
@@ -132,8 +160,8 @@ pub fn get_player_profiles_for_game_code(
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
-    let anchor = anchor("GAME_CODES".into(), game_code)?;
-    let players = get_player_profiles_for_game_code(anchor)?;
+    anchor("GAME_CODES".into(), game_code.clone())?;
+    let players = get_player_profiles_for_game_code(game_code)?;
     start_default_session(players)
 }
 
@@ -227,8 +255,8 @@ pub struct SignalTest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
-pub struct PlayerProfileInput {
-    pub game_code: String,
+pub struct JoinGameInfo {
+    pub gamecode: String,
     pub nickname: String,
 }
 
@@ -236,14 +264,14 @@ pub struct PlayerProfileInput {
 pub fn validate(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     // Ok(ValidateCallbackResult::Invalid("computer says no")
     // Ok(ValidateCallbackResult::UnresolvedDependencies("something is missing"))
-    info!("validate general");
+    // debug!("validate general");
     Ok(ValidateCallbackResult::Valid)
 }
 
 #[hdk_extern]
 pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     // all creates are valid
-    info!("validate create");
+    // debug!("validate create");
     Ok(ValidateCallbackResult::Valid)
 }
 
@@ -251,9 +279,9 @@ pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateC
 pub fn validate_create_entry_game_move(
     validate_data: ValidateData,
 ) -> ExternResult<ValidateCallbackResult> {
-    info!("validating game move");
+    // debug!("validating game move");
     let x: GameMove = entry_from_element_create_or_update(&validate_data.element)?;
-    debug!("resources {}", x.resources);
+    // trace!("resources {}", x.resources);
     if x.resources < 0 {
         return Ok(ValidateCallbackResult::Invalid(
             "You cannot insert resources back".into(),

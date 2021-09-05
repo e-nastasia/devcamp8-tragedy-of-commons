@@ -3,14 +3,14 @@
 	import StartMenu from "./StartMenu.svelte";
 	import Game from "./Game.svelte";
 	import { AppClient } from "./app-client";
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
 	const DELAY = 300;
 
 	let status = "START"; // "GAME_BEGIN"  "GAME_JOIN" "LOADING"
 	let nickname = "---";
 	let gamecode = "------";
-	let errorMessage = '';
+	let errorMessage = "";
 
 	async function startNewGame(event) {
 		if (status === "LOADING") {
@@ -22,11 +22,13 @@
 		try {
 			status = "LOADING";
 			const anchor = await window.appClient.startNewGame(gamecode);
-			console.log('anchor', anchor);
+			console.log("anchor", anchor);
+			const result = await window.appClient.joinGame(gamecode,nickname);
+			console.log("joined game", result);
 			status = "GAME_BEGIN";
 		} catch (error) {
 			errorMessage = error.data?.data || error.message;
-			console.log('error', error);
+			console.log("error", error);
 		}
 	}
 
@@ -45,25 +47,20 @@
 		status = "LOADING";
 		nickname = event.detail.nickname;
 		gamecode = event.detail.gamecode;
+		console.log("nick and code: ", nickname, gamecode)
 		// call holochain conductor
 		// wait for response
 		// move to other screen
 		asyncCallZomeToJoinGame(gamecode);
 	}
 
-	function callZomeToJoinGame(gamecode) {
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				resolve("resolved");
-			}, DELAY);
-		});
-	}
-
 	async function asyncCallZomeToJoinGame() {
 		// call holochain conductor
 		// wait for response
 		// move to other screen
-		const result = await callZomeToJoinGame();
+		console.log("gamecode", gamecode)
+		const result = await window.appClient.joinGame(gamecode, nickname);
+		console.log("joingame",result);
 		status = "GAME_JOIN";
 	}
 
@@ -71,16 +68,23 @@
 		return Math.random().toString(36).substr(2, 6).toUpperCase();
 	}
 	/****************************************/
+	let appHost = "localhost";
+	let appPort = 8000;
+	let appId = "tragedy_of_commons";
+	let connected = false;
 
-	onMount(async () => {
-		const appClient = new AppClient();
+	async function connect() {
+		const appClient = new AppClient(appHost, appPort);
 		try {
 			await appClient.connect();
 			window.appClient = appClient;
+			connected = true;
+			errorMessage  = '';
 		} catch (error) {
 			errorMessage = error.data || error.message;
+			connected = false;
 		}
-	});
+	};
 </script>
 
 <NavBar />
@@ -96,9 +100,36 @@
 {:else}
 	<Game action={status} {nickname} {gamecode} />
 {/if}
-{#if errorMessage}
-	<h3 style="color: red;">{errorMessage}</h3>	
-{/if}
+
+<footer>
+	<div
+		style="display:flex; vertical-align:middle; justify-content:space-around;"
+	>
+		<div>
+			<label>Host</label><input bind:value={appHost} />
+		</div>
+		<div>
+			<label>Port</label>
+			<input type="number" bind:value={appPort} />
+		</div>
+		<div>
+			<label>AppId</label>
+			<input bind:value={appId} />
+		</div>
+	</div>
+	<div style="display:flex; justify-content:center;">
+		<button class="linkbutton" on:click={connect}>
+			{#if connected}
+				disconnect
+			{:else}
+				connect
+			{/if}
+		</button>
+	</div>
+	{#if errorMessage}
+		<h3 style="color: red;">{errorMessage}</h3>
+	{/if}
+</footer>
 
 <style>
 	h1 {
@@ -107,5 +138,4 @@
 		font-size: 4em;
 		font-weight: 100;
 	}
-	
 </style>

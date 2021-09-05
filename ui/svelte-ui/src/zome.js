@@ -44,12 +44,13 @@ export class Zome {
 
     async attach() {
         // setup the syn instance data
-        this.appInfo = await this.appClient.appInfo();//({ installed_app_id: this.appId })
+        this.appInfo = await this.appClient.appInfo({ installed_app_id: this.appId });
         this.cellId = this.appInfo.cell_data[0].cell_id
         this.agentPubKey = this.cellId[1]
         this.dna = this.cellId[0]
         this.dnaStr = bufferToBase64(this.dna)
-        this.me = bufferToBase64(this.agentPubKey)
+        this.me = bufferToBase64(this.agentPubKey);
+        console.log("appinfo:{}", this.appInfo);
     }
 
     attached() {

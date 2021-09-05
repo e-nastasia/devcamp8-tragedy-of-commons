@@ -10,12 +10,18 @@
     const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
-    function refreshPlayerList() {
-        if (players.length == 0) {
-            players = [players_mock_repo[0], players_mock_repo[1]];
-        } else if (players.length == 2) {
-            players = players_mock_repo;
-        }
+    
+    async function refreshPlayerList() {
+        const playerProfiles = await window.appClient.getPlayers(gamecode);
+		console.log("players", playerProfiles);
+        players  = playerProfiles;
+			
+        
+        // if (players.length == 0) {
+        //     players = [players_mock_repo[0], players_mock_repo[1]];
+        // } else if (players.length == 2) {
+        //     players = players_mock_repo;
+        // }
     }
 
     function callZomeToGetPlayers(gamecode) {
