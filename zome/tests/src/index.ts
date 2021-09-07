@@ -14,7 +14,7 @@ console.log(conductorConfig);
 console.log('==================');
 
 // Construct proper paths for your DNAs
-const dnaPath = path.join(__dirname, "../../workdir/dna/sample.dna");
+const dnaPath = path.join(__dirname, "../../workdir/dna/tragedy_of_commons.dna");
 
 const sleep = (ms) => new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
 
@@ -85,7 +85,7 @@ orchestrator.registerScenario(
     let game_code_anchor_entry_hash_alice = await alice_common.cells[0].call(
       ZOME_NAME,
       "join_game_with_code",
-      {game_code:"ABCDE", nickname: "Alice"}
+      {gamecode:"ABCDE", nickname: "Alice"}
     );
     console.log(game_code_anchor_entry_hash);
     t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_alice);
@@ -93,7 +93,7 @@ orchestrator.registerScenario(
     let game_code_anchor_entry_hash_bob = await bob_common.cells[0].call(
       ZOME_NAME,
       "join_game_with_code",
-      {game_code:"ABCDE", nickname: "Bob"}
+      {gamecode:"ABCDE", nickname: "Bob"}
     );
     console.log(game_code_anchor_entry_hash);
     t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_bob);
