@@ -131,7 +131,7 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
         if agent_pub_key_player != agent_pub_key_owner
             && agent_pub_key_player != agent_pub_key_owner
         {
-            debug!("================= Creating link to PARTICIPANT address {:?} from game session {:?}", game_session_entry_hash.clone(),  agent_pub_key_player.clone());
+            debug!("================= Creating link to PARTICIPANT address {:?} from game session {:?}", agent_pub_key_player.clone(), game_session_entry_hash.clone());
             create_link(
                 game_session_entry_hash.clone(),
                 agent_pub_key_player.into(),
