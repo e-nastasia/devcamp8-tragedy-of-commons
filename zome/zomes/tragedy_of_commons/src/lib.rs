@@ -98,11 +98,8 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
     Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }
 
-
-
-
 #[hdk_extern]
-pub fn join_game_with_code(input:JoinGameInfo) -> ExternResult<EntryHash> {
+pub fn join_game_with_code(input:JoinGameInfo) -> ExternResult<EntryHashB64> {
     info!("input: {:?}", input);
     info!("game code: {:?}", input.gamecode);
     let anchor = anchor("GAME_CODES".into(), input.gamecode)?;
@@ -119,7 +116,7 @@ pub fn join_game_with_code(input:JoinGameInfo) -> ExternResult<EntryHash> {
     debug!("profile entry hash {:?}", &player_profile_entry_hash);
     create_link(anchor.clone().into(), player_profile_entry_hash.into(), ())?;
     debug!("link created");
-    Ok(anchor) // or more Rust like: anchor.into())
+    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }
 
 #[hdk_extern]
