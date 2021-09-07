@@ -160,8 +160,10 @@ pub fn get_player_profiles_for_game_code(
 /// Placeholder function that can be called from UI/test, until invitation zoom is added.
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
-    anchor("GAME_CODES".into(), game_code.clone())?;
+    let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
+    debug!("anchor: {:?}",anchor);
     let players = get_player_profiles_for_game_code(game_code)?;
+    debug!("players: {:?}", players);
     start_default_session(players)
 }
 
@@ -174,7 +176,9 @@ pub fn start_default_session(player_list: Vec<PlayerProfile>) -> ExternResult<He
         reputation_coef: 2,
     };
     let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
+    debug!("player agentpubkeys: {:?}", players);
     let result = game_session::new_session(players, game_params);
+    debug!("new session created: {:?}", result);
     match result {
         Ok(hash) => Ok(HeaderHashB64::from(hash)),
         Err(error) => Err(error),

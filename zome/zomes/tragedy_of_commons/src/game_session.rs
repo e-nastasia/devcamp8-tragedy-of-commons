@@ -133,10 +133,23 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
         {
             debug!("================= Creating link from PARTICIPANT address {:?} to game session {:?}", agent_pub_key_player.clone(), game_session_entry_hash.clone());
             create_link(
-                agent_pub_key_player.into(),
                 game_session_entry_hash.clone(),
+                agent_pub_key_player.into(),
                 LinkTag::new(PARTICIPANT_SESSION_TAG),
             )?;
+
+            /*
+            // create_link(
+            //     agent_pub_key_player.into(),
+            //     game_session_entry_hash.clone(),
+            //     LinkTag::new(PARTICIPANT_SESSION_TAG),
+            // )?;
+            doing this creates a InvalidCommit error (which is not shown when running tryorama -> bugreport?)
+            perhaps we cannot link from agentpubkey as base (perhaps change this and link to profile)
+            TODO
+            
+            
+            */
         }
     }
 

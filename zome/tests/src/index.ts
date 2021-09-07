@@ -27,6 +27,8 @@ const installation: InstallAgentsHapps = [
   [[dnaPath]],  // agent 1 - happ 0
 ];
 
+
+
 orchestrator.registerScenario(
   "start new game session with 2 players",
   async (s: ScenarioApi, t) => {

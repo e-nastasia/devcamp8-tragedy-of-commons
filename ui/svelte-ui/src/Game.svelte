@@ -2,6 +2,7 @@
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
+import { bufferToBase64 } from "./utils";
 
     export let nickname = "Tixel";
     export let gamecode = "3KL54M";
@@ -15,35 +16,17 @@
         const playerProfiles = await window.appClient.getPlayers(gamecode);
 		console.log("players", playerProfiles);
         players  = playerProfiles;
-			
-        
-        // if (players.length == 0) {
-        //     players = [players_mock_repo[0], players_mock_repo[1]];
-        // } else if (players.length == 2) {
-        //     players = players_mock_repo;
-        // }
     }
 
-    function callZomeToGetPlayers(gamecode) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve("resolved");
-            }, DELAY);
-        });
-    }
 
-    async function asyncCallZomeToGetPlayers() {
-        // call holochain conductor
-        // wait for response
-        // move to other screen
-        const result = await callZomeToGetPlayers();
-        refreshPlayerList();
-        status = "GAME_JOIN";
-    }
 
-    function beginGame() {
+    async function beginGame() {
+        const result = await window.appClient.startGame(gamecode);
+		console.log("game started", result);
+        const result1 = await refreshPlayerList();
         game_status = "MAKE_MOVE";
     }
+    
     let rounds = [];
     let _max_round_counter = 0;
 
@@ -154,7 +137,7 @@
 
 <div class="playerlist">
     {#each players as player, i}
-        <button>{player.nickname}<br />{player.id}</button>
+        <button>{player.nickname}<br />{bufferToBase64(player.player_id)}</button>
     {/each}
 </div>
 
@@ -164,7 +147,7 @@
             <p>
                 Wait until all player joined the game.
                 <br />
-                <a href="#" on:click={asyncCallZomeToGetPlayers}>Refresh</a>
+                <a href="#" on:click={refreshPlayerList}>Refresh</a>
                 <br />
                 {#if players.length != 0}
                     <button class="startgamebutton" on:click={beginGame}
@@ -175,7 +158,7 @@
         </div>
     {:else}
         <div class="columncentered">
-                <a href="#" on:click={asyncCallZomeToGetPlayers}>Refresh player list</a>
+                <a href="#" on:click={refreshPlayerList}>Refresh player list</a>
         </div>
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
