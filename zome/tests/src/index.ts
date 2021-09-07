@@ -78,7 +78,7 @@ orchestrator.registerScenario(
       "create_game_code_anchor",
       "ABCDE"
     );
-    console.log(game_code_anchor_entry_hash);
+    console.log("Alice created the game code: ", game_code_anchor_entry_hash);
     t.ok(game_code_anchor_entry_hash);
 
     // alice joins with game code
@@ -87,15 +87,16 @@ orchestrator.registerScenario(
       "join_game_with_code",
       {gamecode:"ABCDE", nickname: "Alice"}
     );
-    console.log(game_code_anchor_entry_hash);
+    console.log("Alice joined game: ", game_code_anchor_entry_hash_alice);
     t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_alice);
+
     // bob joins with game code
     let game_code_anchor_entry_hash_bob = await bob_common.cells[0].call(
       ZOME_NAME,
       "join_game_with_code",
       {gamecode:"ABCDE", nickname: "Bob"}
     );
-    console.log(game_code_anchor_entry_hash);
+    console.log("Bob joined game: ", game_code_anchor_entry_hash_bob);
     t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_bob);
 
     await sleep(5000); // wait until all links have propagated
@@ -155,13 +156,14 @@ orchestrator.registerScenario(
     await sleep(2000);
 
     // NOTE(e-nastasia): checking that GameSession get fns work as expected
-    // maybe should be done in a separate test instead of making thins one 
+    // maybe should be done in a separate test instead of making this one
     // a single super test case, but for speed reasons I'm keeping it here for now
     let alice_owned_games = await alice_common.cells[0].call(
       ZOME_NAME,
       "get_my_owned_sessions",
       null
     );
+    console.log("Verify that Alice's owned games is 1");
     t.ok(alice_owned_games.length == 1);
 
     let bob_owned_games = await bob_common.cells[0].call(
@@ -169,6 +171,7 @@ orchestrator.registerScenario(
       "get_my_owned_sessions",
       null
     );
+    console.log("Verify that Bob's owned games is 0");
     t.ok(bob_owned_games.length == 0);
 
     let alice_part_games = await alice_common.cells[0].call(
@@ -176,6 +179,7 @@ orchestrator.registerScenario(
       "get_my_played_sessions",
       null
     );
+    console.log("Verify that Alice's played sessions is 0");
     t.ok(alice_part_games.length == 0);
 
     let bob_part_games = await bob_common.cells[0].call(
@@ -183,6 +187,7 @@ orchestrator.registerScenario(
       "get_my_played_sessions",
       null
     );
+    console.log("Verify that Bob's played sessions is 1");
     t.ok(bob_part_games.length == 1);
 
     let alice_all_games = await alice_common.cells[0].call(
@@ -190,6 +195,7 @@ orchestrator.registerScenario(
       "get_all_my_sessions",
       null
     );
+    console.log("Verify that Alice's all games is 1");
     t.ok(alice_all_games.length == 1);
 
     let bob_all_games = await bob_common.cells[0].call(
@@ -197,6 +203,7 @@ orchestrator.registerScenario(
       "get_all_my_sessions",
       null
     );
+    console.log("Verify that Bob's all games is 1");
     t.ok(bob_all_games.length == 1);
 
     let alice_active_games = await alice_common.cells[0].call(
@@ -204,6 +211,7 @@ orchestrator.registerScenario(
       "get_my_active_sessions",
       null
     );
+    console.log("Verify that Alice's active games is 1");
     t.ok(alice_active_games.length == 1);
 
     let bob_active_games = await bob_common.cells[0].call(
@@ -211,6 +219,7 @@ orchestrator.registerScenario(
       "get_my_active_sessions",
       null
     );
+    console.log("Verify that Bob's active games is 1");
     t.ok(bob_active_games.length == 1);
 
     // CHECK  TO CLOSE GAME
