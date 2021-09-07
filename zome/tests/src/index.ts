@@ -179,7 +179,7 @@ orchestrator.registerScenario(
       "get_my_played_sessions",
       null
     );
-    console.log("Verify that Alice's played sessions is 0");
+    console.log("Alice's played sessions is: ", alice_part_games);
     t.ok(alice_part_games.length == 0);
 
     let bob_part_games = await bob_common.cells[0].call(
@@ -187,7 +187,7 @@ orchestrator.registerScenario(
       "get_my_played_sessions",
       null
     );
-    console.log("Verify that Bob's played sessions is 1");
+    console.log("Bob's played sessions is: ", bob_part_games);
     t.ok(bob_part_games.length == 1);
 
     let alice_all_games = await alice_common.cells[0].call(
@@ -195,7 +195,7 @@ orchestrator.registerScenario(
       "get_all_my_sessions",
       null
     );
-    console.log("Verify that Alice's all games is 1");
+    console.log("Alice's all games is: ", alice_all_games);
     t.ok(alice_all_games.length == 1);
 
     let bob_all_games = await bob_common.cells[0].call(
@@ -203,7 +203,7 @@ orchestrator.registerScenario(
       "get_all_my_sessions",
       null
     );
-    console.log("Verify that Bob's all games is 1");
+    console.log("Bob's all games is: ", bob_all_games);
     t.ok(bob_all_games.length == 1);
 
     let alice_active_games = await alice_common.cells[0].call(
@@ -211,7 +211,7 @@ orchestrator.registerScenario(
       "get_my_active_sessions",
       null
     );
-    console.log("Verify that Alice's active games is 1");
+    console.log("Alice's active games is: ", alice_active_games);
     t.ok(alice_active_games.length == 1);
 
     let bob_active_games = await bob_common.cells[0].call(
@@ -219,7 +219,7 @@ orchestrator.registerScenario(
       "get_my_active_sessions",
       null
     );
-    console.log("Verify that Bob's active games is 1");
+    console.log("Bob's active games is: ", bob_active_games);
     t.ok(bob_active_games.length == 1);
 
     // CHECK  TO CLOSE GAME
