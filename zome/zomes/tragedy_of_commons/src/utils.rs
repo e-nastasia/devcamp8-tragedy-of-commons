@@ -76,3 +76,31 @@ pub fn enable_tracing(level: tracing::Level) {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
+
+// fn copied from connor's acorn, see: https://github.com/h-be/acorn/blob/main/dna/zomes/projects/src/project/validate.rs#L59
+// should always be called with the HeaderHash of a Create or Update header
+pub fn must_get_header_and_entry<O>(header_hash: HeaderHash) -> ExternResult<O>
+where
+    O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+{
+    let h = must_get_header(header_hash)?;
+    match h.header().entry_hash() {
+        Some(entry_hash) => {
+            let entry = must_get_entry(entry_hash.clone())?;
+            match entry.into_inner().0 {
+                Entry::App(bytes) => match O::try_from(bytes.into()) {
+                    Ok(deserialized) => Ok(deserialized),
+                    Err(e) => Err(e.into()),
+                },
+                _ => Err(WasmError::Guest(
+                    "entry within resolve_header_to_entry must be an Entry::App variant"
+                        .to_string(),
+                )),
+            }
+        }
+        None => Err(WasmError::Guest(
+            "within resolve_header_to_entry a header that was not a Create variant was attempted"
+                .to_string(),
+        )),
+    }
+}
