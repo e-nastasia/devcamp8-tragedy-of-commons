@@ -73,3 +73,20 @@ pub fn new_move(
     // retrieval process and the process of commiting the round entry.
     Ok(header_hash_link.into())
 }
+
+pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult>
+{
+    let game_move: GameMove = data
+        .element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest(
+            "Trying to validate an entry that's not a GameMove".into(),
+        ))?;
+    
+    if game_move.resources <= 0 {
+        return Ok(ValidateCallbackResult::Invalid(format!("GameMove has to have resources >= 0, but it has {}", game_move.resources)));
+    }    
+    
+    Ok(ValidateCallbackResult::Valid)
+}
