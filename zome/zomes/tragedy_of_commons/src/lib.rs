@@ -252,24 +252,6 @@ pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSessi
     game_session::get_my_own_sessions_via_source_query()
 }
 
-/// Function to list game sessions in which caller has been a participant.
-#[hdk_extern]
-pub fn get_my_played_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-    game_session::get_sessions_with_tags(vec![PARTICIPANT_SESSION_TAG])
-}
-
-/// Function to list all game sessions in which caller was involved, both as
-/// an owner and as a participant
-#[hdk_extern]
-pub fn get_all_my_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-    game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])
-}
-
-/// Function to list all active sessions where caller is either owner or participant
-#[hdk_extern]
-pub fn get_my_active_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
-    game_session::get_sessions_with_status(SessionState::InProgress)
-}
 
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
