@@ -7,7 +7,7 @@ use hdk::prelude::*;
 use holo_hash::*;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use utils::{convert_keys_from_b64, entry_from_element_create_or_update};
+use utils::{entry_from_element_create_or_update};
 
 #[allow(unused_imports)]
 use crate::{
@@ -127,8 +127,25 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
     let player_profiles = get_player_profiles_for_game_code(short_unique_code)?;
 
     // debug!("filter profiles to extract nickname");
-    // let players = player_profiles.iter().map(|x| x.nickname.clone()).collect();
+    let players:Vec<String> = player_profiles.iter().map(|x| x.nickname.clone()).collect();
+    debug!("players: {:?}", players);
+    debug!("profiles {:?}", player_profiles);
     Ok(player_profiles) // or more Rust like: anchor.into())
+}
+
+#[hdk_extern]
+pub fn get_game_session_info(game_session_header_hash: HeaderHash)-> ExternResult<GameSessionInfo>{
+    //get game session
+    //get game round
+    let x = GameSessionInfo{
+        round_num:1,
+        current_round_hash:(),
+        entry_hash:(),
+        current_round_state:"IN_PROGESS".into(),  //FINISHED
+        resources_left:100,
+    };
+
+    Ok(x)
 }
 
 pub fn get_player_profiles_for_game_code(
@@ -161,10 +178,41 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
     debug!("anchor: {:?}",anchor);
     let players = get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
-    start_default_session(players)
+    start_default_session(players, anchor)
 }
 
-pub fn start_default_session(player_list: Vec<PlayerProfile>) -> ExternResult<HeaderHashB64> {
+#[hdk_extern]
+pub fn game_session_with_code_exists(game_code: String) -> ExternResult<String> {
+    let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
+    let linktag = LinkTag::new("GAME_SESSION");
+    let links: Links = get_links(anchor, Some(linktag))?;
+    debug!("links: {:?}", links);
+    if links.clone().into_inner().len() > 1 {  // TODO find alternative for clone to get len
+        return Err(WasmError::Guest(String::from("More than one link from anchor to game session. Should not happen.")))
+    }
+    let mut game_session_option:Option<GameSession> = None;
+    for link in links.into_inner() {
+        debug!("link: {:?}", link);
+        let element: Element = get(link.target, GetOptions::latest())?
+            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+        game_session_option = element.entry().to_app_option()?;
+
+    }
+
+    let gs: GameSession = match game_session_option {
+        Some(x) => x,
+        None => return Ok("STILL WAITING".into()),
+    };
+
+    match gs.status {
+        SessionState::InProgress => Ok("IN_PROGRESS".into()),
+        SessionState::Finished => Ok("FINISHED".into()),
+    }
+}
+
+
+
+pub fn start_default_session(player_list: Vec<PlayerProfile>, anchor:EntryHash) -> ExternResult<HeaderHashB64> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
@@ -174,9 +222,9 @@ pub fn start_default_session(player_list: Vec<PlayerProfile>) -> ExternResult<He
     };
     let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
     debug!("player agentpubkeys: {:?}", players);
-    let result = game_session::new_session(players, game_params);
-    debug!("new session created: {:?}", result);
-    match result {
+    let round_zero = game_session::new_session(players, game_params, anchor);
+    debug!("new session created: {:?}", round_zero);
+    match round_zero {
         Ok(hash) => Ok(HeaderHashB64::from(hash)),
         Err(error) => Err(error),
     }
@@ -188,13 +236,13 @@ pub fn start_default_session(player_list: Vec<PlayerProfile>) -> ExternResult<He
 // #[hdk_extern]
 // pub fn propose_new_session() -> ExternResult<HeaderHash> {}
 
-/// Function to call by the invite zome once all invites are taken care of
-/// and we can actually create the GameSession and start playing
-pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
-    let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
-    let game_params = input.game_params;
-    convert(game_session::new_session(players, game_params))
-}
+// /// Function to call by the invite zome once all invites are taken care of
+// /// and we can actually create the GameSession and start playing
+// pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
+//     let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
+//     let game_params = input.game_params;
+//     convert(game_session::new_session(players, game_params))
+// }
 
 // TODO: think of better naming to distinguish between sessions "as owner" and "as player"
 /// Function to list all game sessions that the caller has created
@@ -259,6 +307,15 @@ pub struct SignalTest {
 pub struct JoinGameInfo {
     pub gamecode: String,
     pub nickname: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
+pub struct GameSessionInfo {
+    pub entry_hash: HeaderHash,
+    pub round_num: i32,
+    pub resources_left: i32,
+    pub current_round_hash: HeaderHash,
+    pub current_round_state: String,
 }
 
 #[hdk_extern]

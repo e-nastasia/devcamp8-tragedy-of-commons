@@ -2,41 +2,38 @@
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
-import { bufferToBase64 } from "./utils";
+    import { bufferToBase64 } from "./utils";
 
     export let nickname = "Tixel";
     export let gamecode = "3KL54M";
-    export const action = "GAME_BEGIN";
+    export let action = "GAME_BEGIN";
 
     const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
-    
+
     async function refreshPlayerList() {
         const playerProfiles = await window.appClient.getPlayers(gamecode);
-		console.log("players", playerProfiles);
-        players  = playerProfiles;
+        console.log("players", playerProfiles);
+        players = playerProfiles;
     }
 
-
-
-    async function beginGame() {
-        const result = await window.appClient.startGame(gamecode);
-		console.log("game started", result);
-        const result1 = await refreshPlayerList();
-        game_status = "MAKE_MOVE";
+    async function play() {
+        console.log("action", action);
+        if (action == "GAME_BEGIN") {
+            let result = await window.appClient.startGame(gamecode);
+            console.log("game started", result);
+            game_status = "MAKE_MOVE";
+        } else if (action == "GAME_JOIN"){
+            console.log("check if game has been started");
+            let result = await window.appClient.checkGameStarted(gamecode);
+            console.log("game joined", result);
+            game_status = "MAKE_MOVE";
+        }
     }
-    
+
     let rounds = [];
     let _max_round_counter = 0;
-
-    function callZomeToMakeMove(resources) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve("resolved");
-            }, DELAY);
-        });
-    }
 
     // let last_round_state="IN PROGRESS";
 
@@ -45,11 +42,10 @@ import { bufferToBase64 } from "./utils";
         rounds = [...rounds, { num: _max_round_counter, hash: "round_hash" }];
 
         game_status = "WAIT_NEXT_ROUND";
-        let _resources = event.detail.resources;
-        // call holochain conductor
-        // wait for response
-        // move to other screen
-        const result = await callZomeToMakeMove(_resources);
+        let resources = event.detail.resources;
+        console.log("taking resources:", resources);
+        // (amount, prev_round_hash)
+        let result = await window.appClient.make(resources);
     }
 
     function roundComplete() {
@@ -137,7 +133,9 @@ import { bufferToBase64 } from "./utils";
 
 <div class="playerlist">
     {#each players as player, i}
-        <button>{player.nickname}<br />{bufferToBase64(player.player_id)}</button>
+        <button
+            >{player.nickname}<br />{bufferToBase64(player.player_id)}</button
+        >
     {/each}
 </div>
 
@@ -150,7 +148,7 @@ import { bufferToBase64 } from "./utils";
                 <a href="#" on:click={refreshPlayerList}>Refresh</a>
                 <br />
                 {#if players.length != 0}
-                    <button class="startgamebutton" on:click={beginGame}
+                    <button class="startgamebutton" on:click={play}
                         >Play!</button
                     >
                 {/if}
@@ -158,7 +156,7 @@ import { bufferToBase64 } from "./utils";
         </div>
     {:else}
         <div class="columncentered">
-                <a href="#" on:click={refreshPlayerList}>Refresh player list</a>
+            <a href="#" on:click={refreshPlayerList}>Refresh player list</a>
         </div>
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
@@ -250,5 +248,4 @@ import { bufferToBase64 } from "./utils";
     .playerlist button + button {
         margin-left: 1rem;
     }
-
 </style>

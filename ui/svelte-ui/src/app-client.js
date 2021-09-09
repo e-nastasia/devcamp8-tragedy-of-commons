@@ -87,6 +87,17 @@ export class AppClient {
         };
         return this.#appClient.callZome(params);
     }
+    async checkGameStarted(gameCode) {
+        const params = {
+            cap: null,
+            cell_id: this.#cellId,
+            zome_name: 'tragedy_of_commons',
+            fn_name: 'game_session_with_code_exists',
+            provenance: this.#agentPubKey,
+            payload: gameCode
+        };
+        return this.#appClient.callZome(params);
+    }
     async makeMove(amount, prev_round_hash) {
         const params = {
             cap: null,

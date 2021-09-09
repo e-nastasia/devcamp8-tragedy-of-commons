@@ -92,7 +92,7 @@ impl GameSession {
 /// Create a new GameSession with the confirmed players (who accepted their invites).
 /// NOTE: we're only creating session for those who accepted and only if there are at
 /// least two of them -- otherwise there won't be any turns.
-pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> ExternResult<HeaderHash> {
+pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:EntryHash) -> ExternResult<HeaderHash> {
     // TODO: get timestamp as systime
 
     info!("creating new game session");
@@ -122,48 +122,56 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams) -> Extern
         LinkTag::new(OWNER_SESSION_TAG),
     )?;
 
+    info!("linking game code anchor to game session");
+    // create link from session owner's address to the game session entry
+    create_link(
+        anchor.into(),
+        game_session_entry_hash.clone(),
+        LinkTag::new("GAME_SESSION"),
+    )?;
+
     // create links from all game players' addresses to the game session entry
     info!("linking participants to game session");
-    for p in players.iter() {
-        let agent_pub_key_player = p.clone();
-        let agent_pub_key_owner = agent_info_owner.agent_initial_pubkey.clone();
-        // skip the game creator
-        if agent_pub_key_player != agent_pub_key_owner
-            && agent_pub_key_player != agent_pub_key_owner
-        {
-            // Thanks to amazing @tatssato who shared this solution
-            // https://forum.holochain.org/t/problem-that-may-occur-when-creating-a-link-between-two-entries-when-the-said-entries-are-literally-just-created-in-the-dht/6316/2
-            // Below is his original comment and TODOs for the context:
-            // create_link() actually retrieves the entry of the base and target for validation.
-            // This means that create_link() may potentially fail if the entry is not found on the DHT.
-            // This especially can happen in this fn since the message_entry_hash received is of a
-            // freshly committed entry in DHT. To avoid the "dependency not held" error in create_link(),
-            // we wait here until the entry can be retrieved even before the create_link() is executed.
-            // https://forum.holochain.org/t/problem-that-may-occur-when-creating-a-link-between-two-entries-when-the-said-entries-are-literally-just-created-in-the-dht/6316/3
-            // TODO: use https://docs.rs/hdk/0.0.100/hdk/time/fn.sleep.html to lessen burden.
-            // TODO: refactor the flow of creating a link from an EntryHash received from the signal as
-            // the receiver of signal has no guarantee that the sender of signal succefully created the entry
-            debug!("================= Waiting to receive player's pub key: {:?}", agent_pub_key_player);
-            let mut player_entry: Option<Element> = None;
-            while let None = player_entry {
-                let options = GetOptions::content();
-                player_entry = get(agent_pub_key_player.clone(), options)?;
-            }
+    // for p in players.iter() {
+    //     let agent_pub_key_player = p.clone();
+    //     let agent_pub_key_owner = agent_info_owner.agent_initial_pubkey.clone();
+    //     // skip the game creator
+    //     if agent_pub_key_player != agent_pub_key_owner
+    //         && agent_pub_key_player != agent_pub_key_owner
+    //     {
+    //         // Thanks to amazing @tatssato who shared this solution
+    //         // https://forum.holochain.org/t/problem-that-may-occur-when-creating-a-link-between-two-entries-when-the-said-entries-are-literally-just-created-in-the-dht/6316/2
+    //         // Below is his original comment and TODOs for the context:
+    //         // create_link() actually retrieves the entry of the base and target for validation.
+    //         // This means that create_link() may potentially fail if the entry is not found on the DHT.
+    //         // This especially can happen in this fn since the message_entry_hash received is of a
+    //         // freshly committed entry in DHT. To avoid the "dependency not held" error in create_link(),
+    //         // we wait here until the entry can be retrieved even before the create_link() is executed.
+    //         // https://forum.holochain.org/t/problem-that-may-occur-when-creating-a-link-between-two-entries-when-the-said-entries-are-literally-just-created-in-the-dht/6316/3
+    //         // TODO: use https://docs.rs/hdk/0.0.100/hdk/time/fn.sleep.html to lessen burden.
+    //         // TODO: refactor the flow of creating a link from an EntryHash received from the signal as
+    //         // the receiver of signal has no guarantee that the sender of signal succefully created the entry
+    //         debug!("================= Waiting to receive player's pub key: {:?}", agent_pub_key_player);
+    //         let mut player_entry: Option<Element> = None;
+    //         while let None = player_entry {
+    //             let options = GetOptions::content();
+    //             player_entry = get(agent_pub_key_player.clone(), options)?;
+    //         }
 
-            debug!("================= Creating link to PARTICIPANT address {:?} from game session {:?}", agent_pub_key_player.clone(), game_session_entry_hash.clone());
-            create_link(
-                game_session_entry_hash.clone(),
-                agent_pub_key_player.clone().into(),
-                LinkTag::new(PARTICIPANT_SESSION_TAG),
-            )?;
+    //         debug!("================= Creating link to PARTICIPANT address {:?} from game session {:?}", agent_pub_key_player.clone(), game_session_entry_hash.clone());
+    //         create_link(
+    //             game_session_entry_hash.clone(),
+    //             agent_pub_key_player.clone().into(),
+    //             LinkTag::new(PARTICIPANT_SESSION_TAG),
+    //         )?;
 
-            create_link(
-                agent_pub_key_player.into(),
-                game_session_entry_hash.clone(),
-                LinkTag::new(PARTICIPANT_SESSION_TAG),
-            )?;
-        }
-    }
+    //         create_link(
+    //             agent_pub_key_player.into(),
+    //             game_session_entry_hash.clone(),
+    //             LinkTag::new(PARTICIPANT_SESSION_TAG),
+    //         )?;
+    //     }
+    // }
 
     // create game round results for round 0
     // this is starting point for all the game moves of round 1 to reference (implicit link)

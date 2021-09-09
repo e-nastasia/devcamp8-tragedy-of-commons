@@ -5,12 +5,11 @@
 
 
     function makeMove(event){
-        // event.preventDefault();
+        event.preventDefault();
         let input = document.getElementById("input_take_resources").value;
         dispatch('makeMove', {
 			resources: input
 		});
-        // dispatch('executeMove');
     }
 </script>
 

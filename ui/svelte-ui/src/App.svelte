@@ -32,15 +32,7 @@
 		}
 	}
 
-	async function asyncCallZomeToStartNewGame() {
-		// call holochain conductor
-		// wait for response
-		// move to other screen
-		const result = await callZomeToStartNewGame();
-		status = "GAME_BEGIN";
-	}
-
-	function joinGame(event) {
+	async function joinGame(event) {
 		if (status === "LOADING") {
 			return;
 		}
@@ -48,16 +40,6 @@
 		nickname = event.detail.nickname;
 		gamecode = event.detail.gamecode;
 		console.log("nick and code: ", nickname, gamecode)
-		// call holochain conductor
-		// wait for response
-		// move to other screen
-		asyncCallZomeToJoinGame(gamecode);
-	}
-
-	async function asyncCallZomeToJoinGame() {
-		// call holochain conductor
-		// wait for response
-		// move to other screen
 		console.log("gamecode", gamecode)
 		const result = await window.appClient.joinGame(gamecode, nickname);
 		console.log("joingame",result);
