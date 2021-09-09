@@ -9,6 +9,7 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 use utils::{entry_from_element_create_or_update};
 
+use crate::{utils::entry_hash_from_element};
 #[allow(unused_imports)]
 use crate::{
     game_move::GameMoveInput,
@@ -133,18 +134,33 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
     Ok(player_profiles) // or more Rust like: anchor.into())
 }
 
-#[hdk_extern]
-pub fn get_game_session_info(game_session_header_hash: HeaderHash)-> ExternResult<GameSessionInfo>{
-    //get game session
-    //get game round
-    let x = GameSessionInfo{
-        round_num:1,
-        current_round_hash:(),
-        entry_hash:(),
-        current_round_state:"IN_PROGESS".into(),  //FINISHED
-        resources_left:100,
-    };
+#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
+pub struct GameRoundInfo {
+    pub round_num: u32,
+    pub resources_left: Option<i32>,
+    pub current_round_header_hash: HeaderHash,
+    pub current_round_state: String,
+}
 
+#[hdk_extern]
+pub fn current_round_info(game_round_header_hash: HeaderHash)-> ExternResult<GameRoundInfo>{
+    //get latest update for game round
+    let result = game_round::get_latest_round(game_round_header_hash)?;
+    let round = result.0;
+    let hash = result.1;
+    let mut round_state:String = "IN_PROGRESS".into();
+    let mut resources:Option<i32> = None;
+
+    if round.game_moves.len() == 0 {
+        round_state = "FINISHED".into();
+        resources = Some(round.round_state.resource_amount)
+    }
+    let x = GameRoundInfo{
+        round_num:round.round_num,
+        current_round_header_hash:hash,
+        current_round_state: round_state,
+        resources_left:resources,
+    };
     Ok(x)
 }
 
@@ -182,32 +198,46 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
 }
 
 #[hdk_extern]
-pub fn game_session_with_code_exists(game_code: String) -> ExternResult<String> {
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
     let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
-    let linktag = LinkTag::new("GAME_SESSION");
-    let links: Links = get_links(anchor, Some(linktag))?;
-    debug!("links: {:?}", links);
-    if links.clone().into_inner().len() > 1 {  // TODO find alternative for clone to get len
-        return Err(WasmError::Guest(String::from("More than one link from anchor to game session. Should not happen.")))
-    }
-    let mut game_session_option:Option<GameSession> = None;
-    for link in links.into_inner() {
+    let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
+    let links_vec = links.into_inner();
+    debug!("links: {:?}", &links_vec);
+
+    if links_vec.len() > 0 {
+        if links_vec.len() > 1 {  
+            // TODO find alternative for clone to get len
+            return Err(WasmError::Guest(String::from("More than one link from anchor to game session. Should not happen.")))
+        }
+        // should be only one link
+        let link = &links_vec[0];
+        
         debug!("link: {:?}", link);
-        let element: Element = get(link.target, GetOptions::latest())?
+        let element: Element = get(link.target.clone(), GetOptions::latest())?
+        .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+        
+        let game_session_header_hash:&EntryHash = entry_hash_from_element(&element)?;
+        
+        let round_links: Links = get_links(game_session_header_hash.clone(), Some(LinkTag::new("GAME_ROUND")))?;
+        let round_links_vec = round_links.into_inner();
+        
+        if round_links_vec.len() > 0 {
+            if round_links_vec.len() > 1 {  
+                // TODO find alternative for clone to get len
+                return Err(WasmError::Guest(String::from("More than one link from game session to game round. Should not happen.")))
+            };
+            // should be only one link
+            let link = &round_links_vec[0];
+            let element: Element = get(link.target.clone(), GetOptions::latest())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-        game_session_option = element.entry().to_app_option()?;
-
+            
+            let game_round_entry_hash:&EntryHash = entry_hash_from_element(&element)?;
+            return Ok(Some(game_round_entry_hash.clone()))
+        } 
     }
-
-    let gs: GameSession = match game_session_option {
-        Some(x) => x,
-        None => return Ok("STILL WAITING".into()),
-    };
-
-    match gs.status {
-        SessionState::InProgress => Ok("IN_PROGRESS".into()),
-        SessionState::Finished => Ok("FINISHED".into()),
-    }
+    
+    // in this case the game lead has not yet started the game session
+    Ok(None)
 }
 
 
@@ -289,15 +319,6 @@ pub struct SignalTest {
 pub struct JoinGameInfo {
     pub gamecode: String,
     pub nickname: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
-pub struct GameSessionInfo {
-    pub entry_hash: HeaderHash,
-    pub round_num: i32,
-    pub resources_left: i32,
-    pub current_round_hash: HeaderHash,
-    pub current_round_state: String,
 }
 
 #[hdk_extern]

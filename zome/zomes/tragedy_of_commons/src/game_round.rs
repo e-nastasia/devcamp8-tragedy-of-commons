@@ -2,7 +2,7 @@ use crate::game_move::GameMove;
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
-use crate::types::{PlayerStats, ReputationAmount, ResourceAmount};
+use crate::types::{PlayerStats, ResourceAmount};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
 };
@@ -10,8 +10,6 @@ use hdk::prelude::*;
 use holo_hash::*;
 use std::collections::HashMap;
 use std::vec;
-
-const NO_REPUTATION: ReputationAmount = 0;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoundState {
@@ -82,11 +80,11 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats dd
-    let mut stats: HashMap<AgentPubKey, (ResourceAmount, ReputationAmount)> = HashMap::new();
+    let mut stats: HashMap<AgentPubKey, ResourceAmount> = HashMap::new();
     for p in player_moves.iter() {
         let a = p.owner.clone();
-        let tuple: (ResourceAmount, ReputationAmount) = (p.resources, NO_REPUTATION);
-        stats.insert(a, tuple);
+        let r: ResourceAmount = p.resources;
+        stats.insert(a, r);
     }
     info!("total_leftover_resource : {:?}", total_leftover_resource);
 
@@ -94,6 +92,21 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
         resource_amount: total_leftover_resource,
         player_stats: stats,
     }
+}
+
+pub(crate) fn get_latest_round(header_hash:HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
+    info!("fetching element from DHT");
+    debug!(
+        "headerhash previous round: {:?}",
+        HeaderHashB64::from(header_hash.clone())
+    );
+    let round_element = match get(header_hash, GetOptions::latest())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Round not found".into())),
+    };
+    debug!("extracting game round from element");
+    let last_round: GameRound = entry_from_element_create_or_update(&round_element)?;
+    Ok((last_round, round_element.header_address().clone()))
 }
 
 // NOTE: game round is always created once players made their moves, so every round is always
@@ -1134,3 +1147,5 @@ mod tests {
 
 
 }
+
+

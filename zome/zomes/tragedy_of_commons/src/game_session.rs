@@ -4,7 +4,6 @@ use crate::utils::{entry_from_element_create_or_update, entry_hash_from_element}
 use crate::PlayerProfile;
 use crate::{
     game_round::{GameRound, RoundState},
-    types::ReputationAmount,
     utils::convert_keys_from_b64,
 };
 
@@ -146,6 +145,8 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:En
     );
     let header_hash_round_zero = create_entry(&round_zero)?;
     let entry_hash_round_zero = hash_entry(&round_zero)?;
+
+    create_link(game_session_entry_hash, entry_hash_round_zero, LinkTag::new("GAME_ROUND"));
 
     // use remote signals from RSM to send a real-time notif to invited players
     //  ! using remote signal to ping other holochain backends, instead of emit_signal

@@ -87,12 +87,12 @@ export class AppClient {
         };
         return this.#appClient.callZome(params);
     }
-    async checkGameStarted(gameCode) {
+    async currentRoundForGameCode(gameCode) {
         const params = {
             cap: null,
             cell_id: this.#cellId,
             zome_name: 'tragedy_of_commons',
-            fn_name: 'game_session_with_code_exists',
+            fn_name: 'current_round_for_game_code',
             provenance: this.#agentPubKey,
             payload: gameCode
         };

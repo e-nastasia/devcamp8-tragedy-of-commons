@@ -21,16 +21,24 @@
     async function play() {
         console.log("action", action);
         if (action == "GAME_BEGIN") {
-            let result = await window.appClient.startGame(gamecode);
-            console.log("game started", result);
+            current_round_hash = await window.appClient.startGame(gamecode);
+            console.log("game started", current_round_hash);
             game_status = "MAKE_MOVE";
-        } else if (action == "GAME_JOIN"){
+        } else if (action == "GAME_JOIN") {
             console.log("check if game has been started");
-            let result = await window.appClient.checkGameStarted(gamecode);
-            console.log("game joined", result);
-            game_status = "MAKE_MOVE";
+            let result = await window.appClient.currentRoundForGameCode(gamecode);
+            if (!result) {
+                alert("Still waiting on other players");
+            } else {
+                // get current round hash
+                console.log("game joined", result);
+                current_round_hash = result;
+                game_status = "MAKE_MOVE";
+            }
         }
     }
+
+    export let current_round_hash;
 
     let rounds = [];
     let _max_round_counter = 0;
@@ -45,7 +53,7 @@
         let resources = event.detail.resources;
         console.log("taking resources:", resources);
         // (amount, prev_round_hash)
-        let result = await window.appClient.make(resources);
+        let result = await window.appClient.makeMove(resources, current_round_hash);
     }
 
     function roundComplete() {
