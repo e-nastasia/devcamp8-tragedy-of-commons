@@ -105,3 +105,11 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
     
     Ok(ValidateCallbackResult::Valid)
 }
+
+pub fn validate_update_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from("Can't update GameMove entry")))
+}
+
+pub fn validate_delete_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    Ok(ValidateCallbackResult::Invalid(String::from("Can't delete GameMove entry")))
+}
