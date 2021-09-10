@@ -4,7 +4,7 @@ use crate::game_session::{
 };
 use crate::types::{PlayerStats, ResourceAmount};
 use crate::utils::{
-    convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
+    convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_header_and_entry
 };
 use hdk::prelude::*;
 use holo_hash::*;
@@ -318,6 +318,26 @@ fn end_game(
 fn get_all_round_moves(round_entry_hash: EntryHash) {
     unimplemented!();
 }
+
+pub fn validate_update_entry_game_round(data: ValidateData) -> ExternResult<ValidateCallbackResult>
+{
+    // todo: retrieve previous entry in the update chain
+    let game_round: GameRound = data
+        .element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest(
+            "Trying to validate an entry that's not a GameRound".into(),
+        ))?;
+    let game_session = must_get_header_and_entry::<GameSession>(
+        game_round.session
+    )?;
+    if game_round.round_num > game_session.game_params.num_rounds {
+        return Ok(ValidateCallbackResult::Invalid(format!("Can't create GameRound number {} because GameSession only has {} rounds", game_round.round_num, game_session.game_params.num_rounds)));
+    }
+    Ok(ValidateCallbackResult::Valid)
+}
+
 
 #[cfg(test)]
 #[rustfmt::skip]   // skipping formatting is needed, because to correctly import fixt we needed "use ::fixt::prelude::*;" which rustfmt does not like
