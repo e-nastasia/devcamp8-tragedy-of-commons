@@ -1,22 +1,19 @@
-use game_move::GameMove;
-use game_session::GameParams;
-// use game_session::GameSession;
 #[allow(unused_imports)]
 use hdk::prelude::*;
 #[allow(unused)]
 use holo_hash::*;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use utils::entry_from_element_create_or_update;
 
-use crate::utils::entry_hash_from_element;
 #[allow(unused_imports)]
 use crate::{
-    game_move::GameMoveInput,
+    game_move::{GameMove, GameMoveInput},
+    game_round::GameRoundInfo,
     game_session::{
-        GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload, OWNER_SESSION_TAG,
-        PARTICIPANT_SESSION_TAG,
+        GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
+        OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
     },
+    utils::{convert, entry_from_element_create_or_update},
 };
 mod error;
 #[allow(unused_imports)]
@@ -134,34 +131,9 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
     Ok(player_profiles) // or more Rust like: anchor.into())
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
-pub struct GameRoundInfo {
-    pub round_num: u32,
-    pub resources_left: Option<i32>,
-    pub current_round_header_hash: HeaderHash,
-    pub current_round_state: String,
-}
-
 #[hdk_extern]
 pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
-    //get latest update for game round
-    let result = game_round::get_latest_round(game_round_header_hash)?;
-    let round = result.0;
-    let hash = result.1;
-    let mut round_state: String = "IN_PROGRESS".into();
-    let mut resources: Option<i32> = None;
-
-    if round.game_moves.len() == 0 {
-        round_state = "FINISHED".into();
-        resources = Some(round.round_state.resource_amount)
-    }
-    let x = GameRoundInfo {
-        round_num: round.round_num,
-        current_round_header_hash: hash,
-        current_round_state: round_state,
-        resources_left: resources,
-    };
-    Ok(x)
+    game_round::current_round_info(game_round_header_hash)
 }
 
 pub fn get_player_profiles_for_game_code(
@@ -198,52 +170,7 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
 
 #[hdk_extern]
 pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
-    let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
-    let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
-    let links_vec = links.into_inner();
-    debug!("links: {:?}", &links_vec);
-
-    if links_vec.len() > 0 {
-        if links_vec.len() > 1 {
-            // TODO find alternative for clone to get len
-            return Err(WasmError::Guest(String::from(
-                "More than one link from anchor to game session. Should not happen.",
-            )));
-        }
-        // should be only one link
-        let link = &links_vec[0];
-
-        debug!("link: {:?}", link);
-        let element: Element = get(link.target.clone(), GetOptions::latest())?
-            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-
-        let game_session_header_hash: &EntryHash = entry_hash_from_element(&element)?;
-
-        let round_links: Links = get_links(
-            game_session_header_hash.clone(),
-            Some(LinkTag::new("GAME_ROUND")),
-        )?;
-        let round_links_vec = round_links.into_inner();
-
-        if round_links_vec.len() > 0 {
-            if round_links_vec.len() > 1 {
-                // TODO find alternative for clone to get len
-                return Err(WasmError::Guest(String::from(
-                    "More than one link from game session to game round. Should not happen.",
-                )));
-            };
-            // should be only one link
-            let link = &round_links_vec[0];
-            let element: Element = get(link.target.clone(), GetOptions::latest())?
-                .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-
-            let game_round_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
-            return Ok(Some(game_round_entry_hash.clone()));
-        }
-    }
-
-    // in this case the game lead has not yet started the game session
-    Ok(None)
+    game_round::current_round_for_game_code(game_code)
 }
 
 pub fn start_default_session(
@@ -281,7 +208,6 @@ pub fn start_default_session(
 //     convert(game_session::new_session(players, game_params))
 // }
 
-// TODO: think of better naming to distinguish between sessions "as owner" and "as player"
 /// Function to list all game sessions that the caller has created
 #[hdk_extern]
 pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
@@ -292,7 +218,6 @@ pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSessi
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
-    //TODO convert
     convert(game_move::new_move(
         input.resource_amount,
         input.previous_round.into(),
@@ -304,15 +229,7 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
 /// will close it if it's possible. If not, it will return None
 #[hdk_extern]
 pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<HeaderHashB64> {
-    // TODO: this should probably go to the game_round.rs instead
     convert(game_round::try_to_close_round(prev_round_hash.into()))
-}
-
-fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHashB64> {
-    match result {
-        Ok(hash) => return Ok(HeaderHashB64::from(hash)),
-        Err(error) => return Err(error),
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]

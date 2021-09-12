@@ -3,7 +3,7 @@ use crate::{
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
     utils::{
-        convert_keys_from_b64, entry_hash_from_element, must_get_header_and_entry,
+        convert, convert_keys_from_b64, entry_hash_from_element, must_get_header_and_entry,
         try_get_and_convert,
     },
 };

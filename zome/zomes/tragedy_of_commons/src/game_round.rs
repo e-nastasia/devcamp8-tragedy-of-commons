@@ -27,6 +27,14 @@ pub struct GameRound {
     pub game_moves: Vec<EntryHash>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
+pub struct GameRoundInfo {
+    pub round_num: u32,
+    pub resources_left: Option<i32>,
+    pub current_round_header_hash: HeaderHash,
+    pub current_round_state: String,
+}
+
 impl RoundState {
     /// Creates a new RoundState instance with the provided input
     pub fn new(resource_amount: ResourceAmount, player_stats: PlayerStats) -> RoundState {
@@ -312,6 +320,76 @@ fn end_game(
     debug!("sending signal to {:?}", game_session.players.clone());
 
     Ok(game_session_header_hash_update.clone())
+}
+
+pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
+    //get latest update for game round
+    let result = get_latest_round(game_round_header_hash)?;
+    let round = result.0;
+    let hash = result.1;
+    let mut round_state: String = "IN_PROGRESS".into();
+    let mut resources: Option<i32> = None;
+
+    if round.game_moves.len() == 0 {
+        round_state = "FINISHED".into();
+        resources = Some(round.round_state.resource_amount)
+    }
+    let x = GameRoundInfo {
+        round_num: round.round_num,
+        current_round_header_hash: hash,
+        current_round_state: round_state,
+        resources_left: resources,
+    };
+    Ok(x)
+}
+
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
+    let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
+    let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
+    let links_vec = links.into_inner();
+    debug!("links: {:?}", &links_vec);
+
+    if links_vec.len() > 0 {
+        if links_vec.len() > 1 {
+            // TODO find alternative for clone to get len
+            return Err(WasmError::Guest(String::from(
+                "More than one link from anchor to game session. Should not happen.",
+            )));
+        }
+        // should be only one link
+        let link = &links_vec[0];
+
+        debug!("link: {:?}", link);
+        let element: Element = get(link.target.clone(), GetOptions::latest())?
+            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+
+        let game_session_header_hash: &EntryHash = entry_hash_from_element(&element)?;
+
+        let round_links: Links = get_links(
+            game_session_header_hash.clone(),
+            Some(LinkTag::new("GAME_ROUND")),
+        )?;
+        let round_links_vec = round_links.into_inner();
+
+        if round_links_vec.len() > 0 {
+            if round_links_vec.len() > 1 {
+                // TODO find alternative for clone to get len
+                return Err(WasmError::Guest(String::from(
+                    "More than one link from game session to game round. Should not happen.",
+                )));
+            };
+            // should be only one link
+            let link = &round_links_vec[0];
+            let element: Element = get(link.target.clone(), GetOptions::latest())?
+                .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+
+            let game_round_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
+            return Ok(Some(game_round_entry_hash.clone()));
+        }
+    }
+
+    // in this case the game lead has not yet started the game session
+    Ok(None)
 }
 
 // Retrieves all available game moves made in a certain round, where entry_hash identifies
