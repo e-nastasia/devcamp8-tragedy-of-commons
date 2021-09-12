@@ -91,7 +91,11 @@ impl GameSession {
 /// Create a new GameSession with the confirmed players (who accepted their invites).
 /// NOTE: we're only creating session for those who accepted and only if there are at
 /// least two of them -- otherwise there won't be any turns.
-pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:EntryHash) -> ExternResult<HeaderHash> {
+pub fn new_session(
+    players: Vec<AgentPubKey>,
+    game_params: GameParams,
+    anchor: EntryHash,
+) -> ExternResult<HeaderHash> {
     // TODO: get timestamp as systime
 
     info!("creating new game session");
@@ -146,7 +150,11 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:En
     let header_hash_round_zero = create_entry(&round_zero)?;
     let entry_hash_round_zero = hash_entry(&round_zero)?;
 
-    create_link(game_session_entry_hash, entry_hash_round_zero, LinkTag::new("GAME_ROUND"));
+    create_link(
+        game_session_entry_hash,
+        entry_hash_round_zero,
+        LinkTag::new("GAME_ROUND"),
+    );
 
     // use remote signals from RSM to send a real-time notif to invited players
     //  ! using remote signal to ping other holochain backends, instead of emit_signal

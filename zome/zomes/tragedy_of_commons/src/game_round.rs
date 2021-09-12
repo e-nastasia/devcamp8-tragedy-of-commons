@@ -4,7 +4,8 @@ use crate::game_session::{
 };
 use crate::types::{PlayerStats, ResourceAmount};
 use crate::utils::{
-    convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_header_and_entry
+    convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
+    must_get_header_and_entry,
 };
 use hdk::prelude::*;
 use holo_hash::*;
@@ -94,7 +95,7 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
     }
 }
 
-pub(crate) fn get_latest_round(header_hash:HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
+pub(crate) fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
     info!("fetching element from DHT");
     debug!(
         "headerhash previous round: {:?}",
@@ -319,8 +320,9 @@ fn get_all_round_moves(round_entry_hash: EntryHash) {
     unimplemented!();
 }
 
-pub fn validate_update_entry_game_round(data: ValidateData) -> ExternResult<ValidateCallbackResult>
-{
+pub fn validate_update_entry_game_round(
+    data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
     let game_round: GameRound = data
         .element
         .entry()
@@ -328,34 +330,35 @@ pub fn validate_update_entry_game_round(data: ValidateData) -> ExternResult<Vali
         .ok_or(WasmError::Guest(
             "Trying to validate an entry that's not a GameRound".into(),
         ))?;
-    let game_session = must_get_header_and_entry::<GameSession>(
-        game_round.session
-    )?;
+    let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
     if game_round.round_num > game_session.game_params.num_rounds {
-        return Ok(ValidateCallbackResult::Invalid(format!("Can't create GameRound number {} because GameSession only has {} rounds", game_round.round_num, game_session.game_params.num_rounds)));
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "Can't create GameRound number {} because GameSession only has {} rounds",
+            game_round.round_num, game_session.game_params.num_rounds
+        )));
     }
 
     // todo: retrieve previous entry in the update chain
-    let update_header = data
-    .element
-    .header();
-    
+    let update_header = data.element.header();
+
     match update_header {
         Header::Update(update_data) => {
-            let prev_entry = must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
+            let prev_entry =
+                must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
             if (prev_entry.round_num + 1) != game_round.round_num {
                 return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
             }
-        },
+        }
         _ => {
             // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
-            return Ok(ValidateCallbackResult::Invalid(String::from("GameRound's element has the wrong header: expected Update")));
+            return Ok(ValidateCallbackResult::Invalid(String::from(
+                "GameRound's element has the wrong header: expected Update",
+            )));
         }
     }
 
     Ok(ValidateCallbackResult::Valid)
 }
-
 
 #[cfg(test)]
 #[rustfmt::skip]   // skipping formatting is needed, because to correctly import fixt we needed "use ::fixt::prelude::*;" which rustfmt does not like
@@ -1185,5 +1188,3 @@ mod tests {
 
 
 }
-
-
