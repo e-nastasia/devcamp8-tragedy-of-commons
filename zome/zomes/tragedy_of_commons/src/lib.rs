@@ -13,6 +13,7 @@ use crate::{
         GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
         OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
     },
+    player_profile::PlayerProfile,
     utils::{convert, entry_from_element_create_or_update},
 };
 mod error;
@@ -28,6 +29,7 @@ mod game_round;
 #[allow(dead_code)]
 #[allow(unused)]
 mod game_session;
+mod player_profile;
 mod types;
 mod utils;
 
@@ -42,7 +44,7 @@ entry_defs![
     game_round::GameRound::entry_def(),
     game_move::GameMove::entry_def(),
     game_session::GameScores::entry_def(),
-    PlayerProfile::entry_def()
+    player_profile::PlayerProfile::entry_def()
 ];
 
 // give unrestricted access to recv_remote_signal, which is needed for sending remote signals
@@ -83,13 +85,6 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
     }
 }
 
-#[hdk_entry(id = "player_profile", visibility = "public")]
-#[derive(Clone)]
-pub struct PlayerProfile {
-    pub player_id: AgentPubKey,
-    pub nickname: String,
-}
-
 #[hdk_extern]
 pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryHashB64> {
     let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
@@ -119,16 +114,7 @@ pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
 
 #[hdk_extern]
 pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<PlayerProfile>> {
-    // Ok(vec!["Anipur".into(), "Bob".into()]);
-
-    debug!("get profiles");
-    let player_profiles = get_player_profiles_for_game_code(short_unique_code)?;
-
-    // debug!("filter profiles to extract nickname");
-    let players: Vec<String> = player_profiles.iter().map(|x| x.nickname.clone()).collect();
-    debug!("players: {:?}", players);
-    debug!("profiles {:?}", player_profiles);
-    Ok(player_profiles) // or more Rust like: anchor.into())
+    player_profile::get_players_for_game_code(short_unique_code)
 }
 
 #[hdk_extern]
@@ -136,34 +122,13 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
     game_round::current_round_info(game_round_header_hash)
 }
 
-pub fn get_player_profiles_for_game_code(
-    short_unique_code: String,
-) -> ExternResult<Vec<PlayerProfile>> {
-    let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
-    debug!("anchor: {:?}", anchor);
-    let links: Links = get_links(anchor, None)?;
-    debug!("links: {:?}", links);
-    let mut players = vec![];
-    for link in links.into_inner() {
-        debug!("link: {:?}", link);
-        let element: Element = get(link.target, GetOptions::default())?
-            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-        let entry_option = element.entry().to_app_option()?;
-        let entry: PlayerProfile = entry_option.ok_or(WasmError::Guest(
-            "The targeted entry is not agent pubkey".into(),
-        ))?;
-        players.push(entry);
-    }
-
-    Ok(players) // or more Rust like: anchor.into())
-}
-
-/// Placeholder function that can be called from UI/test, until invitation zoom is added.
+/// Creates GameSession with the game_code and game_params
+// TODO(e-nastasia): actually add game_params to be used for creation
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
     let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
     debug!("anchor: {:?}", anchor);
-    let players = get_player_profiles_for_game_code(game_code)?;
+    let players = player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
     start_default_session(players, anchor)
 }
