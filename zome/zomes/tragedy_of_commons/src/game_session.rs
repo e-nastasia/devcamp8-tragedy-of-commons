@@ -104,6 +104,7 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:En
         game_params: game_params,
         players: players.clone(),
         scores: PlayerStats::new(),
+        //anchor: EntryHash,
     };
     let game_session_header_hash = create_entry(&game_session)?;
     let game_session_entry_hash = hash_entry(&game_session)?;

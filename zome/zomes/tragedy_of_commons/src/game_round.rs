@@ -1,3 +1,4 @@
+use crate::GameRoundInfo;
 use crate::game_move::GameMove;
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
@@ -166,7 +167,7 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
     info!("fetching links to game moves");
     let links = get_links(
         entry_hash_from_element(&last_round_element)?.to_owned(),
-        Some(LinkTag::new("game_move")),
+        Some(LinkTag::new("GAME_MOVE")),
     )?;
     let mut moves: Vec<GameMove> = vec![];
     for link in links.into_inner() {
@@ -213,6 +214,99 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<HeaderHas
     }
 }
 
+pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
+    //previous round
+    info!("fetching element with previous round from DHT");
+    debug!(
+        "headerhash previous round: {:?}",
+        HeaderHashB64::from(last_round_hash.clone())
+    );
+    let last_round_element = match get(last_round_hash.clone(), GetOptions::latest())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Previous round not found".into())),
+    };
+    debug!("extracting game round from element");
+    let last_round: GameRound = entry_from_element_create_or_update(&last_round_element)?;
+
+    // game session
+    info!("fetching element with game session from DHT, trying locally first");
+    let game_session_element = match get(last_round.session.clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Game session not found".into())),
+    };
+    debug!("extracting game session from element");
+    let game_session: GameSession = entry_from_element_create_or_update(&game_session_element)?;
+
+    // game moves
+    info!("fetching links to game moves");
+    let links = get_links(
+        entry_hash_from_element(&last_round_element)?.to_owned(),
+        Some(LinkTag::new("GAME_MOVE")),
+    )?;
+    let mut moves: Vec<GameMove> = vec![];
+    for link in links.into_inner() {
+        debug!("fetching game move element, trying locally first");
+        let game_move_element = match get(link.target.clone(), GetOptions::latest())? {
+            Some(element) => element,
+            None => return Err(WasmError::Guest("Game move not found".into())),
+        };
+        let game_move: GameMove = entry_from_element_create_or_update(&game_move_element)?;
+        moves.push(game_move);
+    }
+
+    let b = missing_moves(&moves, game_session.players.len());
+    if (b) {
+
+        return Ok(GameRoundInfo{
+            current_round_header_hash: Some(last_round_hash),
+            game_session_hash: Some(game_session_element.header_address().clone()),
+            resources_left: Some(last_round.round_state.resource_amount),
+            round_num: last_round.round_num,
+            next_action: "WAITING".into(),
+            // add anonymous moves list
+        })
+        // existing hashes + next action
+    }
+    info!("all players made their moves: calculating round state");
+    let round_state = calculate_round_state(&game_session.game_params, moves);
+
+    // TODO: add check here that we're creating a new round only if
+    // it's num is < game.num_rounds, so that we don't accidentally create more rounds
+    // than are supposed to be in the game
+    if start_new_round(&game_session, &last_round, &round_state) {
+        let hash = create_new_round(
+            &game_session,
+            &last_round,
+            last_round_element.header_address(),
+            &round_state,
+        )?;
+        Ok(GameRoundInfo{
+            current_round_header_hash: Some(hash),
+            game_session_hash: None,
+            resources_left: Some(round_state.resource_amount),
+            round_num: 3,
+            next_action: "START_NEXT_ROUND".into(),
+        })
+        //round_hash + next action
+    } else {
+        let hash = end_game(
+            &game_session,
+            &game_session_element.header_address(),
+            &last_round,
+            last_round_element.header_address(),
+            &round_state,
+        )?;
+        Ok(GameRoundInfo{
+            current_round_header_hash: None,
+            game_session_hash: Some(hash),
+            resources_left: Some(round_state.resource_amount),
+            round_num: last_round.round_num,
+            next_action: "SHOW_GAME_RESULTS".into(),
+        })
+        //game_session_hash + next action
+    }
+}
+
 fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
     info!("checking number of moves");
     debug!("moves list #{:?}", moves);
@@ -223,7 +317,7 @@ fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
         info!("Cannot close round: wait until all moves are made");
         debug!(
             "number of moves found: #{:?}",
-            number_of_players - moves.len()
+            moves.len()
         );
         return true;
     };
@@ -489,7 +583,7 @@ mod tests {
         let link_to_move_alice_round1 = Link {
             target: move_alice_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_alice_round1_link_header_hash.into(),
         };
         let game_moves: Links = vec![link_to_move_alice_round1].into();
@@ -656,7 +750,7 @@ mod tests {
         let link_to_move_alice_round1 = Link {
             target: move_alice_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_alice_round1_link_header_hash.into(),
         };
 
@@ -664,7 +758,7 @@ mod tests {
         let link_to_move_bob_round1 = Link {
             target: move_bob_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_bob_round1_link_header_hash.into(),
         };
         let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();
@@ -846,7 +940,7 @@ mod tests {
         let link_to_move_alice_round1 = Link {
             target: move_alice_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_alice_round1_link_header_hash.into(),
         };
 
@@ -854,7 +948,7 @@ mod tests {
         let link_to_move_bob_round1 = Link {
             target: move_bob_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_bob_round1_link_header_hash.into(),
         };
         let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();
@@ -1064,7 +1158,7 @@ mod tests {
         let link_to_move_alice_round1 = Link {
             target: move_alice_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_alice_round1_link_header_hash.into(),
         };
 
@@ -1072,7 +1166,7 @@ mod tests {
         let link_to_move_bob_round1 = Link {
             target: move_bob_round1_entry_hash.clone(),
             timestamp: Timestamp::from(chrono::offset::Utc::now()),
-            tag: LinkTag::new("game_move"),
+            tag: LinkTag::new("GAME_MOVE"),
             create_link_hash: move_bob_round1_link_header_hash.into(),
         };
         let game_moves: Links = vec![link_to_move_alice_round1, link_to_move_bob_round1].into();

@@ -98,6 +98,17 @@ export class AppClient {
         };
         return this.#appClient.callZome(params);
     }
+    async currentRoundInfoForHeaderHash(headerHash) {
+        const params = {
+            cap: null,
+            cell_id: this.#cellId,
+            zome_name: 'tragedy_of_commons',
+            fn_name: 'current_round_info',
+            provenance: this.#agentPubKey,
+            payload: headerHash
+        };
+        return this.#appClient.callZome(params);
+    }
     async makeMove(amount, prev_round_hash) {
         const params = {
             cap: null,
@@ -105,7 +116,7 @@ export class AppClient {
             zome_name: 'tragedy_of_commons',
             fn_name: 'make_new_move',
             provenance: this.#agentPubKey,
-            payload: { resource_amount: amount, previous_round: prev_round_hash }
+            payload: { resource_amount: parseInt(amount), previous_round: prev_round_hash }
         };
         return this.#appClient.callZome(params);
     }

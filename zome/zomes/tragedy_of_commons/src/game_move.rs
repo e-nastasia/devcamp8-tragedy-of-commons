@@ -23,7 +23,7 @@ pub struct GameMoveInput {
     // NOTE: if we're linking all moves to the round, this can never be None
     // as we'll need a base for the link. Instead moves for the round 0 could be
     // linked directly from the game session.
-    pub previous_round: HeaderHashB64,
+    pub previous_round: HeaderHash,
 }
 
 /*
@@ -49,6 +49,7 @@ pub fn new_move(
     round_header_hash: HeaderHash,
 ) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
+    debug!("current round: {:?} amount: {:?}", round_header_hash, resource_amount);
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
         resources: resource_amount,
@@ -61,16 +62,18 @@ pub fn new_move(
         Some(element) => element,
         None => return Err(WasmError::Guest("Round not found".into())),
     };
+    let entry_hash_game_round = entry_hash_from_element(&game_round_element)?.to_owned();
+    debug!("link move {:?} to round {:?}", &game_move, entry_hash_game_round.clone());
 
     let header_hash_link = create_link(
-        entry_hash_from_element(&game_round_element)?.to_owned(),
+        entry_hash_game_round,
         entry_hash_game_move.clone(),
-        LinkTag::new("game_move"),
+        LinkTag::new("GAME_MOVE"),
     )?;
     // todo: (if we're making a link from round to move) make a link round -> move
     // note: instead of calling try_to_close_Round right here, we can have a UI make
     // this call for us. This way making a move wouldn't be blocked by the other moves'
-    // retrieval process and the process of commiting the round entry.
+    // retrieval process and the process of committing the round entry.
     Ok(header_hash_link.into())
 }
 
