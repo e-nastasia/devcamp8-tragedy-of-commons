@@ -41,5 +41,5 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
-    crate::start_default_session(players, anchor)
+    crate::game_session::start_default_session(players, anchor)
 }

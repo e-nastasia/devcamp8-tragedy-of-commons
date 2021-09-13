@@ -117,27 +117,6 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
     game_round::current_round_for_game_code(game_code)
 }
 
-pub fn start_default_session(
-    player_list: Vec<PlayerProfile>,
-    anchor: EntryHash,
-) -> ExternResult<HeaderHashB64> {
-    let game_params = GameParams {
-        regeneration_factor: 1.1,
-        start_amount: 100,
-        num_rounds: 3,
-        resource_coef: 3,
-        reputation_coef: 2,
-    };
-    let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
-    debug!("player agentpubkeys: {:?}", players);
-    let round_zero = game_session::new_session(players, game_params, anchor);
-    debug!("new session created: {:?}", round_zero);
-    match round_zero {
-        Ok(hash) => Ok(HeaderHashB64::from(hash)),
-        Err(error) => Err(error),
-    }
-}
-
 /// Function to call when player wants to start a new game and has already selected
 /// invitees for this game. This function is only supposed to handle invite zome integration
 /// and it shouldn't be really creating a new GameSession entry.
