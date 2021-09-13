@@ -13,6 +13,7 @@ use crate::{
         GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
         OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
     },
+    game_code::JoinGameInfo,
     player_profile::PlayerProfile,
     utils::{convert, entry_from_element_create_or_update},
 };
@@ -30,6 +31,7 @@ mod game_round;
 #[allow(unused)]
 mod game_session;
 mod player_profile;
+mod game_code;
 mod types;
 mod utils;
 
@@ -87,29 +89,12 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 
 #[hdk_extern]
 pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryHashB64> {
-    let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
-    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
+    game_code::create_game_code_anchor(short_unique_code)
 }
 
 #[hdk_extern]
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
-    info!("input: {:?}", input);
-    info!("game code: {:?}", input.gamecode);
-    let anchor = anchor("GAME_CODES".into(), input.gamecode)?;
-    debug!("anchor created {:?}", &anchor);
-    let agent = agent_info()?;
-    debug!("agent {:?}", agent.clone());
-    let player_profile = PlayerProfile {
-        player_id: agent.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
-        nickname: input.nickname,
-    };
-    create_entry(&player_profile)?;
-    debug!("profile created");
-    let player_profile_entry_hash = hash_entry(&player_profile)?;
-    debug!("profile entry hash {:?}", &player_profile_entry_hash);
-    create_link(anchor.clone().into(), player_profile_entry_hash.into(), ())?;
-    debug!("link created");
-    Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
+    game_code::join_game_with_code(input)
 }
 
 #[hdk_extern]
@@ -122,15 +107,9 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
     game_round::current_round_info(game_round_header_hash)
 }
 
-/// Creates GameSession with the game_code and game_params
-// TODO(e-nastasia): actually add game_params to be used for creation
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
-    let anchor = anchor("GAME_CODES".into(), game_code.clone())?;
-    debug!("anchor: {:?}", anchor);
-    let players = player_profile::get_player_profiles_for_game_code(game_code)?;
-    debug!("players: {:?}", players);
-    start_default_session(players, anchor)
+    game_code::start_game_session_with_code(game_code)
 }
 
 #[hdk_extern]
@@ -201,12 +180,6 @@ pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<Header
 pub struct SignalTest {
     pub content: String,
     pub value: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
-pub struct JoinGameInfo {
-    pub gamecode: String,
-    pub nickname: String,
 }
 
 #[hdk_extern]
