@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+use crate::game_code::GAME_CODES_ANCHOR;
 
 #[hdk_entry(id = "player_profile", visibility = "public")]
 #[derive(Clone)]
@@ -10,7 +11,7 @@ pub struct PlayerProfile {
 pub fn get_player_profiles_for_game_code(
     short_unique_code: String,
 ) -> ExternResult<Vec<PlayerProfile>> {
-    let anchor = anchor("GAME_CODES".into(), short_unique_code)?;
+    let anchor = anchor(GAME_CODES_ANCHOR.into(), short_unique_code)?;
     debug!("anchor: {:?}", anchor);
     let links: Links = get_links(anchor, None)?;
     debug!("links: {:?}", links);
