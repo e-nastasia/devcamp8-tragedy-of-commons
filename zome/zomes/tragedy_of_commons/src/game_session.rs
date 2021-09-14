@@ -88,10 +88,38 @@ impl GameSession {
     }
 }
 
+// TODO(e-nastasia) This is a placeholder fn that can be refactored once
+// the UI is providing game params. Or we can leave it to separate retrieval
+// of the players from the actual session create. Anyway, GameParams have to go!
+pub fn start_default_session(
+    player_list: Vec<PlayerProfile>,
+    anchor: EntryHash,
+) -> ExternResult<HeaderHashB64> {
+    let game_params = GameParams {
+        regeneration_factor: 1.1,
+        start_amount: 100,
+        num_rounds: 3,
+        resource_coef: 3,
+        reputation_coef: 2,
+    };
+    let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
+    debug!("player agentpubkeys: {:?}", players);
+    let round_zero = new_session(players, game_params, anchor);
+    debug!("new session created: {:?}", round_zero);
+    match round_zero {
+        Ok(hash) => Ok(HeaderHashB64::from(hash)),
+        Err(error) => Err(error),
+    }
+}
+
 /// Create a new GameSession with the confirmed players (who accepted their invites).
 /// NOTE: we're only creating session for those who accepted and only if there are at
 /// least two of them -- otherwise there won't be any turns.
-pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:EntryHash) -> ExternResult<HeaderHash> {
+pub fn new_session(
+    players: Vec<AgentPubKey>,
+    game_params: GameParams,
+    anchor: EntryHash,
+) -> ExternResult<HeaderHash> {
     // TODO: get timestamp as systime
 
     info!("creating new game session");
@@ -147,7 +175,11 @@ pub fn new_session(players: Vec<AgentPubKey>, game_params: GameParams, anchor:En
     let header_hash_round_zero = create_entry(&round_zero)?;
     let entry_hash_round_zero = hash_entry(&round_zero)?;
 
-    create_link(game_session_entry_hash, entry_hash_round_zero, LinkTag::new("GAME_ROUND"));
+    create_link(
+        game_session_entry_hash,
+        entry_hash_round_zero,
+        LinkTag::new("GAME_ROUND"),
+    );
 
     // use remote signals from RSM to send a real-time notif to invited players
     //  ! using remote signal to ping other holochain backends, instead of emit_signal

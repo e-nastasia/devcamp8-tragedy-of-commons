@@ -1,7 +1,6 @@
-use hdk::prelude::*;
-use holo_hash::AgentPubKeyB64;
-
 use crate::error::Error;
+use hdk::prelude::*;
+use holo_hash::*;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
 #[allow(dead_code)]
@@ -102,5 +101,12 @@ where
             "within resolve_header_to_entry a header that was not a Create variant was attempted"
                 .to_string(),
         )),
+    }
+}
+
+pub fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHashB64> {
+    match result {
+        Ok(hash) => return Ok(HeaderHashB64::from(hash)),
+        Err(error) => return Err(error),
     }
 }
