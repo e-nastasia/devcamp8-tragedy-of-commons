@@ -107,6 +107,7 @@ pub(crate) fn get_latest_round(header_hash:HeaderHash) -> ExternResult<(GameRoun
     };
     debug!("extracting game round from element");
     let last_round: GameRound = entry_from_element_create_or_update(&round_element)?;
+    debug!("get latest round: {:?}", last_round);
     Ok((last_round, round_element.header_address().clone()))
 }
 
@@ -254,8 +255,14 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
         moves.push(game_move);
     }
 
+
+
     let b = missing_moves(&moves, game_session.players.len());
     if (b) {
+        let mut anonymous_moves_info:Vec<(i32,String,String)> = vec![];
+        for game_move in &moves {
+            anonymous_moves_info.push((-1, "playername".into(), HoloHashB64::from(game_move.owner.clone()).to_string()));
+        }
 
         return Ok(GameRoundInfo{
             current_round_header_hash: Some(last_round_hash),
@@ -263,9 +270,15 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
             resources_left: Some(last_round.round_state.resource_amount),
             round_num: last_round.round_num,
             next_action: "WAITING".into(),
+            moves: vec![(12,"Bobby".into(),"msqljfmsqfdkmqlkdsf".into())],
             // add anonymous moves list
         })
         // existing hashes + next action
+    }
+
+    let mut moves_info:Vec<(i32,String,String)> = vec![];
+    for game_move in &moves {
+        moves_info.push((game_move.resources.clone(), "playername".into(), HoloHashB64::from(game_move.owner.clone()).to_string()));
     }
     info!("all players made their moves: calculating round state");
     let round_state = calculate_round_state(&game_session.game_params, moves);
@@ -284,8 +297,9 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
             current_round_header_hash: Some(hash),
             game_session_hash: None,
             resources_left: Some(round_state.resource_amount),
-            round_num: 3,
+            round_num: last_round.round_num + 1,
             next_action: "START_NEXT_ROUND".into(),
+            moves: moves_info,
         })
         //round_hash + next action
     } else {
@@ -300,8 +314,9 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
             current_round_header_hash: None,
             game_session_hash: Some(hash),
             resources_left: Some(round_state.resource_amount),
-            round_num: last_round.round_num,
+            round_num: last_round.round_num + 1,
             next_action: "SHOW_GAME_RESULTS".into(),
+            moves: moves_info,
         })
         //game_session_hash + next action
     }
@@ -341,7 +356,7 @@ fn create_new_round(
     last_round_header_hash: &HeaderHash,
     round_state: &RoundState,
 ) -> ExternResult<HeaderHash> {
-    info!("start new round: updating game round entry");
+    info!("start new round: updating game round entry. Last_round_num {:?}", last_round.round_num);
     //update chain from the previous round entry hash and commit an updated version
     let next_round = GameRound {
         round_num: last_round.round_num + 1,
@@ -349,6 +364,7 @@ fn create_new_round(
         session: last_round.session.clone().into(),
         game_moves: vec![],
     };
+    debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
@@ -385,6 +401,7 @@ fn end_game(
         game_params: game_session.game_params.clone(),
         players: game_session.players.clone(),
         scores: round_state.player_stats.clone(),
+        anchor: game_session.anchor.clone(),
     };
     let game_session_header_hash_update =
         update_entry(game_session_header_hash.clone(), &game_session_update)?;

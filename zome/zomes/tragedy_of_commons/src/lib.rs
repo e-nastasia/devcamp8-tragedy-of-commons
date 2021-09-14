@@ -65,7 +65,9 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let subscriber = FmtSubscriber::builder()
         // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
         // will be written to stdout.
+        .with_target(false)
         .with_max_level(Level::TRACE)
+        .without_time()
         // completes the builder.
         .finish();
 
@@ -141,8 +143,9 @@ pub struct GameRoundInfo {
     pub current_round_header_hash: Option<HeaderHash>,
     pub game_session_hash: Option<HeaderHash>,
     pub next_action: String,
-    // moves
+    pub moves:Vec<(i32,String, String)>,
 }
+
 
 #[hdk_extern]
 pub fn current_round_info(game_round_header_hash: HeaderHash)-> ExternResult<GameRoundInfo>{
@@ -163,7 +166,9 @@ pub fn current_round_info(game_round_header_hash: HeaderHash)-> ExternResult<Gam
         next_action: round_state,
         resources_left:resources,
         game_session_hash: None,
+        moves: vec![],
     };
+    debug!("Round info: {:?}", x);
     Ok(x)
 }
 
