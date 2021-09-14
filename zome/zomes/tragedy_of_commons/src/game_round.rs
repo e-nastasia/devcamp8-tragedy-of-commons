@@ -63,22 +63,6 @@ impl GameRound {
     }
 }
 
-/*
-validation rules:
-
-- In any game session there's always only one round with the respective round_num
-- len of rounds update chain is always <= game_session.params.num_rounds + 1
-
-- validation calculus: validate one round at a time and assume params of previous round
-    are already valid
--
-
-TODO: impl validation as:
-validate_update_entry_game_round_results -> EntryID
-
-
-*/
-
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
 pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -> RoundState {
@@ -104,7 +88,7 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
     }
 }
 
-pub(crate) fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
+fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
     info!("fetching element from DHT");
     debug!(
         "headerhash previous round: {:?}",
@@ -417,7 +401,6 @@ pub fn validate_update_entry_game_round(
         )));
     }
 
-    // todo: retrieve previous entry in the update chain
     let update_header = data.element.header();
 
     match update_header {
