@@ -15,14 +15,22 @@
             resourcesTaken: "10",
         }],
     };
+
     
     // moves
-    $: roundnum = round.num;
-    $: roundhash = round.current_round_header_hash;
-    $: moves = round.moves;
+    // $: roundnum = round.num;
+    // $: roundhash = round.current_round_header_hash;
+    export let moves = [];
+    // $: moves = [...moves, round.moves];
 
 
-    export let gameRoundState = "IN PROGRESS"; // COMPLETE
+    $: if (round.fake === false){
+        gameRoundState = "COMPLETE";
+    } else {
+        gameRoundState = "IN PROGRESS";
+    } 
+    
+    let gameRoundState = "NEW"; // COMPLETE
 
     function refreshGameRound() {
         if (gameRoundState == "COMPLETE"){
@@ -34,8 +42,8 @@
 
 <section>
     <aside class="gameround">
-        <h2>Round {roundnum} - {gameRoundState}</h2>
-        <p>{roundhash}</p>
+        <h2>Round {round.round_num} - {gameRoundState}</h2>
+        <i style="color:silver">{round.current_round_header_hash}</i>
         <ul>
             {#each moves as move}
                 <li>

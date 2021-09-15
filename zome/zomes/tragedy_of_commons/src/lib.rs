@@ -7,17 +7,18 @@ use tracing_subscriber::FmtSubscriber;
 
 #[allow(unused_imports)]
 use crate::{
+    game_code::JoinGameInfo,
     game_move::{GameMove, GameMoveInput},
     game_round::GameRoundInfo,
     game_session::{
         GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
         OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
     },
-    game_code::JoinGameInfo,
     player_profile::PlayerProfile,
     utils::{convert, entry_from_element_create_or_update},
 };
 mod error;
+mod game_code;
 #[allow(unused_imports)]
 #[allow(dead_code)]
 #[allow(unused)]
@@ -31,7 +32,6 @@ mod game_round;
 #[allow(unused)]
 mod game_session;
 mod player_profile;
-mod game_code;
 mod types;
 mod utils;
 
@@ -66,7 +66,9 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let subscriber = FmtSubscriber::builder()
         // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
         // will be written to stdout.
+        .with_target(false)
         .with_max_level(Level::TRACE)
+        .without_time()
         // completes the builder.
         .finish();
 
@@ -112,11 +114,8 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
     game_code::start_game_session_with_code(game_code)
 }
 
-
-
-
 #[hdk_extern]
-pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<HeaderHash>> {
     game_round::current_round_for_game_code(game_code)
 }
 
@@ -147,15 +146,16 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
     convert(game_move::new_move(
         input.resource_amount,
         input.previous_round,
-    )
+    ))
 }
 
 /// Function to call from the UI on a regular basis to try and close the currently
 /// active GameRound. It will check the currently available GameRound state and then
 /// will close it if it's possible. If not, it will return None
 #[hdk_extern]
-pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<HeaderHashB64> {
-    convert(game_round::try_to_close_round(prev_round_hash.into()))
+pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<GameRoundInfo> {
+    // TODO: this should probably go to the game_round.rs instead
+    game_round::try_to_close_round_alt(prev_round_hash.into())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]

@@ -1,9 +1,8 @@
-use crate::GameRoundInfo;
+use crate::game_code::GAME_CODES_ANCHOR;
 use crate::game_move::GameMove;
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
-use crate::game_code::GAME_CODES_ANCHOR;
 use crate::types::{PlayerStats, ResourceAmount};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
@@ -33,8 +32,10 @@ pub struct GameRound {
 pub struct GameRoundInfo {
     pub round_num: u32,
     pub resources_left: Option<i32>,
-    pub current_round_header_hash: HeaderHash,
-    pub current_round_state: String,
+    pub current_round_header_hash: Option<HeaderHash>,
+    pub game_session_hash: Option<HeaderHash>,
+    pub next_action: String,
+    pub moves: Vec<(i32, String, String)>,
 }
 
 impl RoundState {
@@ -101,6 +102,7 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderH
     };
     debug!("extracting game round from element");
     let last_round: GameRound = entry_from_element_create_or_update(&round_element)?;
+    debug!("get latest round: {:?}", last_round);
     Ok((last_round, round_element.header_address().clone()))
 }
 
@@ -250,16 +252,34 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
 
     let b = missing_moves(&moves, game_session.players.len());
     if (b) {
+        let mut anonymous_moves_info: Vec<(i32, String, String)> = vec![];
+        for game_move in &moves {
+            anonymous_moves_info.push((
+                -1,
+                "playername".into(),
+                HoloHashB64::from(game_move.owner.clone()).to_string(),
+            ));
+        }
 
-        return Ok(GameRoundInfo{
+        return Ok(GameRoundInfo {
             current_round_header_hash: Some(last_round_hash),
             game_session_hash: Some(game_session_element.header_address().clone()),
             resources_left: Some(last_round.round_state.resource_amount),
             round_num: last_round.round_num,
             next_action: "WAITING".into(),
+            moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
             // add anonymous moves list
-        })
+        });
         // existing hashes + next action
+    }
+
+    let mut moves_info: Vec<(i32, String, String)> = vec![];
+    for game_move in &moves {
+        moves_info.push((
+            game_move.resources.clone(),
+            "playername".into(),
+            HoloHashB64::from(game_move.owner.clone()).to_string(),
+        ));
     }
     info!("all players made their moves: calculating round state");
     let round_state = calculate_round_state(&game_session.game_params, moves);
@@ -274,12 +294,13 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
             last_round_element.header_address(),
             &round_state,
         )?;
-        Ok(GameRoundInfo{
+        Ok(GameRoundInfo {
             current_round_header_hash: Some(hash),
             game_session_hash: None,
             resources_left: Some(round_state.resource_amount),
-            round_num: 3,
+            round_num: last_round.round_num + 1,
             next_action: "START_NEXT_ROUND".into(),
+            moves: moves_info,
         })
         //round_hash + next action
     } else {
@@ -290,12 +311,13 @@ pub fn try_to_close_round_alt(last_round_hash: HeaderHash) -> ExternResult<GameR
             last_round_element.header_address(),
             &round_state,
         )?;
-        Ok(GameRoundInfo{
+        Ok(GameRoundInfo {
             current_round_header_hash: None,
             game_session_hash: Some(hash),
             resources_left: Some(round_state.resource_amount),
-            round_num: last_round.round_num,
+            round_num: last_round.round_num + 1,
             next_action: "SHOW_GAME_RESULTS".into(),
+            moves: moves_info,
         })
         //game_session_hash + next action
     }
@@ -309,10 +331,7 @@ fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
         // Since we're not validating that every player has only made one move, we need to make
         // this check here, otherwise game would be broken.
         info!("Cannot close round: wait until all moves are made");
-        debug!(
-            "number of moves found: #{:?}",
-            moves.len()
-        );
+        debug!("number of moves found: #{:?}", moves.len());
         return true;
     };
     false
@@ -335,7 +354,10 @@ fn create_new_round(
     last_round_header_hash: &HeaderHash,
     round_state: &RoundState,
 ) -> ExternResult<HeaderHash> {
-    info!("start new round: updating game round entry");
+    info!(
+        "start new round: updating game round entry. Last_round_num {:?}",
+        last_round.round_num
+    );
     //update chain from the previous round entry hash and commit an updated version
     let next_round = GameRound {
         round_num: last_round.round_num + 1,
@@ -343,6 +365,7 @@ fn create_new_round(
         session: last_round.session.clone().into(),
         game_moves: vec![],
     };
+    debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
@@ -379,6 +402,7 @@ fn end_game(
         game_params: game_session.game_params.clone(),
         players: game_session.players.clone(),
         scores: round_state.player_stats.clone(),
+        anchor: game_session.anchor.clone(),
     };
     let game_session_header_hash_update =
         update_entry(game_session_header_hash.clone(), &game_session_update)?;
@@ -415,14 +439,17 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
     }
     let x = GameRoundInfo {
         round_num: round.round_num,
-        current_round_header_hash: hash,
-        current_round_state: round_state,
+        current_round_header_hash: Some(hash),
+        next_action: round_state,
         resources_left: resources,
+        game_session_hash: None,
+        moves: vec![],
     };
+    debug!("Round info: {:?}", x);
     Ok(x)
 }
 
-pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<HeaderHash>> {
     let anchor = anchor(GAME_CODES_ANCHOR.into(), game_code.clone())?;
     let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
     let links_vec = links.into_inner();
@@ -442,15 +469,16 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
         let element: Element = get(link.target.clone(), GetOptions::latest())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
 
-        let game_session_header_hash: &EntryHash = entry_hash_from_element(&element)?;
+        let game_session_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
 
         let round_links: Links = get_links(
-            game_session_header_hash.clone(),
+            game_session_entry_hash.clone(),
             Some(LinkTag::new("GAME_ROUND")),
         )?;
         let round_links_vec = round_links.into_inner();
 
         if round_links_vec.len() > 0 {
+            debug!("links session round: {:?}", &round_links_vec);
             if round_links_vec.len() > 1 {
                 // TODO find alternative for clone to get len
                 return Err(WasmError::Guest(String::from(
@@ -459,11 +487,13 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
             };
             // should be only one link
             let link = &round_links_vec[0];
+
+            debug!("link session round: {:?}", &link);
             let element: Element = get(link.target.clone(), GetOptions::latest())?
                 .ok_or(WasmError::Guest(String::from("Entry not found")))?;
 
-            let game_round_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
-            return Ok(Some(game_round_entry_hash.clone()));
+            //let game_round_entry_hash:&EntryHash = entry_hash_from_element(&element)?;
+            return Ok(Some(element.header_address().clone()));
         }
     }
 

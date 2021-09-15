@@ -52,7 +52,10 @@ pub fn new_move(
     round_header_hash: HeaderHash,
 ) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
-    debug!("current round: {:?} amount: {:?}", round_header_hash, resource_amount);
+    debug!(
+        "current round: {:?} amount: {:?}",
+        round_header_hash, resource_amount
+    );
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
         resources: resource_amount,
@@ -66,7 +69,11 @@ pub fn new_move(
         None => return Err(WasmError::Guest("Round not found".into())),
     };
     let entry_hash_game_round = entry_hash_from_element(&game_round_element)?.to_owned();
-    debug!("link move {:?} to round {:?}", &game_move, entry_hash_game_round.clone());
+    debug!(
+        "link move {:?} to round {:?}",
+        &game_move,
+        entry_hash_game_round.clone()
+    );
 
     let header_hash_link = create_link(
         entry_hash_game_round,

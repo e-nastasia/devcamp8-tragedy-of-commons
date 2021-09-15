@@ -42,6 +42,7 @@ pub struct GameSession {
     pub game_params: GameParams,   // what specific game are we playing
     pub players: Vec<AgentPubKey>, // who is playing
     pub scores: PlayerStats,       // end scores
+    pub anchor: EntryHash,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
@@ -132,7 +133,7 @@ pub fn new_session(
         game_params: game_params,
         players: players.clone(),
         scores: PlayerStats::new(),
-        //anchor: EntryHash,
+        anchor: anchor.clone(),
     };
     let game_session_header_hash = create_entry(&game_session)?;
     let game_session_entry_hash = hash_entry(&game_session)?;
