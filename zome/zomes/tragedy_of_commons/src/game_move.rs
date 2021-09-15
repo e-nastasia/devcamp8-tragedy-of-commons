@@ -2,7 +2,10 @@ use crate::{
     game_round::{calculate_round_state, GameRound, RoundState},
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
-    utils::{convert_keys_from_b64, entry_hash_from_element, try_get_and_convert, must_get_header_and_entry},
+    utils::{
+        convert, convert_keys_from_b64, entry_hash_from_element, must_get_header_and_entry,
+        try_get_and_convert,
+    },
 };
 use hdk::prelude::*;
 use holo_hash::*;
@@ -49,7 +52,10 @@ pub fn new_move(
     round_header_hash: HeaderHash,
 ) -> ExternResult<HeaderHash> {
     // todo: add guard clauses for empty input
-    debug!("current round: {:?} amount: {:?}", round_header_hash, resource_amount);
+    debug!(
+        "current round: {:?} amount: {:?}",
+        round_header_hash, resource_amount
+    );
     let game_move = GameMove {
         owner: agent_info()?.agent_initial_pubkey,
         resources: resource_amount,
@@ -63,7 +69,11 @@ pub fn new_move(
         None => return Err(WasmError::Guest("Round not found".into())),
     };
     let entry_hash_game_round = entry_hash_from_element(&game_round_element)?.to_owned();
-    debug!("link move {:?} to round {:?}", &game_move, entry_hash_game_round.clone());
+    debug!(
+        "link move {:?} to round {:?}",
+        &game_move,
+        entry_hash_game_round.clone()
+    );
 
     let header_hash_link = create_link(
         entry_hash_game_round,
@@ -77,8 +87,7 @@ pub fn new_move(
     Ok(header_hash_link.into())
 }
 
-pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult>
-{
+pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = data
         .element
         .entry()
@@ -86,33 +95,36 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
         .ok_or(WasmError::Guest(
             "Trying to validate an entry that's not a GameMove".into(),
         ))?;
-    
+
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
-        return Ok(ValidateCallbackResult::Invalid(format!("GameMove has to have resources >= 0, but it has {}", game_move.resources)));
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "GameMove has to have resources >= 0, but it has {}",
+            game_move.resources
+        )));
     }
-    
+
     // now we need to retrieve game session via the round header hash saved
     // in the game move entry to verify that player is making a move for the
     // game session they're actually playing
-    let game_round = must_get_header_and_entry::<GameRound>(
-        game_move.round
-    )?;
-    let game_session = must_get_header_and_entry::<GameSession>(
-        game_round.session
-    )?;
+    let game_round = must_get_header_and_entry::<GameRound>(game_move.round)?;
+    let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
 
     if !game_session.players.contains(&game_move.owner) {
         return Ok(ValidateCallbackResult::Invalid(String::from("Can't make a GameMove for this GameSession because move owner isn't in the list of GameSession players")));
     }
-    
+
     Ok(ValidateCallbackResult::Valid)
 }
 
 pub fn validate_update_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Can't update GameMove entry")))
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Can't update GameMove entry",
+    )))
 }
 
 pub fn validate_delete_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Can't delete GameMove entry")))
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Can't delete GameMove entry",
+    )))
 }
