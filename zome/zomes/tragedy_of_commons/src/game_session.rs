@@ -18,10 +18,10 @@ pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
     InProgress,
-    //Lost { last_round: HeaderHash },
+    Lost { last_round: HeaderHash },
     // TODO: when validating things, check that last game round is finished to verify
     // that session itself is finished
-    Finished, //{ last_round: HeaderHash },
+    Finished { last_round: HeaderHash },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Copy)]
