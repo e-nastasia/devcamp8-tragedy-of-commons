@@ -7,6 +7,7 @@
     export let nickname = "Tixel";
     export let gamecode = "3KL54M";
     export let action = "GAME_BEGIN";
+    export let current_round_hash = "";
 
     const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
@@ -26,7 +27,9 @@
             game_status = "MAKE_MOVE";
         } else if (action == "GAME_JOIN") {
             console.log("check if game has been started");
-            let result = await window.appClient.currentRoundForGameCode(gamecode);
+            let result = await window.appClient.currentRoundForGameCode(
+                gamecode
+            );
             if (!result) {
                 alert("Still waiting on other players");
             } else {
@@ -38,26 +41,127 @@
         }
     }
 
-    export let current_round_hash;
-
     let rounds = [];
-    let _max_round_counter = 0;
 
     // let last_round_state="IN PROGRESS";
 
-    async function asyncCallZomeToMakeMove(event) {
-        _max_round_counter = _max_round_counter + 1;
-        rounds = [...rounds, { num: _max_round_counter, hash: "round_hash" }];
-
+    async function makeMove(event) {
         game_status = "WAIT_NEXT_ROUND";
         let resources = event.detail.resources;
         console.log("taking resources:", resources);
         // (amount, prev_round_hash)
-        let result = await window.appClient.makeMove(resources, current_round_hash);
+        let result = await window.appClient.makeMove(
+            resources,
+            current_round_hash
+        );
+        console.log(
+            "added move to round with header hash:",
+            current_round_hash
+        );
+        console.log("result make move", result);
+
+        addFakePendingRound();
+    }
+
+    async function updateRound() {
+        if (game_status == "GAME_OVER") {
+            return;
+        }
+
+        /* get last rounds from dht
+        if roundnum equal, then update fake round to actual round
+        else do nothing
+        */
+        if (!current_round_hash || rounds.length === 0) {
+            return;
+        }
+        let latest_game_info = await window.appClient.tryCloseRound(
+            current_round_hash
+        );
+        console.log("current round info:", latest_game_info);
+        console.log("rounds:", rounds);
+        let last_round = rounds[rounds.length - 1];
+        // current_round_header_hash: Some(last_round_hash),
+        //     game_session_hash: Some(game_session_element.header_address().clone()),
+        //     resources_left: Some(last_round.round_state.resource_amount),
+        //     round_num: last_round.round_num,
+        //     next_action: "WAITING".into(),
+        if (latest_game_info.next_action === "WAITING") {
+            return;
+        }
+        console.log("next action:", latest_game_info.next_action);
+        if (last_round.fake) {
+            //} && last_round.round_num === latest_game_info.round_num){
+            //rounds.pop(); //remove fake round
+            console.log("update fake round to real");
+            addRealCompletedRound(latest_game_info);
+            console.log("set new round hash");
+            current_round_hash = latest_game_info.current_round_header_hash;
+        }
+
+        if (latest_game_info.next_action === "SHOW_GAME_RESULTS") {
+            game_status = "WAIT_GAME_SCORE";
+        } else if (latest_game_info.next_action === "START_NEXT_ROUND") {
+            game_status = "MAKE_MOVE";
+        } else {
+            console.error("unknown action:", latest_game_info.next_action);
+        }
+    }
+
+    function addFakePendingRound() {
+        let fakePendingRound = {
+            round_num: rounds.length + 1,
+            resources_left: 100,
+            current_round_header_hash: "slfsd",
+            game_session_hash: "smdlfk",
+            next_action: "TODO",
+            moves: [
+                {
+                    nickname: "tixel",
+                    id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
+                    resourcesTaken: "10",
+                },
+            ],
+            fake: true,
+        };
+
+        rounds = [...rounds, fakePendingRound];
+        console.log("rounds: ", rounds);
+    }
+
+    function addRealCompletedRound(latest_game_info) {
+        let last_round = rounds[rounds.length - 1];
+        if (last_round.round_num !== latest_game_info.round_num){
+            console.log("last round is different. Oink?");
+            return;
+        }
+        let convertedMoves = [];
+        
+        latest_game_info.moves.forEach(convertMove);
+        function convertMove(move, index)
+        {
+            console.debug("move: ", move);
+            let x =                 {
+                    nickname: move[2],
+                    id: move[1],
+                    resourcesTaken: move[0],
+                };
+            convertedMoves.push(x);
+        }
+
+        last_round.current_round_header_hash = bufferToBase64(latest_game_info.current_round_header_hash);
+        last_round.resources_left = latest_game_info.resources_left;
+        last_round.round_num = latest_game_info.round_num;
+        last_round.fake = false;
+        last_round.moves = convertedMoves;
+
+
+        rounds = rounds;
+        console.log("rounds: ", rounds);
     }
 
     function roundComplete() {
-        if (_max_round_counter == 2) {
+        if (rounds.length == 2) {
             // MAX ROUNDS
             game_status = "WAIT_GAME_SCORE";
             return;
@@ -168,10 +272,14 @@
         </div>
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
-            <GameRound {round} on:roundComplete={roundComplete} />
+            <GameRound
+                {round}
+                moves={round.moves}
+                on:updateRound={updateRound}
+            />
         {/each}
         {#if game_status == "MAKE_MOVE"}
-            <GameMove on:makeMove={asyncCallZomeToMakeMove} />
+            <GameMove on:makeMove={makeMove} />
         {/if}
         {#if game_status == "WAIT_NEXT_ROUND"}
             <div style="text-align:center;">

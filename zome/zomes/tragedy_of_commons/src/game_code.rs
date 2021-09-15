@@ -31,7 +31,11 @@ pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
     debug!("profile created");
     let player_profile_entry_hash = hash_entry(&player_profile)?;
     debug!("profile entry hash {:?}", &player_profile_entry_hash);
-    create_link(anchor.clone().into(), player_profile_entry_hash.into(), ())?;
+    create_link(
+        anchor.clone().into(),
+        player_profile_entry_hash.into(),
+        LinkTag::new("PLAYER"),
+    )?;
     debug!("link created");
     Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }

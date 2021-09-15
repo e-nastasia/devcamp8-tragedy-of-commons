@@ -3,70 +3,47 @@
     const dispatch = createEventDispatcher();
 
     export let round = {
-        num: 0,
-        hash: "123"
+        round_num: 0,
+        resources_left: 100,
+        current_round_header_hash: "slfsd",
+        game_session_hash: "smdlfk",
+        next_action: "TODO",
+        moves: [
+        {
+            nickname: "tixel",
+            id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
+            resourcesTaken: "10",
+        }],
     };
 
-    $: roundnum = round.num;
-
-    let moves = [
-        {
-            nickname: "tixel",
-            id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
-            resourcesTaken: "10",
-        },
-    ];
-
-    let moves_complete = [
-        {
-            nickname: "tixel",
-            id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
-            resourcesTaken: "10",
-        },
-        {
-            nickname: "f00bar42",
-            id: "4652cd28-4fc2-4c77-9709-234ca8adab81",
-            resourcesTaken: "10",
-        },
-        {
-            nickname: "harlan",
-            id: "c6b4f8a6-224f-4a7e-9a87-63416e0cafaf",
-            resourcesTaken: "10",
-        },
-        {
-            nickname: "robot5x",
-            id: "68472d6d-39d2-44cc-8c8c-5d21c8d75ae5",
-            resourcesTaken: "10",
-        },
-        {
-            nickname: "lchang",
-            id: "81ded8af-dcf1-407c-922d-20b9d7e3a42e",
-            resourcesTaken: "10",
-        },
-    ];
+    
+    // moves
+    // $: roundnum = round.num;
+    // $: roundhash = round.current_round_header_hash;
+    export let moves = [];
+    // $: moves = [...moves, round.moves];
 
 
-    let gameRoundState = "IN PROGRESS"; // COMPLETE
+    $: if (round.fake === false){
+        gameRoundState = "COMPLETE";
+    } else {
+        gameRoundState = "IN PROGRESS";
+    } 
+    
+    let gameRoundState = "NEW"; // COMPLETE
 
     function refreshGameRound() {
         if (gameRoundState == "COMPLETE"){
             return;
         }
-        if (moves.length < 2) {
-            console.log("---------------> moves length {}", moves.length);
-            moves = moves_complete;
-            // dispatch("roundUpdated");
-        // } else {
-            // round complete
-            gameRoundState = "COMPLETE";
-            dispatch("roundComplete");
-        }
+        dispatch("updateRound");
     }
 </script>
 
 <section>
     <aside class="gameround">
-        <h2>Round {roundnum} - {gameRoundState}</h2>
+        <h2>Round {round.round_num} - {gameRoundState}</h2>
+        <i style="color:silver">{round.current_round_header_hash}</i>
         <ul>
             {#each moves as move}
                 <li>
