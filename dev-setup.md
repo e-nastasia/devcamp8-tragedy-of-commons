@@ -28,37 +28,6 @@ Read the [UI developer setup](/ui/README.md) and the [Zome developer setup](/zom
 
 # Run game in online mode
 
-after compiling the same source code as the other player
-you run
-> hc sandbox generate --run=8000 --app-id=tragedy_of_commons --num-sandboxes=1 network --bootstrap https://bootstrap-staging.holo.host quic
-
-This generates a sandbox. Look in the output for a file path and name like (name will differ):
-/tmp/tmp.LR0icGixJK/aBI6KPWClY8jF6uYh7m35  
-
-And open the conductor-config.yml file and replace the transport pool section with this:
-
-  transport_pool:
-    - type: proxy
-      sub_transport:
-        type: quic
-        bind_to: ~
-        override_host: ~
-        override_port: ~
-      proxy_config:
-        type: remote_proxy_client
-        proxy_url: "kitsune-proxy://SYVd4CF3BdJ4DS7KwLLgeU3_DbHoZ34Y-qroZ79DOs8/kitsune-quic/h/165.22.32.11/p/5779/--"
-  
-Check with :
-> hc list
-
-It should only show 1 /tmp/tmp.xyz**** file
-If you have many then run
-> hc clean
-And start going through these steps again
-
-then run 
-hc sandbox run 0
-
-this runs the sandbox, but with the changed transport settings
-
+cd zome/workdir/happ/
+run ./run_sandbox_remove_network.sh
 run the UI, generate a game code and attempt to play online
