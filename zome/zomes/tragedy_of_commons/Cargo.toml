@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 name = "tragedy_of_commons"
 
 [dependencies]
-hdk = { git = "https://github.com/holochain/holochain", rev = "792c707e8abeb9566de6ddac04f699f208b923ff" }
+hdk = "0.0.103"
 derive_more = "0"
 paste = "*"
 # use whatever serde hdk uses
