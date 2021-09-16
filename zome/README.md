@@ -1,29 +1,30 @@
-# Zome Developer Setup
+# DNA: Tragedy of commons
 
-This folder has an example DNA for the `tragedy_of_commons` zome. The actual code for the zome is in `zomes/tragedy_of_commons`.
+This folder contains entire backend for the Tragedy of commons game implementation.
+Actual code for the zome is in the `zomes/tragedy_of_commons`.
 
-To change the code, you can work either opening VSCode inside the root folder of the repo or in this folder, you should have rust intellisense either way.
+(e-nastasia) It is recommended to run VSCode from this directory (1) and outside of the nix-shell (2):
+  (1): root level directory doesn't have the `Cargo.toml` for rust-analyzer to read, 
+  (2): nix-shell would mess up VSCode paths to Rust binaries (or maybe I just don't know how to set it up!)
 
-All the instructions here assume you are running them inside the nix-shell at the root of the repository. For more info, see the [developer setup](/dev-setup.md).
+**Attention**: note that all commands below assume that you're running them in nix-shell that has been started from the root of this repository: it has `default.nix` which is used to set up nix-shell properly.
 
 ## Building
 
+For your convenience, there's a bash script that already contains all the necessary commands:
+
 ```bash
-CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown
-hc dna pack workdir/dna
-hc app pack workdir/happ
+./run_build.sh
 ```
 
-This should create a `workdir/happ/sample.happ` file.
+This should create a `workdir/happ/tragedy_of_commons.happ` file.
 
 ## Testing
 
-After having built the DNA:
+After running the builds with the bash script above you can use another one for testing:
 
 ```bash
-cd test
-npm install
-npm test
+./run_tests.sh
 ```
 
 ## Running
@@ -31,12 +32,23 @@ npm test
 After having built the DNA:
 
 ```bash
-hc s generate workdir/happ/sample.happ --run=8888
+hc s generate workdir/happ/tragedy_of_commons.happ --run=8888
 ```
 
 Now `holochain` will be listening at port `8888`;
 
-----------------------------
+## Running in the sandbox
+
+Alternatively you can use sandbox setup (TODO: explain the difference between execution envs for `hc s --run` and sandbox) that is already configured to allow for two conductors (most useful for UI testing).
+The script to run it is `workdir/happ/run_sandbox.sh` and you would need to run it from this directory:
+
+```bash
+cd workdir/happ/
+./run_sandbox.sh
+```
+
+That would create two conductors: one on 8000 and another on 8001 ports.
+
 
 ## Implementation
 
