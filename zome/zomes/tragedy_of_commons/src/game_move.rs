@@ -90,8 +90,10 @@ pub fn new_move(
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
+    debug!("Validating GameMove {:?}", game_move);
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
+        debug!("GameMove {:?} has negative resources, INVALID", game_move);
         return Ok(ValidateCallbackResult::Invalid(format!(
             "GameMove has to have resources >= 0, but it has {}",
             game_move.resources
