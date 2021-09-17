@@ -183,13 +183,19 @@ pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateC
 pub fn validate_create_entry_game_move(
     validate_data: ValidateData,
 ) -> ExternResult<ValidateCallbackResult> {
-    // debug!("validating game move");
-    let x: GameMove = entry_from_element_create_or_update(&validate_data.element)?;
-    // trace!("resources {}", x.resources);
-    if x.resources < 0 {
-        return Ok(ValidateCallbackResult::Invalid(
-            "You cannot insert resources back".into(),
-        ));
-    }
-    Ok(ValidateCallbackResult::Valid)
+    game_move::validate_create_entry_game_move(validate_data)
+}
+
+#[hdk_extern]
+pub fn validate_update_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_move::validate_update_entry_game_move(validate_data)
+}
+
+#[hdk_extern]
+pub fn validate_delete_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_move::validate_delete_entry_game_move(validate_data)
 }
