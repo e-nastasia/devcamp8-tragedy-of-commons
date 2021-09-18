@@ -83,6 +83,7 @@ where
     O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
 {
     let h = must_get_header(header_hash)?;
+    debug!("header hash: {:?}", h);
     match h.header().entry_hash() {
         Some(entry_hash) => {
             let entry = must_get_entry(entry_hash.clone())?;
@@ -97,10 +98,12 @@ where
                 )),
             }
         }
-        None => Err(WasmError::Guest(
+        None => {
+            error!("not a create header?");
+            Err(WasmError::Guest(
             "within resolve_header_to_entry a header that was not a Create variant was attempted"
                 .to_string(),
-        )),
+        ))},
     }
 }
 
