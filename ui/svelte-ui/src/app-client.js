@@ -1,36 +1,43 @@
 import { AppWebsocket } from '@holochain/conductor-api';
-import { bufferToBase64, encodeJson } from './utils';
 
-// hc sandbox generate workdir/happ/ --run=8888 --app-id tragedy
+const HOST = "localhost";
+const APP_PORT = 8888;
+const ADMIN_PORT = 65000;
+const HAPP_ID = 'sample-happ';
 
 export class AppClient {
     #host = '';
     #appPort = '';
     #appClient = null;
-    #cellId = '';
-    #dna = '';
-    #dnaStr = '';
+    #cellId = [];
     #agentPubKey = '';
-    #appId = "tragedy_of_commons";
-    #appInfo = null;
 
-    constructor(host, appPort) {
-        this.#host = host || 'localhost';
-        this.#appPort = appPort || '8888';
+    constructor() {
+        // we could use the consts directly instead of these assignments
+        // it's only for when they'll be in a different module or coming from env vars
+        this.#host = HOST || 'localhost';
+        this.#adminPort = ADMIN_PORT;
+        this.#appPort = APP_PORT || '8888';
     }
-    async connect() {
-        this.#appClient = await AppWebsocket.connect(
-            `ws://${this.#host}:${this.#appPort}`,
-            30000,
-            (signal) => signalHandler(self, signal))
 
-        this.#appInfo = await this.#appClient.appInfo({ installed_app_id: this.#appId });
-        this.#cellId = this.#appInfo.cell_data[0].cell_id;
-        this.#agentPubKey = this.#cellId[1]
-        this.#dna = this.#cellId[0]
-        this.#dnaStr = bufferToBase64(this.#dna)
-        // this.#agentPubKey = bufferToBase64(this.#agentPubKey);
-        console.log("appinfo:{}", this.#appInfo);
+    async connect() {
+        const adminClient = await AdminWebsocket.connect(`ws://${this.#host}:${this.#adminPort}`);
+        const installedHApps = await adminClient.listApps({ status_filter: {} });
+        if (installedHApps.length) {
+            // hApp is already installed -> activate it
+            const response = await adminClient.activateApp({ installed_app_id: HAPP_ID });
+            this.#cellId = response.app.cell_data[0].cell_id;
+        } else {
+            // install hApp first with a generated agent pub key
+            this.#agentPubKey = await adminClient.generateAgentPubKey();
+            const response = await adminClient.installAppBundle({ path: 'zome/workdir/happ/sample-happ.happ', agent_key: this.#agentPubKey, membrane_proofs: {} });
+            this.#cellId = response.cell_data[0].cell_id;
+            await adminClient.attachAppInterface({ port: this.#appPort });
+        }
+        // doesn't work in the browser
+        // adminClient.client.close();
+        adminClient.client.socket.close();
+        this.#appClient = await AppWebsocket.connect(`ws://${this.#host}:${this.#appPort}`);
     }
 
     async close() {
@@ -38,7 +45,8 @@ export class AppClient {
         await this.#appClient.client.socket.close();
     }
 
-    async startNewGame(gameCode) {
+    async startNewGame() {
+        const gameCode = Math.random().toString(36).substr(2, 6).toUpperCase();
         const params = {
             cap: null,
             cell_id: this.#cellId,

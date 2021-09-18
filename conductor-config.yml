@@ -1,0 +1,13 @@
+---
+environment_path: ./databases
+use_dangerous_test_keystore: false
+dpki: ~
+keystore_path: ~
+passphrase_service:
+  type: danger_insecure_from_config
+  passphrase: default-insecure-passphrase
+admin_interfaces:
+  - driver:
+      type: websocket
+      port: 65000
+network: ~

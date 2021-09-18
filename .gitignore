@@ -1,6 +1,7 @@
 target/
 node_modules/
 .cargo/
+databases/
 .hc
 .hc_live**
 **.dna
