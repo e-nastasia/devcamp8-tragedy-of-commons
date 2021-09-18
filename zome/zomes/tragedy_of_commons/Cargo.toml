@@ -9,7 +9,8 @@ crate-type = ["cdylib", "rlib"]
 name = "tragedy_of_commons"
 
 [dependencies]
-hdk = "0.0.103"
+hdk = "0.0.106"
+holo_hash = {version = "*", features=["encoding"]}
 derive_more = "0"
 paste = "*"
 # use whatever serde hdk uses
