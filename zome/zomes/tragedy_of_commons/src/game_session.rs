@@ -201,6 +201,56 @@ pub fn new_session(
     Ok(header_hash_round_zero)
 }
 
+pub fn end_game(
+    game_session: &GameSession,
+    game_session_header_hash: &HeaderHash,
+    last_round: &GameRound,
+    last_round_header_hash: &HeaderHash,
+    round_state: &RoundState,
+) -> ExternResult<HeaderHash> {
+    info!("ending game");
+    // last_round contains end results
+    // so no creates or update are necessary
+    // only a signal to all players that game has ended
+    // players that miss the signal should have their UI poll GameRound
+    // based on that content it can be derive if the game has ended or not
+
+    info!("updating game session: setting finished state and adding player stats");
+    let game_status = if last_round.round_state.resource_amount <= 0 {
+        SessionState::Lost{last_round: last_round_header_hash.clone()}
+    } else {
+        SessionState::Finished{last_round: last_round_header_hash.clone()}
+    };
+    //update chain for game session entry
+    let game_session_update = GameSession {
+        owner: game_session.owner.clone(),
+        status: game_status,
+        game_params: game_session.game_params.clone(),
+        players: game_session.players.clone(),
+        scores: round_state.player_stats.clone(),
+        anchor: game_session.anchor.clone(),
+    };
+    let game_session_header_hash_update =
+        update_entry(game_session_header_hash.clone(), &game_session_update)?;
+    debug!(
+        "updated game session header hash: {:?}",
+        game_session_header_hash_update.clone()
+    );
+
+    info!("signaling player game has ended");
+    let signal_payload = SignalPayload {
+        game_session_header_hash: game_session_header_hash_update.clone().into(),
+        round_header_hash_update: last_round_header_hash.clone().into(),
+    };
+    let signal = ExternIO::encode(GameSignal::GameOver(signal_payload))?;
+    // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
+    // the AgentPubKey type, we need to convert our keys to the expected data type
+    remote_signal(signal, game_session.players.clone())?;
+    debug!("sending signal to {:?}", game_session.players.clone());
+
+    Ok(game_session_header_hash_update.clone())
+}
+
 pub fn get_sessions_with_tags(
     link_tags: Vec<&str>,
 ) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
