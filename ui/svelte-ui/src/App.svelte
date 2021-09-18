@@ -3,9 +3,11 @@
 	import StartMenu from "./StartMenu.svelte";
 	import Game from "./Game.svelte";
 	import { AppClient } from "./app-client";
-	import { onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 
 	const DELAY = 300;
+
+	let queryParamPort = new URLSearchParams(window.location.search).get('port');
 
 	let status = "START"; // "GAME_BEGIN"  "GAME_JOIN" "LOADING"
 	let nickname = "---";
@@ -51,7 +53,7 @@
 	}
 	/****************************************/
 	let appHost = "localhost";
-	let appPort = 8000;
+	let appPort = queryParamPort || 8000;
 	let appId = "tragedy_of_commons";
 	let connected = false;
 
@@ -67,6 +69,16 @@
 			connected = false;
 		}
 	};
+
+	onMount(async () => {
+		console.log("on mount")
+		connect();
+	});
+	
+	onDestroy(() => {
+		if (window.appClient) {
+			window.appClient.close();
+		}});
 </script>
 
 <NavBar />
