@@ -172,6 +172,7 @@ pub fn validate(_validation_data: ValidateData) -> ExternResult<ValidateCallback
     Ok(ValidateCallbackResult::Valid)
 }
 
+
 #[hdk_extern]
 pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     // all creates are valid
