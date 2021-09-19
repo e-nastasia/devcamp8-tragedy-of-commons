@@ -30,6 +30,7 @@
             let result = await window.appClient.currentRoundForGameCode(
                 gamecode
             );
+            console.log("result:", result);
             if (!result) {
                 alert("Still waiting on other players");
             } else {
@@ -257,10 +258,10 @@
             <p>
                 Wait until all player joined the game.
                 <br />
-                <a href="#" on:click={refreshPlayerList}>Refresh</a>
+                <a id="refresh_player_list" href="#" on:click={refreshPlayerList}>Refresh</a>
                 <br />
                 {#if players.length != 0}
-                    <button class="startgamebutton" on:click={play}
+                    <button id="start_play_btn" class="startgamebutton" on:click={play}
                         >Play!</button
                     >
                 {/if}
@@ -293,7 +294,7 @@
                 <p>
                     Calculating game scores...
                     <br />
-                    <a href="#" on:click={getAsyncFinalResults}>Click refresh</a
+                    <a id="refresh_scores_btn" href="#" on:click={getAsyncFinalResults}>Refresh scores</a
                     >
                 </p>
             </div>

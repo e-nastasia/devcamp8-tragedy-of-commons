@@ -186,7 +186,7 @@ function signalHandler(connection, signal) {
     //     return
     // }
     console.log('Got Signal', signal.data.payload.signal_name, signal)
-    alert(signal.data.payload.signal_name);
+    //alert(signal.data.payload.signal_name);
     switch (signal.data.payload.signal_name) {
         case 'SyncReq':
             connection.session.syncReq({ from: signal.data.payload.signal_payload })

@@ -1,0 +1,140 @@
+*** Settings ***
+Documentation     Simple example using SeleniumLibrary.
+Library           SeleniumLibrary
+
+*** Variables ***
+${URL_A}      http://localhost:5000?port=8000
+${URL_B}      http://localhost:5000?port=8001
+${BROWSER}        Firefox
+
+*** Test Cases ***
+Play Game
+    Open Browser A To App Page
+    Input Nickname    Tim
+    Click Start
+    ${GAMECODE}    Get Text    gamecode
+
+    Open Browser B To App Page
+    Input Nickname    Eva
+    Input Gamecode    ${GAMECODE}
+    Click Join
+
+    Sleep    3s
+    Switch Browser    A
+    Refresh Player List
+
+    Switch Browser    B
+    Refresh Player List
+
+    Switch Browser    A
+    Click Play
+    Sleep    2s
+    # Handle Alert      ACCEPT
+
+    Switch Browser    B
+    Sleep    1s
+    # Handle Alert      ACCEPT
+    Click Play
+    
+    # ROUND ONE
+    Switch Browser    A
+    Take Resource    1
+    
+    Switch Browser    B
+    Take Resource    2  
+    
+    Sleep    3s
+
+    Switch Browser    A
+    Refresh Round 
+    # Handle Alert      ACCEPT
+
+    Switch Browser    B
+    # Handle Alert      ACCEPT
+    Sleep    5s
+    Refresh Round 
+
+    # ROUND TWO
+    Switch Browser    A
+    Sleep    1s
+    Take Resource    3  
+
+    Switch Browser    B
+    Sleep    1s
+    Take Resource    4  
+    Sleep    5s
+    Refresh Round 
+
+    Switch Browser   A
+    Refresh Round
+
+    # ROUND THREE
+    Switch Browser    A
+    Sleep    1s
+    Take Resource    5  
+
+    Switch Browser    B
+    Sleep    1s
+    Take Resource    6  
+    Sleep    5s
+    Refresh Round 
+
+    Switch Browser    A
+    Refresh Round
+
+    Sleep     5s
+    Refresh Scores
+
+    Switch Browser    B
+    Refresh Scores
+
+    # [Teardown]    Close All Browsers
+
+*** Keywords ***
+Open Browser A To App Page
+    Open Browser    ${URL_A}    ${BROWSER}  alias=A
+    Title Should Be    Devcamp n°8 | september 2021
+
+Open Browser B To App Page
+    Open Browser    ${URL_B}    ${BROWSER}  alias=B
+    Title Should Be    Devcamp n°8 | september 2021
+
+Input Nickname
+    [Arguments]    ${nickname}
+    Input Text    input_start_nick    ${nickname}
+    Input Text    input_join_nick     ${nickname}
+
+Input Gamecode
+    [Arguments]    ${gamecode}
+    Input Text    input_join_game_code    ${gamecode}
+
+Take Resource
+    [Arguments]    ${amount}
+    Input Text      input_take_resources    ${amount}
+    Click Button    make_move_btn
+
+Click Start
+    Click Button    start_game_btn
+
+Click Join
+    Click Button    join_game_btn
+
+Click Play
+    Click Button    start_play_btn
+
+Refresh Round
+    Click Button    refresh_round_btn
+
+Refresh Scores
+    Click Button    refresh_scores_btn
+    
+Refresh Player List
+    #tries max 3 times
+    FOR    ${i}    IN RANGE    6
+        Click Element   refresh_player_list
+        ${player_count}=    Get Text    playercount
+        ${has_2_players}=   Evaluate    ${playercount} == 2
+        Exit For Loop If    ${has_2_players}
+        Sleep    3s
+        Log    try ${i}
+    END
