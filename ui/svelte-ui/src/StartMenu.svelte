@@ -34,7 +34,7 @@
         />
         <input type="hidden" id="input_start_gamecode" name="gamecode" />
         <input type="hidden" name="action" value="start" />
-        <button type="submit" on:click="{startNewGame}">Start</button>
+        <button id="start_game_btn" type="submit" on:click="{startNewGame}">Start</button>
     </form>
     <form action="game.html">
         <h1>Join game</h1>
@@ -43,9 +43,7 @@
         <input type="text" id="input_join_nick" size="20" placeholder="" />
         <label for="input_join_game_code">Game code:</label>
         <input type="text" id="input_join_game_code" size="20" placeholder="" />
-        <input type="hidden" id="input_join_gamecode" name="gamecode" />
-        <input type="hidden" name="action" value="join" />
-        <button type="submit" on:click="{joinGame}">Join</button>
+        <button id="join_game_btn" type="submit" on:click="{joinGame}">Join</button>
     </form>
 </div>
 
