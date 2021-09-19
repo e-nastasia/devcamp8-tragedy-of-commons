@@ -28,9 +28,67 @@ Play Game
 
     Switch Browser    A
     Click Play
+    Sleep    2s
+    # Handle Alert      ACCEPT
 
+    Switch Browser    B
+    Sleep    1s
+    # Handle Alert      ACCEPT
+    Click Play
+    
+    # ROUND ONE
+    Switch Browser    A
+    Take Resource    1
+    
+    Switch Browser    B
+    Take Resource    2  
+    
+    Sleep    3s
 
-   # [Teardown]    Close All Browsers
+    Switch Browser    A
+    Refresh Round 
+    # Handle Alert      ACCEPT
+
+    Switch Browser    B
+    # Handle Alert      ACCEPT
+    Sleep    5s
+    Refresh Round 
+
+    # ROUND TWO
+    Switch Browser    A
+    Sleep    1s
+    Take Resource    3  
+
+    Switch Browser    B
+    Sleep    1s
+    Take Resource    4  
+    Sleep    5s
+    Refresh Round 
+
+    Switch Browser   A
+    Refresh Round
+
+    # ROUND THREE
+    Switch Browser    A
+    Sleep    1s
+    Take Resource    5  
+
+    Switch Browser    B
+    Sleep    1s
+    Take Resource    6  
+    Sleep    5s
+    Refresh Round 
+
+    Switch Browser    A
+    Refresh Round
+
+    Sleep     5s
+    Refresh Scores
+
+    Switch Browser    B
+    Refresh Scores
+
+    # [Teardown]    Close All Browsers
 
 *** Keywords ***
 Open Browser A To App Page
@@ -50,6 +108,11 @@ Input Gamecode
     [Arguments]    ${gamecode}
     Input Text    input_join_game_code    ${gamecode}
 
+Take Resource
+    [Arguments]    ${amount}
+    Input Text      input_take_resources    ${amount}
+    Click Button    make_move_btn
+
 Click Start
     Click Button    start_game_btn
 
@@ -58,6 +121,13 @@ Click Join
 
 Click Play
     Click Button    start_play_btn
+
+Refresh Round
+    Click Button    refresh_round_btn
+
+Refresh Scores
+    Click Button    refresh_scores_btn
+    
 Refresh Player List
     #tries max 3 times
     FOR    ${i}    IN RANGE    6
