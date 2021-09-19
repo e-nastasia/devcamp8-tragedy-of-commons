@@ -155,7 +155,7 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
 #[hdk_extern]
 pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<GameRoundInfo> {
     // TODO: this should probably go to the game_round.rs instead
-    game_round::try_to_close_round_alt(prev_round_hash.into())
+    game_round::try_to_close_round(prev_round_hash.into())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
