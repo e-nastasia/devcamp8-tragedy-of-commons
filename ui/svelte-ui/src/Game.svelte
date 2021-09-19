@@ -294,7 +294,7 @@
                 <p>
                     Calculating game scores...
                     <br />
-                    <a href="#" on:click={getAsyncFinalResults}>Click refresh</a
+                    <a id="refresh_scores_btn" href="#" on:click={getAsyncFinalResults}>Refresh scores</a
                     >
                 </p>
             </div>

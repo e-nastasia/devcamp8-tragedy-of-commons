@@ -53,7 +53,7 @@
             {/each}
         </ul>
         {#if gameRoundState == "IN PROGRESS"}
-            <button on:click={refreshGameRound}>refresh</button>
+            <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
         {/if}
     </aside>
 </section>
