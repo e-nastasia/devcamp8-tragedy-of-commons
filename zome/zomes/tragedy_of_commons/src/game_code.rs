@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use holo_hash::*;
+use hdk::prelude::holo_hash::{EntryHashB64, HeaderHashB64};
 
 use crate::player_profile::PlayerProfile;
 
