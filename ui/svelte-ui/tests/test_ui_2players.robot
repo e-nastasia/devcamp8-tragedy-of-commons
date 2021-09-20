@@ -9,28 +9,34 @@ ${BROWSER}        Firefox
 
 *** Test Cases ***
 Play Game
+    # Open app as game host and start new game
     Open Browser A To App Page
     Input Nickname    Tim
     Click Start
+    Sleep    1s
     ${GAMECODE}    Get Text    gamecode
 
+    #Open app as participant and join game with same code
     Open Browser B To App Page
     Input Nickname    Eva
     Input Gamecode    ${GAMECODE}
     Click Join
 
-    Sleep    3s
+    #Refresh playerlist with retry for game host
     Switch Browser    A
     Refresh Player List
 
+    #Refresh playerlist with retry for game host
     Switch Browser    B
     Refresh Player List
 
+    #Game host starts game by clicking Play
     Switch Browser    A
     Click Play
     Sleep    2s
     # Handle Alert      ACCEPT
 
+    #Participant joins game by clicking Play
     Switch Browser    B
     Sleep    1s
     # Handle Alert      ACCEPT
@@ -43,52 +49,43 @@ Play Game
     Switch Browser    B
     Take Resource    2  
     
-    Sleep    3s
-
     Switch Browser    A
-    Refresh Round 
+    Wait And Refresh Round 
     # Handle Alert      ACCEPT
 
     Switch Browser    B
     # Handle Alert      ACCEPT
-    Sleep    5s
-    Refresh Round 
+    Wait And Refresh Round 
 
     # ROUND TWO
     Switch Browser    A
-    Sleep    1s
     Take Resource    3  
 
     Switch Browser    B
-    Sleep    1s
     Take Resource    4  
-    Sleep    5s
-    Refresh Round 
+    Wait And Refresh Round 
 
     Switch Browser   A
-    Refresh Round
+    Wait And Refresh Round 
 
     # ROUND THREE
     Switch Browser    A
-    Sleep    1s
     Take Resource    5  
 
     Switch Browser    B
-    Sleep    1s
     Take Resource    6  
-    Sleep    5s
-    Refresh Round 
+    Wait And Refresh Round 
 
     Switch Browser    A
-    Refresh Round
+    Wait And Refresh Round 
 
-    Sleep     5s
-    Refresh Scores
+    #GAME OVER
+    Wait And Refresh Scores
 
     Switch Browser    B
-    Refresh Scores
-
-    # [Teardown]    Close All Browsers
+    Wait And Refresh Scores
+    
+    [Teardown]    Close All Browsers
 
 *** Keywords ***
 Open Browser A To App Page
@@ -122,14 +119,23 @@ Click Join
 Click Play
     Click Button    start_play_btn
 
+
+Wait And Refresh Round
+    Sleep    5s
+    Refresh Round 
+
 Refresh Round
     Click Button    refresh_round_btn
 
+Wait And Refresh Scores
+    Sleep    3s
+    Refresh Scores
+
 Refresh Scores
-    Click Button    refresh_scores_btn
+    Click Link    refresh_scores_btn
     
 Refresh Player List
-    #tries max 3 times
+    #tries max 6 times
     FOR    ${i}    IN RANGE    6
         Click Element   refresh_player_list
         ${player_count}=    Get Text    playercount
@@ -138,3 +144,14 @@ Refresh Player List
         Sleep    3s
         Log    try ${i}
     END
+
+# Refresh Scores
+#     #tries max 3 times
+#     FOR    ${i}    IN RANGE    6
+#         Click Element   refresh_player_list
+#         ${player_count}=    Get Text    playercount
+#         ${has_2_players}=   Evaluate    ${playercount} == 2
+#         Exit For Loop If    ${has_2_players}
+#         Sleep    3s
+#         Log    try ${i}
+#     END
