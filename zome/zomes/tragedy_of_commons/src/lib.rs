@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use hdk::prelude::*;
 #[allow(unused)]
-use holo_hash::*;
+use hdk::prelude::holo_hash::*;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 

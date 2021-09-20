@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use hdk::prelude::*;
-use holo_hash::*;
+use hdk::prelude::holo_hash::*;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {

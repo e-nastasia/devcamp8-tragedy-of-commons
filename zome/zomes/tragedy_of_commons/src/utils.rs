@@ -1,6 +1,6 @@
 use crate::error::Error;
 use hdk::prelude::*;
-use holo_hash::*;
+use hdk::prelude::holo_hash::{AgentPubKeyB64, HeaderHashB64};
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
 #[allow(dead_code)]

@@ -7,9 +7,8 @@ use crate::{
     utils::convert_keys_from_b64,
 };
 
-use hdk::prelude::holo_hash::HeaderHashB64;
+use hdk::prelude::holo_hash::{AgentPubKeyB64, EntryHashB64, HeaderHashB64};
 use hdk::prelude::*;
-use holo_hash::{AgentPubKeyB64, EntryHashB64};
 use std::{collections::HashMap, time::SystemTime};
 
 pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
@@ -189,7 +188,7 @@ pub fn new_session(
     // that players need to make their moves
     // WARNING: remote_signal is fire and forget, no error if it fails, might be a weak point if this were production happ
     let signal_payload = SignalPayload {
-        game_session_header_hash: game_session_header_hash.clone().into(),
+        game_session_header_hash: HeaderHashB64::from(game_session_header_hash.clone()),
         round_header_hash_update: header_hash_round_zero.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
@@ -217,9 +216,13 @@ pub fn end_game(
 
     info!("updating game session: setting finished state and adding player stats");
     let game_status = if last_round.round_state.resource_amount <= 0 {
-        SessionState::Lost{last_round: last_round_header_hash.clone()}
+        SessionState::Lost {
+            last_round: last_round_header_hash.clone(),
+        }
     } else {
-        SessionState::Finished{last_round: last_round_header_hash.clone()}
+        SessionState::Finished {
+            last_round: last_round_header_hash.clone(),
+        }
     };
     //update chain for game session entry
     let game_session_update = GameSession {
@@ -239,7 +242,7 @@ pub fn end_game(
 
     info!("signaling player game has ended");
     let signal_payload = SignalPayload {
-        game_session_header_hash: game_session_header_hash_update.clone().into(),
+        game_session_header_hash: HeaderHashB64::from(game_session_header_hash_update.clone()),
         round_header_hash_update: last_round_header_hash.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::GameOver(signal_payload))?;

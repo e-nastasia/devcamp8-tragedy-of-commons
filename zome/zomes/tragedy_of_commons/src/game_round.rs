@@ -9,7 +9,7 @@ use crate::utils::{
     must_get_header_and_entry,
 };
 use hdk::prelude::*;
-use holo_hash::*;
+use hdk::prelude::holo_hash::*;
 use std::collections::HashMap;
 use std::vec;
 
@@ -297,7 +297,7 @@ fn create_new_round(
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
     let signal_payload = SignalPayload {
-        game_session_header_hash: last_round.session.clone().into(),
+        game_session_header_hash: HeaderHashB64::from(last_round.session.clone()),
         round_header_hash_update: round_header_hash_update.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
