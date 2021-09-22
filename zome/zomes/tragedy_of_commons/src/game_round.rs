@@ -407,13 +407,15 @@ pub fn validate_update_entry_game_round(
             game_round.round_num, game_session.game_params.num_rounds
         )));
     }
+    debug!("Validated that round_num {} is correct", game_round.round_num);
 
     let update_header = data.element.header();
-
+    debug!("Matching update_header {:?}", update_header);
     match update_header {
         Header::Update(update_data) => {
+            debug!("Getting prev GameRound entry");
             let prev_entry =
-                must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
+                must_get_header_and_entry::<GameRound>(update_data.original_header_address.clone())?;
             if (prev_entry.round_num + 1) != game_round.round_num {
                 return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
             }

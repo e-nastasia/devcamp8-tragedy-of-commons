@@ -83,7 +83,7 @@ where
     O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
 {
     let h = must_get_header(header_hash)?;
-    debug!("header hash: {:?}", h);
+    debug!("must_get_header_and_entry | header hash: {:?} entry hash: {:?}", h, h.header().entry_hash());
     match h.header().entry_hash() {
         Some(entry_hash) => {
             let entry = must_get_entry(entry_hash.clone())?;
