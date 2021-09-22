@@ -96,13 +96,13 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHas
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
-    crate::game_session::start_default_session(players, anchor)
+    start_default_session(players, anchor)
 }
 
 // TODO(e-nastasia) This is a placeholder fn that can be refactored once
 // the UI is providing game params. Or we can leave it to separate retrieval
 // of the players from the actual session create. Anyway, GameParams have to go!
-pub fn start_default_session(
+fn start_default_session(
     player_list: Vec<PlayerProfile>,
     anchor: EntryHash,
 ) -> ExternResult<HeaderHashB64> {
