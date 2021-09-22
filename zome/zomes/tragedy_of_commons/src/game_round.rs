@@ -297,7 +297,7 @@ fn create_new_round(
         round_num: last_round.round_num + 1,
         // round_state: round_state.clone(),
         session: last_round.session.clone().into(),
-        // game_moves: vec![],
+        // game_moves: vec![],  TODO add these back
     };
     debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
