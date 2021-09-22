@@ -110,7 +110,7 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
 
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
-    game_code::start_game_session_with_code(game_code)
+    game_session::start_game_session_with_code(game_code)
 }
 
 #[hdk_extern]

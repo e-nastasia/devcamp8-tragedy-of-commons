@@ -92,7 +92,7 @@ impl GameSession {
 /// Creates GameSession with the game_code and game_params
 // TODO(e-nastasia): actually add game_params to be used for creation
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
-    let anchor = get_game_code_anchor(game_code)?;
+    let anchor = get_game_code_anchor(game_code.clone())?;
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
