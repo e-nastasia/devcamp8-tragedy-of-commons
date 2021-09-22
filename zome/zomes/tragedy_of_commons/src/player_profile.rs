@@ -8,6 +8,18 @@ pub struct PlayerProfile {
     pub nickname: String,
 }
 
+pub fn create_and_hash_entry_player_profile(nickname: String) -> ExternResult<EntryHash> {
+    let agent = agent_info()?;
+    debug!("create_and_hash_entry_player_profile | nickname: {}, agent {:?}", nickname, agent.clone());
+    let player_profile = PlayerProfile {
+        player_id: agent.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
+        nickname: nickname,
+    };
+    create_entry(&player_profile)?;
+    debug!("create_and_hash_entry_player_profile | profile created, hashing");
+    hash_entry(&player_profile)
+}
+
 pub fn get_player_profiles_for_game_code(
     short_unique_code: String,
 ) -> ExternResult<Vec<PlayerProfile>> {

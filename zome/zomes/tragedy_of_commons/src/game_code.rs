@@ -1,7 +1,7 @@
 use hdk::prelude::*;
 use hdk::prelude::holo_hash::{EntryHashB64, HeaderHashB64};
 
-use crate::player_profile::PlayerProfile;
+use crate::player_profile::create_and_hash_entry_player_profile;
 
 pub const GAME_CODES_ANCHOR: &str = "GAME_CODES";
 
@@ -16,27 +16,19 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
     Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }
 
+/// Creates user's profile and registers this user as one of the game players
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
-    info!("input: {:?}", input);
-    info!("game code: {:?}", input.gamecode);
+    info!("join_game_with_code | input: {:?}, game code: {:?}", input, input.gamecode);
     let anchor = anchor(GAME_CODES_ANCHOR.into(), input.gamecode)?;
-    debug!("anchor created {:?}", &anchor);
-    let agent = agent_info()?;
-    debug!("agent {:?}", agent.clone());
-    let player_profile = PlayerProfile {
-        player_id: agent.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
-        nickname: input.nickname,
-    };
-    create_entry(&player_profile)?;
-    debug!("profile created");
-    let player_profile_entry_hash = hash_entry(&player_profile)?;
-    debug!("profile entry hash {:?}", &player_profile_entry_hash);
+    debug!("join_game_with_code | anchor created {:?}", &anchor);
+    let player_profile_entry_hash = create_and_hash_entry_player_profile(input.nickname)?;
+    debug!("join_game_with_code | profile entry hash {:?}", &player_profile_entry_hash);
     create_link(
         anchor.clone().into(),
         player_profile_entry_hash.into(),
         LinkTag::new("PLAYER"),
     )?;
-    debug!("link created");
+    debug!("join_game_with_code | link created");
     Ok(EntryHashB64::from(anchor)) // or more Rust like: anchor.into())
 }
 
