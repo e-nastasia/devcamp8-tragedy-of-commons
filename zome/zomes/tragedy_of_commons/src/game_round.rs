@@ -1,5 +1,5 @@
 use crate::game_code::get_game_code_anchor;
-use crate::game_move::{GameMove, get_moves_for_round};
+use crate::game_move::{GameMove, get_moves_for_round, finalize_moves};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
@@ -178,66 +178,66 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
     // game moves
     let moves = get_moves_for_round(&last_round_element)?;
 
-    let b = missing_moves(&moves, game_session.players.len());
-    if (b) {
-
-        // TODO: convert Vec<GameMove> into something for nice printing
-        return Ok(GameRoundInfo {
-            current_round_header_hash: Some(last_round_hash),
-            game_session_hash: Some(game_session_element.header_address().clone()),
-            resources_left: Some(last_round.round_state.resource_amount),
-            round_num: last_round.round_num,
-            next_action: "WAITING".into(),
-            moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
-            // add anonymous moves list
-        });
-        // existing hashes + next action
-    }
-
-    let mut moves_info: Vec<(i32, String, String)> = vec![];
-    for game_move in &moves {
-        moves_info.push((
-            game_move.resources.clone(),
-            "playername".into(),
-            HoloHashB64::from(game_move.owner.clone()).to_string(),
-        ));
-    }
-    info!("all players made their moves: calculating round state");
-    let round_state = calculate_round_state(&game_session.game_params, moves);
-    if start_new_round(&game_session, &last_round, &round_state) {
-        let hash = create_new_round(
-            &game_session,
-            &last_round,
-            last_round_element.header_address(),
-            &round_state,
-        )?;
-        Ok(GameRoundInfo {
-            current_round_header_hash: Some(hash),
-            game_session_hash: None,
-            resources_left: Some(round_state.resource_amount),
-            round_num: last_round.round_num + 1,
-            next_action: "START_NEXT_ROUND".into(),
-            moves: moves_info,
-        })
-        //round_hash + next action
-    } else {
-        let hash = crate::game_session::end_game(
-            &game_session,
-            &game_session_element.header_address(),
-            &last_round,
-            last_round_element.header_address(),
-            &round_state,
-        )?;
-        Ok(GameRoundInfo {
-            current_round_header_hash: None,
-            game_session_hash: Some(hash),
-            resources_left: Some(round_state.resource_amount),
-            round_num: last_round.round_num + 1,
-            next_action: "SHOW_GAME_RESULTS".into(),
-            moves: moves_info,
-        })
-        //game_session_hash + next action
-    }
+    match finalize_moves(moves, game_session.players.len())? {
+        Some(unique_moves) => {
+            let mut moves_info: Vec<(i32, String, String)> = vec![];
+            for game_move in &unique_moves {
+                moves_info.push((
+                    game_move.resources.clone(),
+                    "playername".into(),
+                    HoloHashB64::from(game_move.owner.clone()).to_string(),
+                ));
+            }
+            info!("all players made their moves: calculating round state");
+            let round_state = calculate_round_state(&game_session.game_params, unique_moves);
+            if start_new_round(&game_session, &last_round, &round_state) {
+                let hash = create_new_round(
+                    &game_session,
+                    &last_round,
+                    last_round_element.header_address(),
+                    &round_state,
+                )?;
+                return Ok(GameRoundInfo {
+                    current_round_header_hash: Some(hash),
+                    game_session_hash: None,
+                    resources_left: Some(round_state.resource_amount),
+                    round_num: last_round.round_num + 1,
+                    next_action: "START_NEXT_ROUND".into(),
+                    moves: moves_info,
+                })
+                //round_hash + next action
+            } else {
+                let hash = crate::game_session::end_game(
+                    &game_session,
+                    &game_session_element.header_address(),
+                    &last_round,
+                    last_round_element.header_address(),
+                    &round_state,
+                )?;
+                return Ok(GameRoundInfo {
+                    current_round_header_hash: None,
+                    game_session_hash: Some(hash),
+                    resources_left: Some(round_state.resource_amount),
+                    round_num: last_round.round_num + 1,
+                    next_action: "SHOW_GAME_RESULTS".into(),
+                    moves: moves_info,
+                })
+                //game_session_hash + next action
+            }
+        },
+        None => {
+            // TODO: convert Vec<GameMove> into something for nice printing
+            return Ok(GameRoundInfo {
+                current_round_header_hash: Some(last_round_hash),
+                game_session_hash: Some(game_session_element.header_address().clone()),
+                resources_left: Some(last_round.round_state.resource_amount),
+                round_num: last_round.round_num,
+                next_action: "WAITING".into(),
+                moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
+                // add anonymous moves list
+            });
+        }
+    };
 }
 
 fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
