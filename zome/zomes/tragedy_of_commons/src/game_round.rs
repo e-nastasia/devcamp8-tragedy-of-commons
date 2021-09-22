@@ -1,5 +1,5 @@
 use crate::game_code::get_game_code_anchor;
-use crate::game_move::GameMove;
+use crate::game_move::{GameMove, get_moves_for_round};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
@@ -160,22 +160,23 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
     debug!("extracting game session from element");
     let game_session: GameSession = entry_from_element_create_or_update(&game_session_element)?;
 
+/*
+- [DONE] get game moves
+- do we have enough?
+    - if no, display all we have and return
+    - if yes, continue
+- clean all moves: if any player made 2 or more, only leave the first move
+- calculate the state
+- is the round lost?
+    - if no, continue
+    - if yes, close the game
+- is the last round?
+    - if no, open the next one
+    - if yes, close the game
+*/
+
     // game moves
-    info!("fetching links to game moves");
-    let links = get_links(
-        entry_hash_from_element(&last_round_element)?.to_owned(),
-        Some(LinkTag::new("GAME_MOVE")),
-    )?;
-    let mut moves: Vec<GameMove> = vec![];
-    for link in links.into_inner() {
-        debug!("fetching game move element, trying locally first");
-        let game_move_element = match get(link.target.clone(), GetOptions::latest())? {
-            Some(element) => element,
-            None => return Err(WasmError::Guest("Game move not found".into())),
-        };
-        let game_move: GameMove = entry_from_element_create_or_update(&game_move_element)?;
-        moves.push(game_move);
-    }
+    let moves = get_moves_for_round(&last_round_element)?;
 
     let b = missing_moves(&moves, game_session.players.len());
     if (b) {
@@ -203,10 +204,6 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
     }
     info!("all players made their moves: calculating round state");
     let round_state = calculate_round_state(&game_session.game_params, moves);
-
-    // TODO: add check here that we're creating a new round only if
-    // it's num is < game.num_rounds, so that we don't accidentally create more rounds
-    // than are supposed to be in the game
     if start_new_round(&game_session, &last_round, &round_state) {
         let hash = create_new_round(
             &game_session,

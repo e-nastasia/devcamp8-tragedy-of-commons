@@ -87,6 +87,25 @@ pub fn new_move(
     Ok(header_hash_link.into())
 }
 
+pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<GameMove>> {
+    info!("fetching links to game moves");
+    let links = get_links(
+        entry_hash_from_element(last_round_element)?.to_owned(),
+        Some(LinkTag::new("GAME_MOVE")),
+    )?;
+    let mut moves: Vec<GameMove> = vec![];
+    for link in links.into_inner() {
+        debug!("fetching game move element, trying locally first");
+        let game_move_element = match get(link.target.clone(), GetOptions::latest())? {
+            Some(element) => element,
+            None => return Err(WasmError::Guest("Game move not found".into())),
+        };
+        let game_move: GameMove = entry_from_element_create_or_update(&game_move_element)?;
+        moves.push(game_move);
+    }
+    Ok(moves)
+}
+
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
