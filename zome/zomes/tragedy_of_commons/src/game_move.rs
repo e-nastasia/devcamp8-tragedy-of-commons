@@ -10,6 +10,8 @@ use crate::{
 use hdk::prelude::holo_hash::*;
 use hdk::prelude::*;
 
+pub const GAME_MOVE_LINK_TAG: &str = "GAME_MOVE";
+
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
     pub owner: AgentPubKey,
@@ -78,9 +80,8 @@ pub fn new_move(
     let header_hash_link = create_link(
         entry_hash_game_round,
         entry_hash_game_move.clone(),
-        LinkTag::new("GAME_MOVE"),
+        LinkTag::new(String::from(GAME_MOVE_LINK_TAG)),
     )?;
-    // todo: (if we're making a link from round to move) make a link round -> move
     // note: instead of calling try_to_close_Round right here, we can have a UI make
     // this call for us. This way making a move wouldn't be blocked by the other moves'
     // retrieval process and the process of committing the round entry.
@@ -91,7 +92,7 @@ pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<Gam
     info!("fetching links to game moves");
     let links = get_links(
         entry_hash_from_element(last_round_element)?.to_owned(),
-        Some(LinkTag::new("GAME_MOVE")),
+        Some(LinkTag::new(String::from(GAME_MOVE_LINK_TAG))),
     )?;
     let mut moves: Vec<GameMove> = vec![];
     for link in links.into_inner() {
