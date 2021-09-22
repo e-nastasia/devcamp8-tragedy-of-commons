@@ -1,20 +1,19 @@
-#[allow(unused_imports)]
-use hdk::prelude::*;
 #[allow(unused)]
 use hdk::prelude::holo_hash::*;
+#[allow(unused_imports)]
+use hdk::prelude::*;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 #[allow(unused_imports)]
 use crate::{
-    game_code::JoinGameInfo,
     game_move::{GameMove, GameMoveInput},
     game_round::GameRoundInfo,
     game_session::{
         GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
         OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
     },
-    player_profile::PlayerProfile,
+    player_profile::{JoinGameInfo, PlayerProfile},
     utils::{convert, entry_from_element_create_or_update},
 };
 mod error;
@@ -97,7 +96,7 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
 
 #[hdk_extern]
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
-    game_code::join_game_with_code(input)
+    player_profile::join_game_with_code(input)
 }
 
 #[hdk_extern]
@@ -107,7 +106,7 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
 
 #[hdk_extern]
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHashB64> {
-    game_code::start_game_session_with_code(game_code)
+    game_session::start_game_session_with_code(game_code)
 }
 
 // #[hdk_extern]
@@ -173,7 +172,6 @@ pub fn validate(_validation_data: ValidateData) -> ExternResult<ValidateCallback
     Ok(ValidateCallbackResult::Valid)
 }
 
-
 #[hdk_extern]
 pub fn validate_create(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     // all creates are valid
@@ -202,9 +200,9 @@ pub fn validate_delete_entry_game_move(
     game_move::validate_delete_entry_game_move(validate_data)
 }
 
-// #[hdk_extern]
-// pub fn validate_update_entry_game_round(
-//     data: ValidateData,
-// ) -> ExternResult<ValidateCallbackResult> {
-//     game_round::validate_update_entry_game_round(data)
-// }
+#[hdk_extern]
+pub fn validate_update_entry_game_round(
+    data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_round::validate_update_entry_game_round(data)
+}
