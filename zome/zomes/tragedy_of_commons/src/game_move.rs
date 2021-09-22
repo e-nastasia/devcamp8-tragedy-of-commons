@@ -9,10 +9,12 @@ use crate::{
 };
 use hdk::prelude::holo_hash::*;
 use hdk::prelude::*;
+use std::collections::HashMap;
 
 pub const GAME_MOVE_LINK_TAG: &str = "GAME_MOVE";
 
 #[hdk_entry(id = "game_move", visibility = "public")]
+#[derive(Clone)]
 pub struct GameMove {
     pub owner: AgentPubKey,
     // For the very first round this option would be None, because we create game rounds
@@ -105,6 +107,50 @@ pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<Gam
         moves.push(game_move);
     }
     Ok(moves)
+}
+
+/// Consumes list of moves passed to it to finalize them.
+/// If every player made at least one move, it returns list of moves which is guaranteed
+/// to have (TODO: the earliest) a single move for every player.
+/// If there are missing moves, it returns None, since we can't finalize the moves and
+/// have to wait for other players instead.
+pub fn finalize_moves(moves: Vec<GameMove>, number_of_players: usize) -> ExternResult<Option<Vec<GameMove>>> {
+    info!("checking number of moves");
+    debug!("moves list #{:?}", moves);
+    // Check that at least we have as many moves
+    // as there are players in the game
+    if moves.len() < number_of_players {
+        info!("Cannot close round: wait until all moves are made");
+        debug!("number of moves found: #{:?}", moves.len());
+        return Ok(None);
+    } else {
+        // Now that we know we have moves >= num of players, we need
+        // to make sure that every player made at least one move, so
+        // we're not closing the round without someone's move
+        let mut moves_per_player: HashMap::<AgentPubKey, Vec<GameMove>> = HashMap::new();
+        for m in moves {
+            match moves_per_player.get_mut(&m.owner) {
+                Some(mut moves) => {
+                    moves.push(m)
+                },
+                // TODO(e-nastasia): cloning owner value seems like a waste, but I think
+                // that alternative would be to use lifetimes. Not sure it's worth the
+                // readability penalty that we'll incur.
+                None => {moves_per_player.insert(m.owner.clone(), vec![m]);}
+            }
+        }
+        if moves_per_player.keys().len() < number_of_players {
+            info!("Cannot close the round: only {} players made their moves, waiting for total {} players", moves_per_player.keys().len(), number_of_players);
+            return Ok(None)
+        }
+        let mut new_moves = vec![];
+        for (owner, move_vec) in moves_per_player {
+            // TODO: instead of taking just a [0] move, find the move with the earliest
+            // timestamp and use it
+            new_moves.push(move_vec[0].clone());
+        }
+        Ok(Some(new_moves))
+    }
 }
 
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
