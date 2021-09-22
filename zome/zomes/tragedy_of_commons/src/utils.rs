@@ -1,6 +1,6 @@
 use crate::error::Error;
-use hdk::prelude::*;
 use hdk::prelude::holo_hash::{AgentPubKeyB64, HeaderHashB64};
+use hdk::prelude::*;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
 #[allow(dead_code)]
@@ -83,7 +83,11 @@ where
     O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
 {
     let h = must_get_header(header_hash)?;
-    debug!("must_get_header_and_entry | header hash: {:?} entry hash: {:?}", h, h.header().entry_hash());
+    debug!(
+        "must_get_header_and_entry | header hash: {:?} entry hash: {:?}",
+        h,
+        h.header().entry_hash()
+    );
     match h.header().entry_hash() {
         Some(entry_hash) => {
             let entry = must_get_entry(entry_hash.clone())?;
@@ -103,7 +107,8 @@ where
             Err(WasmError::Guest(
             "within resolve_header_to_entry a header that was not a Create variant was attempted"
                 .to_string(),
-        ))},
+        ))
+        }
     }
 }
 

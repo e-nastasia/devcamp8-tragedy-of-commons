@@ -3,12 +3,12 @@ use crate::{
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
     utils::{
-        convert, convert_keys_from_b64, entry_hash_from_element, must_get_header_and_entry,
-        try_get_and_convert, entry_from_element_create_or_update
+        convert, convert_keys_from_b64, entry_from_element_create_or_update,
+        entry_hash_from_element, must_get_header_and_entry, try_get_and_convert,
     },
 };
-use hdk::prelude::*;
 use hdk::prelude::holo_hash::*;
+use hdk::prelude::*;
 
 #[hdk_entry(id = "game_move", visibility = "public")]
 pub struct GameMove {
@@ -90,7 +90,10 @@ pub fn new_move(
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
-    debug!("Validating GameMove create_entry {:?}, data: {:?}", game_move, data);
+    debug!(
+        "Validating GameMove create_entry {:?}, data: {:?}",
+        game_move, data
+    );
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
         debug!("GameMove {:?} has negative resources, INVALID", game_move);
