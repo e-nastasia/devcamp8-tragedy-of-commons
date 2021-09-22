@@ -24,8 +24,8 @@ pub struct RoundState {
 pub struct GameRound {
     pub round_num: u32,
     pub session: EntryHash,
-    pub round_state: RoundState,
-    pub game_moves: Vec<EntryHash>,
+    // pub round_state: RoundState,
+    // pub game_moves: Vec<EntryHash>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
@@ -59,8 +59,8 @@ impl GameRound {
         GameRound {
             round_num,
             session,
-            round_state,
-            game_moves: previous_round_moves,
+            // round_state,
+            // game_moves: previous_round_moves,
         }
     }
 }
@@ -295,13 +295,14 @@ fn create_new_round(
     //update chain from the previous round entry hash and commit an updated version
     let next_round = GameRound {
         round_num: last_round.round_num + 1,
-        round_state: round_state.clone(),
+        // round_state: round_state.clone(),
         session: last_round.session.clone().into(),
-        game_moves: vec![],
+        // game_moves: vec![],
     };
     debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
     let round_entry_hash_update = hash_entry(&next_round)?;
+    info!("updated round header hash: {:?}", round_header_hash_update);
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
     let signal_payload = SignalPayload {
@@ -315,29 +316,29 @@ fn create_new_round(
     Ok(round_entry_hash_update)
 }
 
-pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
-    //get latest update for game round
-    let result = get_latest_round(game_round_header_hash)?;
-    let round = result.0;
-    let hash = result.1;
-    let mut round_state: String = "IN_PROGRESS".into();
-    let mut resources: Option<i32> = None;
+// pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
+//     //get latest update for game round
+//     let result = get_latest_round(game_round_header_hash)?;
+//     let round = result.0;
+//     let hash = result.1;
+//     let mut round_state: String = "IN_PROGRESS".into();
+//     let mut resources: Option<i32> = None;
 
-    if round.game_moves.len() == 0 {
-        round_state = "FINISHED".into();
-        resources = Some(round.round_state.resource_amount)
-    }
-    let x = GameRoundInfo {
-        round_num: round.round_num,
-        current_round_entry_hash: Some(hash),
-        next_action: round_state,
-        resources_left: resources,
-        game_session_hash: None,
-        moves: vec![],
-    };
-    debug!("Round info: {:?}", x);
-    Ok(x)
-}
+//     if round.game_moves.len() == 0 {
+//         round_state = "FINISHED".into();
+//         resources = Some(round.round_state.resource_amount)
+//     }
+//     let x = GameRoundInfo {
+//         round_num: round.round_num,
+//         current_round_entry_hash: Some(hash),
+//         next_action: round_state,
+//         resources_left: resources,
+//         game_session_hash: None,
+//         moves: vec![],
+//     };
+//     debug!("Round info: {:?}", x);
+//     Ok(x)
+// }
 
 pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
     let anchor = anchor(GAME_CODES_ANCHOR.into(), game_code.clone())?;

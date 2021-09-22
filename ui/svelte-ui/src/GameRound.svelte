@@ -50,9 +50,9 @@
                 </li>
             {/each}
         </ul>
-        <!-- {#if gameRoundState == "IN PROGRESS"} -->
+        {#if gameRoundState == "IN PROGRESS"}
             <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
-        <!-- {/if} -->
+        {/if}
     </aside>
 </section>
 

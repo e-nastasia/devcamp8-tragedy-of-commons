@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation     Simple example using SeleniumLibrary.
 Library           SeleniumLibrary
+Library    XML
 
 *** Variables ***
 ${URL_A}      http://localhost:5000?port=8000
@@ -74,10 +75,10 @@ Play Game
 
     Switch Browser    B
     Take Resource    6  
-    Refresh Round 
+    Refresh Last Round 
 
     Switch Browser    A
-    Refresh Round 
+    Refresh Last Round 
 
     #GAME OVER
     Refresh Scores
@@ -121,12 +122,12 @@ Click Play
 
 
 
-Refresh Scores
-    FOR    ${i}    IN RANGE    6
-        Click Link    refresh_scores_btn        
-        Wait Until Element Is Visible    game_results_section    3s
-        Log    try ${i}
-    END
+# Refresh Scores
+#     FOR    ${i}    IN RANGE    6
+#         Click Link    refresh_scores_btn        
+#         Wait Until Element Is Visible    game_results_section    3s
+#         Log    try ${i}
+#     END
     
 Refresh Player List
     #tries max 6 times
@@ -142,14 +143,24 @@ Refresh Player List
 Refresh Round
     Sleep    5s
     Click Button    refresh_round_btn
-    # FOR    ${i}    IN RANGE    6
-    #     Click Button    refresh_round_btn
-    #     Wait Until Element Is Visible    input_take_resources    3s
+    Wait Until Element Is Visible    input_take_resources    3s
+    # FOR    ${i}    IN RANGE    6      
     #     Log    try ${i}
     # END
 
+Refresh Last Round
+    Sleep    5s
+    Click Button    refresh_round_btn
+    Wait Until Element Is Visible    refresh_scores_btn    3s
+    # FOR    ${i}    IN RANGE    6      
+    #     Click Button    refresh_round_btn
+    #     Wait Until Element Is Visible    refresh_scores_btn    3s
+    #     Log    try ${i}
+    # END
 
-# Refresh Scores
+Refresh Scores
+    Sleep    5s
+    Click Link    refresh_scores_btn
 #     #tries max 3 times
 #     FOR    ${i}    IN RANGE    6
 #         Click Element   refresh_player_list
