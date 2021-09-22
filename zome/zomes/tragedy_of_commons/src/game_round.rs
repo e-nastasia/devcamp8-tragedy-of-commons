@@ -1,4 +1,4 @@
-use crate::game_code::GAME_CODES_ANCHOR;
+use crate::game_code::get_game_code_anchor;
 use crate::game_move::GameMove;
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
@@ -332,7 +332,7 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
 }
 
 pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<HeaderHash>> {
-    let anchor = anchor(GAME_CODES_ANCHOR.into(), game_code.clone())?;
+    let anchor = get_game_code_anchor(game_code)?;
     let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
     let links_vec = links.into_inner();
     debug!("links: {:?}", &links_vec);

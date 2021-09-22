@@ -1,4 +1,4 @@
-use crate::game_code::GAME_CODES_ANCHOR;
+use crate::game_code::get_game_code_anchor;
 use hdk::prelude::holo_hash::{EntryHash, EntryHashB64};
 use hdk::prelude::*;
 
@@ -42,7 +42,7 @@ pub fn create_and_hash_entry_player_profile(nickname: String) -> ExternResult<En
 /// Creates user's profile for the game and registers this user as one of the game players
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
     info!("join_game_with_code | input: {:?}", input);
-    let anchor = anchor(GAME_CODES_ANCHOR.into(), input.gamecode)?;
+    let anchor = get_game_code_anchor(input.gamecode)?;
     debug!("join_game_with_code | anchor created {:?}", &anchor);
     let player_profile_entry_hash = create_and_hash_entry_player_profile(input.nickname)?;
     debug!(
@@ -61,7 +61,7 @@ pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
 pub fn get_player_profiles_for_game_code(
     short_unique_code: String,
 ) -> ExternResult<Vec<PlayerProfile>> {
-    let anchor = anchor(GAME_CODES_ANCHOR.into(), short_unique_code)?;
+    let anchor = get_game_code_anchor(short_unique_code)?;
     debug!("anchor: {:?}", anchor);
     let links: Links = get_links(anchor, Some(LinkTag::new(String::from(PLAYER_LINK_TAG))))?;
     debug!("links: {:?}", links);
