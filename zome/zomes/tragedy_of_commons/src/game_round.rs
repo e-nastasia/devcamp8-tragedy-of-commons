@@ -179,15 +179,8 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
 
     let b = missing_moves(&moves, game_session.players.len());
     if (b) {
-        let mut anonymous_moves_info: Vec<(i32, String, String)> = vec![];
-        for game_move in &moves {
-            anonymous_moves_info.push((
-                -1,
-                "playername".into(),
-                HoloHashB64::from(game_move.owner.clone()).to_string(),
-            ));
-        }
 
+        // TODO: convert Vec<GameMove> into something for nice printing
         return Ok(GameRoundInfo {
             current_round_header_hash: Some(last_round_hash),
             game_session_hash: Some(game_session_element.header_address().clone()),
@@ -253,15 +246,32 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
 fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
     info!("checking number of moves");
     debug!("moves list #{:?}", moves);
+    // Check that at least we have as many moves
+    // as there are players in the game
     if moves.len() < number_of_players {
-        // TODO: implement check to verify that each player has made a single move
-        // Since we're not validating that every player has only made one move, we need to make
-        // this check here, otherwise game would be broken.
         info!("Cannot close round: wait until all moves are made");
         debug!("number of moves found: #{:?}", moves.len());
         return true;
-    };
-    false
+    } else {
+        // Now that we know we have moves >= num of players, we need
+        // to make sure that every player made at least one move, so
+        // we're not closing the round without someone's move
+        let mut moves_per_player: HashMap::<&AgentPubKey, Vec<&GameMove>> = HashMap::new();
+        for m in moves {
+            match moves_per_player.get_mut(&m.owner) {
+                Some(mut moves) => {
+                    // TODO: sort these moves by the timestamp and only use the first one
+                    // in all calculations
+                    moves.push(m)
+                },
+                None => {moves_per_player.insert(&m.owner, vec![m]);}
+            }
+        }
+        if moves_per_player.keys().len() < number_of_players {
+            return true;
+        }
+        false
+    }
 }
 
 fn start_new_round(
