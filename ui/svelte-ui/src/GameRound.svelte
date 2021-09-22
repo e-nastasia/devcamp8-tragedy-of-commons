@@ -5,7 +5,7 @@
     export let round = {
         round_num: 0,
         resources_left: 100,
-        current_round_header_hash: "slfsd",
+        current_round_entry_hash: "slfsd",
         game_session_hash: "smdlfk",
         next_action: "TODO",
         moves: [
@@ -18,8 +18,6 @@
 
     
     // moves
-    // $: roundnum = round.num;
-    // $: roundhash = round.current_round_header_hash;
     export let moves = [];
     // $: moves = [...moves, round.moves];
 
@@ -43,7 +41,7 @@
 <section>
     <aside class="gameround">
         <h2>Round {round.round_num} - {gameRoundState}</h2>
-        <i style="color:silver">{round.current_round_header_hash}</i>
+        <i style="color:silver">{round.current_round_entry_hash}</i>
         <ul>
             {#each moves as move}
                 <li>
@@ -52,9 +50,9 @@
                 </li>
             {/each}
         </ul>
-        {#if gameRoundState == "IN PROGRESS"}
+        <!-- {#if gameRoundState == "IN PROGRESS"} -->
             <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
-        {/if}
+        <!-- {/if} -->
     </aside>
 </section>
 

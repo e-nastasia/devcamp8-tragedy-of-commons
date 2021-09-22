@@ -7,7 +7,7 @@
     ];
 </script>
 
-<section>
+<section id="game_results_section">
     <aside class="gameresults">
         <h2>Game scores</h2>
         <p>Total score: {game_scores.totalscore}</p>

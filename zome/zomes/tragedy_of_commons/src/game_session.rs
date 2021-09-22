@@ -17,10 +17,10 @@ pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
     InProgress,
-    Lost { last_round: HeaderHash },
+    Lost { last_round: EntryHash },
     // TODO: when validating things, check that last game round is finished to verify
     // that session itself is finished
-    Finished { last_round: HeaderHash },
+    Finished { last_round: EntryHash },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Copy)]
@@ -52,8 +52,8 @@ pub struct GameSessionInput {
 
 #[derive(Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct SignalPayload {
-    pub game_session_header_hash: HeaderHashB64,
-    pub round_header_hash_update: HeaderHashB64,
+    pub game_session_entry_hash: EntryHashB64,
+    pub round_entry_hash_update: EntryHashB64,
 }
 
 #[hdk_entry(id = "game_scores", visibility = "public")]
@@ -94,7 +94,7 @@ impl GameSession {
 pub fn start_default_session(
     player_list: Vec<PlayerProfile>,
     anchor: EntryHash,
-) -> ExternResult<HeaderHashB64> {
+) -> ExternResult<EntryHashB64> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
@@ -107,7 +107,7 @@ pub fn start_default_session(
     let round_zero = new_session(players, game_params, anchor);
     debug!("new session created: {:?}", round_zero);
     match round_zero {
-        Ok(hash) => Ok(HeaderHashB64::from(hash)),
+        Ok(hash) => Ok(EntryHashB64::from(hash)),
         Err(error) => Err(error),
     }
 }
@@ -119,7 +119,7 @@ pub fn new_session(
     players: Vec<AgentPubKey>,
     game_params: GameParams,
     anchor: EntryHash,
-) -> ExternResult<HeaderHash> {
+) -> ExternResult<EntryHash> {
     // TODO: get timestamp as systime
 
     info!("creating new game session");
@@ -165,7 +165,7 @@ pub fn new_session(
     // TODO: create a link from session to game round entry to make the round discoverable
     let round_zero = GameRound::new(
         0,
-        game_session_header_hash.clone(),
+        game_session_entry_hash.clone(),
         RoundState::new(
             game_session.game_params.start_amount,
             new_player_stats(&players),
@@ -176,8 +176,8 @@ pub fn new_session(
     let entry_hash_round_zero = hash_entry(&round_zero)?;
 
     create_link(
-        game_session_entry_hash,
-        entry_hash_round_zero,
+        game_session_entry_hash.clone(),
+        entry_hash_round_zero.clone(),
         LinkTag::new("GAME_ROUND"),
     );
 
@@ -188,8 +188,8 @@ pub fn new_session(
     // that players need to make their moves
     // WARNING: remote_signal is fire and forget, no error if it fails, might be a weak point if this were production happ
     let signal_payload = SignalPayload {
-        game_session_header_hash: HeaderHashB64::from(game_session_header_hash.clone()),
-        round_header_hash_update: header_hash_round_zero.clone().into(),
+        game_session_entry_hash: EntryHashB64::from(game_session_entry_hash.clone()),
+        round_entry_hash_update: entry_hash_round_zero.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
@@ -197,16 +197,16 @@ pub fn new_session(
     remote_signal(signal, players.clone())?;
     debug!("sending signal to {:?}", players);
 
-    Ok(header_hash_round_zero)
+    Ok(entry_hash_round_zero)
 }
 
 pub fn end_game(
     game_session: &GameSession,
     game_session_header_hash: &HeaderHash,
     last_round: &GameRound,
-    last_round_header_hash: &HeaderHash,
+    last_round_entry_hash: &EntryHash,
     round_state: &RoundState,
-) -> ExternResult<HeaderHash> {
+) -> ExternResult<EntryHash> {
     info!("ending game");
     // last_round contains end results
     // so no creates or update are necessary
@@ -217,11 +217,11 @@ pub fn end_game(
     info!("updating game session: setting finished state and adding player stats");
     let game_status = if last_round.round_state.resource_amount <= 0 {
         SessionState::Lost {
-            last_round: last_round_header_hash.clone(),
+            last_round: last_round_entry_hash.clone(),
         }
     } else {
         SessionState::Finished {
-            last_round: last_round_header_hash.clone(),
+            last_round: last_round_entry_hash.clone(),
         }
     };
     //update chain for game session entry
@@ -235,15 +235,20 @@ pub fn end_game(
     };
     let game_session_header_hash_update =
         update_entry(game_session_header_hash.clone(), &game_session_update)?;
+    let game_session_entry_hash_update = hash_entry(&game_session_update)?;
     debug!(
         "updated game session header hash: {:?}",
         game_session_header_hash_update.clone()
     );
+    debug!(
+        "updated game session entry hash: {:?}",
+        game_session_entry_hash_update.clone()
+    );
 
     info!("signaling player game has ended");
     let signal_payload = SignalPayload {
-        game_session_header_hash: HeaderHashB64::from(game_session_header_hash_update.clone()),
-        round_header_hash_update: last_round_header_hash.clone().into(),
+        game_session_entry_hash: EntryHashB64::from(game_session_entry_hash_update.clone()),
+        round_entry_hash_update: last_round_entry_hash.clone().into(),
     };
     let signal = ExternIO::encode(GameSignal::GameOver(signal_payload))?;
     // Since we're storing agent keys as AgentPubKeyB64, and remote_signal only accepts
@@ -251,7 +256,7 @@ pub fn end_game(
     remote_signal(signal, game_session.players.clone())?;
     debug!("sending signal to {:?}", game_session.players.clone());
 
-    Ok(game_session_header_hash_update.clone())
+    Ok(game_session_entry_hash_update.clone())
 }
 
 pub fn get_sessions_with_tags(

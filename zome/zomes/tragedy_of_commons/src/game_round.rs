@@ -23,7 +23,7 @@ pub struct RoundState {
 #[derive(Clone, PartialEq, Eq)]
 pub struct GameRound {
     pub round_num: u32,
-    pub session: HeaderHash,
+    pub session: EntryHash,
     pub round_state: RoundState,
     pub game_moves: Vec<EntryHash>,
 }
@@ -32,8 +32,8 @@ pub struct GameRound {
 pub struct GameRoundInfo {
     pub round_num: u32,
     pub resources_left: Option<i32>,
-    pub current_round_header_hash: Option<HeaderHash>,
-    pub game_session_hash: Option<HeaderHash>,
+    pub current_round_entry_hash: Option<EntryHash>,
+    pub game_session_hash: Option<EntryHash>,
     pub next_action: String,
     pub moves: Vec<(i32, String, String)>,
 }
@@ -52,7 +52,7 @@ impl GameRound {
     /// Creates a new GameRound instance with the provided input
     pub fn new(
         round_num: u32,
-        session: HeaderHash,
+        session: EntryHash,
         round_state: RoundState,
         previous_round_moves: Vec<EntryHash>,
     ) -> GameRound {
@@ -90,7 +90,7 @@ pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -
     }
 }
 
-fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderHash)> {
+fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, EntryHash)> {
     info!("fetching element from DHT");
     debug!(
         "headerhash previous round: {:?}",
@@ -103,7 +103,8 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderH
     debug!("extracting game round from element");
     let last_round: GameRound = entry_from_element_create_or_update(&round_element)?;
     debug!("get latest round: {:?}", last_round);
-    Ok((last_round, round_element.header_address().clone()))
+    let last_round_entry_hash = round_element.header().entry_hash().expect("round element should always have entry hash");
+    Ok((last_round, last_round_entry_hash.clone()))
 }
 
 // NOTE: game round is always created once players made their moves, so every round is always
@@ -137,12 +138,12 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, HeaderH
 // would actually be a game session entry) and attempt to close the current round by creating it's entry.
 // This would solely depend on the amount of moves retrieved being equal to the amount of players in the game
 
-pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
+pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
     //previous round
     info!("fetching element with previous round from DHT");
     debug!(
-        "headerhash previous round: {:?}",
-        HeaderHashB64::from(last_round_hash.clone())
+        "entry hash previous round: {:?}",
+        EntryHashB64::from(last_round_hash.clone())
     );
     let last_round_element = match get(last_round_hash.clone(), GetOptions::latest())? {
         Some(element) => element,
@@ -168,7 +169,7 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
     )?;
     let mut moves: Vec<GameMove> = vec![];
     for link in links.into_inner() {
-        debug!("fetching game move element, trying locally first");
+        // debug!("fetching game move element, trying locally first");
         let game_move_element = match get(link.target.clone(), GetOptions::latest())? {
             Some(element) => element,
             None => return Err(WasmError::Guest("Game move not found".into())),
@@ -187,16 +188,22 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
                 HoloHashB64::from(game_move.owner.clone()).to_string(),
             ));
         }
-
-        return Ok(GameRoundInfo {
-            current_round_header_hash: Some(last_round_hash),
-            game_session_hash: Some(game_session_element.header_address().clone()),
-            resources_left: Some(last_round.round_state.resource_amount),
-            round_num: last_round.round_num,
-            next_action: "WAITING".into(),
-            moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
-            // add anonymous moves list
-        });
+        return Err(WasmError::Guest(
+            format!(
+                "Still waiting on {} player(s)",
+                game_session.players.len() - &moves.len()
+            )
+            .into(),
+        ));
+        // return Ok(GameRoundInfo {
+        //     current_round_header_hash: Some(last_round_hash),
+        //     game_session_hash: Some(game_session_element.header_address().clone()),
+        //     resources_left: Some(last_round.round_state.resource_amount),
+        //     round_num: last_round.round_num+1,
+        //     next_action: "WAITING".into(),
+        //     moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
+        //     // add anonymous moves list
+        // });
         // existing hashes + next action
     }
 
@@ -222,7 +229,7 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
             &round_state,
         )?;
         Ok(GameRoundInfo {
-            current_round_header_hash: Some(hash),
+            current_round_entry_hash: Some(hash),
             game_session_hash: None,
             resources_left: Some(round_state.resource_amount),
             round_num: last_round.round_num + 1,
@@ -235,11 +242,11 @@ pub fn try_to_close_round(last_round_hash: HeaderHash) -> ExternResult<GameRound
             &game_session,
             &game_session_element.header_address(),
             &last_round,
-            last_round_element.header_address(),
+            last_round_element.header().entry_hash().expect("should have entry"),
             &round_state,
         )?;
         Ok(GameRoundInfo {
-            current_round_header_hash: None,
+            current_round_entry_hash: None,
             game_session_hash: Some(hash),
             resources_left: Some(round_state.resource_amount),
             round_num: last_round.round_num + 1,
@@ -280,7 +287,7 @@ fn create_new_round(
     last_round: &GameRound,
     last_round_header_hash: &HeaderHash,
     round_state: &RoundState,
-) -> ExternResult<HeaderHash> {
+) -> ExternResult<EntryHash> {
     info!(
         "start new round: updating game round entry. Last_round_num {:?}",
         last_round.round_num
@@ -294,17 +301,18 @@ fn create_new_round(
     };
     debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
+    let round_entry_hash_update = hash_entry(&next_round)?;
     debug!("updated round header hash: {:?}", round_header_hash_update);
     info!("signaling player new round has started");
     let signal_payload = SignalPayload {
-        game_session_header_hash: HeaderHashB64::from(last_round.session.clone()),
-        round_header_hash_update: round_header_hash_update.clone().into(),
+        game_session_entry_hash: EntryHashB64::from(last_round.session.clone()),
+        round_entry_hash_update: EntryHashB64::from(round_entry_hash_update.clone()),
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     remote_signal(signal, game_session.players.clone())?;
     debug!("sending signal to {:?}", game_session.players.clone());
 
-    Ok(round_header_hash_update)
+    Ok(round_entry_hash_update)
 }
 
 pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
@@ -321,7 +329,7 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
     }
     let x = GameRoundInfo {
         round_num: round.round_num,
-        current_round_header_hash: Some(hash),
+        current_round_entry_hash: Some(hash),
         next_action: round_state,
         resources_left: resources,
         game_session_hash: None,
@@ -331,7 +339,7 @@ pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<Ga
     Ok(x)
 }
 
-pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<HeaderHash>> {
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
     let anchor = anchor(GAME_CODES_ANCHOR.into(), game_code.clone())?;
     let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
     let links_vec = links.into_inner();
@@ -375,7 +383,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Hea
                 .ok_or(WasmError::Guest(String::from("Entry not found")))?;
 
             //let game_round_entry_hash:&EntryHash = entry_hash_from_element(&element)?;
-            return Ok(Some(element.header_address().clone()));
+            return Ok(Some(element.header().entry_hash().expect("should have entry").clone()));
         }
     }
 
@@ -392,39 +400,41 @@ fn get_all_round_moves(round_entry_hash: EntryHash) {
 pub fn validate_update_entry_game_round(
     data: ValidateData,
 ) -> ExternResult<ValidateCallbackResult> {
-    let game_round: GameRound = data
-        .element
-        .entry()
-        .to_app_option()?
-        .ok_or(WasmError::Guest(
-            "Trying to validate an entry that's not a GameRound".into(),
-        ))?;
-    debug!("Validating GameRound update entry {:?}, data: {:?}", game_round, data);
-    let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
-    if game_round.round_num > game_session.game_params.num_rounds {
-        return Ok(ValidateCallbackResult::Invalid(format!(
-            "Can't create GameRound number {} because GameSession only has {} rounds",
-            game_round.round_num, game_session.game_params.num_rounds
-        )));
-    }
+    // let game_round: GameRound = data
+    //     .element
+    //     .entry()
+    //     .to_app_option()?
+    //     .ok_or(WasmError::Guest(
+    //         "Trying to validate an entry that's not a GameRound".into(),
+    //     ))?;
+    // debug!("Validating GameRound update entry {:?}, data: {:?}", game_round, data);
 
-    let update_header = data.element.header();
+    // TODO: FIX validation now that game_round.session is an EntryHash and not a HeaderHash
+    // let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
+    // if game_round.round_num > game_session.game_params.num_rounds {
+    //     return Ok(ValidateCallbackResult::Invalid(format!(
+    //         "Can't create GameRound number {} because GameSession only has {} rounds",
+    //         game_round.round_num, game_session.game_params.num_rounds
+    //     )));
+    // }
 
-    match update_header {
-        Header::Update(update_data) => {
-            let prev_entry =
-                must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
-            if (prev_entry.round_num + 1) != game_round.round_num {
-                return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
-            }
-        }
-        _ => {
-            // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
-            return Ok(ValidateCallbackResult::Invalid(String::from(
-                "GameRound's element has the wrong header: expected Update",
-            )));
-        }
-    }
+    // let update_header = data.element.header();
+
+    // match update_header {
+    //     Header::Update(update_data) => {
+    //         let prev_entry =
+    //             must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
+    //         if (prev_entry.round_num + 1) != game_round.round_num {
+    //             return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
+    //         }
+    //     }
+    //     _ => {
+    //         // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
+    //         return Ok(ValidateCallbackResult::Invalid(String::from(
+    //             "GameRound's element has the wrong header: expected Update",
+    //         )));
+    //     }
+    // }
 
     Ok(ValidateCallbackResult::Valid)
 }

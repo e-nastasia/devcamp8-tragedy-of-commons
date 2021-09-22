@@ -1,6 +1,6 @@
 use crate::error::Error;
-use hdk::prelude::*;
 use hdk::prelude::holo_hash::{AgentPubKeyB64, HeaderHashB64};
+use hdk::prelude::*;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
 #[allow(dead_code)]
@@ -39,7 +39,7 @@ pub fn entry_from_element_create_or_update<
 >(
     element: &Element,
 ) -> Result<E, Error> {
-    debug!("utils: entry extraction");
+    // debug!("utils: entry extraction");
     match element.header() {
         Header::Create(_) | Header::Update(_) => match element.entry().to_app_option() {
             Ok(Some(entry)) => Ok(entry),
@@ -47,21 +47,21 @@ pub fn entry_from_element_create_or_update<
             Err(e) => return Err(Error::Wasm(e.into())),
         },
         _ => {
-            debug!("which header {:?}", element.header());
+            error!("which header {:?}", element.header());
             Err(Error::WrongHeader)
         }
     }
 }
 
 pub fn entry_hash_from_element(element: &Element) -> ExternResult<&EntryHash> {
-    debug!("utils: entry hash extraction");
+    // debug!("utils: entry hash extraction");
     match element.header() {
         Header::Create(_) | Header::Update(_) => match element.header().entry_hash() {
             Some(entry_hash) => Ok(entry_hash),
             None => Err(WasmError::Guest("no entry hash".into())),
         },
         _ => {
-            debug!("which header {:?}", element.header());
+            error!("which header {:?}", element.header());
             Err(WasmError::Guest("WrongHeader".into()))
         }
     }
@@ -83,7 +83,7 @@ where
     O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
 {
     let h = must_get_header(header_hash)?;
-    debug!("header hash: {:?}", h);
+    // trace!("header hash: {:?}", h);
     match h.header().entry_hash() {
         Some(entry_hash) => {
             let entry = must_get_entry(entry_hash.clone())?;
@@ -103,7 +103,8 @@ where
             Err(WasmError::Guest(
             "within resolve_header_to_entry a header that was not a Create variant was attempted"
                 .to_string(),
-        ))},
+        ))
+        }
     }
 }
 

@@ -98,17 +98,17 @@ export class AppClient {
         };
         return this.#appClient.callZome(params);
     }
-    async currentRoundInfoForHeaderHash(headerHash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'current_round_info',
-            provenance: this.#agentPubKey,
-            payload: headerHash
-        };
-        return this.#appClient.callZome(params);
-    }
+    // async currentRoundInfoForHeaderHash(entryHash) {
+    //     const params = {
+    //         cap: null,
+    //         cell_id: this.#cellId,
+    //         zome_name: 'tragedy_of_commons',
+    //         fn_name: 'current_round_info',
+    //         provenance: this.#agentPubKey,
+    //         payload: entryHash
+    //     };
+    //     return this.#appClient.callZome(params);
+    // }
     async makeMove(amount, prev_round_hash) {
         const params = {
             cap: null,

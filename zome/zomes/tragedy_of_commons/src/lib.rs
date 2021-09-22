@@ -69,6 +69,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
         .with_target(false)
         .with_max_level(Level::TRACE)
         .without_time()
+        .compact()
         // completes the builder.
         .finish();
 
@@ -105,17 +106,17 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
 }
 
 #[hdk_extern]
-pub fn current_round_info(game_round_header_hash: HeaderHash) -> ExternResult<GameRoundInfo> {
-    game_round::current_round_info(game_round_header_hash)
-}
-
-#[hdk_extern]
-pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
+pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHashB64> {
     game_code::start_game_session_with_code(game_code)
 }
 
+// #[hdk_extern]
+// pub fn current_round_info(game_round_entry_hash: EntryHash) -> ExternResult<GameRoundInfo> {
+//     game_round::current_round_info(game_round_entry_hash)
+// }
+
 #[hdk_extern]
-pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<HeaderHash>> {
+pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
     game_round::current_round_for_game_code(game_code)
 }
 
@@ -153,7 +154,7 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
 /// active GameRound. It will check the currently available GameRound state and then
 /// will close it if it's possible. If not, it will return None
 #[hdk_extern]
-pub fn try_to_close_round(prev_round_hash: HeaderHashB64) -> ExternResult<GameRoundInfo> {
+pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
     // TODO: this should probably go to the game_round.rs instead
     game_round::try_to_close_round(prev_round_hash.into())
 }

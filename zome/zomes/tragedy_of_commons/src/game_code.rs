@@ -1,5 +1,5 @@
+use hdk::prelude::holo_hash::EntryHashB64;
 use hdk::prelude::*;
-use hdk::prelude::holo_hash::{EntryHashB64, HeaderHashB64};
 
 use crate::player_profile::PlayerProfile;
 
@@ -42,7 +42,7 @@ pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
 
 /// Creates GameSession with the game_code and game_params
 // TODO(e-nastasia): actually add game_params to be used for creation
-pub fn start_game_session_with_code(game_code: String) -> ExternResult<HeaderHashB64> {
+pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHashB64> {
     let anchor = anchor(GAME_CODES_ANCHOR.into(), game_code.clone())?;
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;

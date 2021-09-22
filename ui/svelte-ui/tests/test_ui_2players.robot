@@ -50,12 +50,12 @@ Play Game
     Take Resource    2  
     
     Switch Browser    A
-    Wait And Refresh Round 
+    Refresh Round 
     # Handle Alert      ACCEPT
 
     Switch Browser    B
     # Handle Alert      ACCEPT
-    Wait And Refresh Round 
+    Refresh Round 
 
     # ROUND TWO
     Switch Browser    A
@@ -63,10 +63,10 @@ Play Game
 
     Switch Browser    B
     Take Resource    4  
-    Wait And Refresh Round 
+    Refresh Round 
 
     Switch Browser   A
-    Wait And Refresh Round 
+    Refresh Round 
 
     # ROUND THREE
     Switch Browser    A
@@ -74,18 +74,18 @@ Play Game
 
     Switch Browser    B
     Take Resource    6  
-    Wait And Refresh Round 
+    Refresh Round 
 
     Switch Browser    A
-    Wait And Refresh Round 
+    Refresh Round 
 
     #GAME OVER
-    Wait And Refresh Scores
+    Refresh Scores
 
     Switch Browser    B
-    Wait And Refresh Scores
+    Refresh Scores
     
-    [Teardown]    Close All Browsers
+    # [Teardown]    Close All Browsers
 
 *** Keywords ***
 Open Browser A To App Page
@@ -117,22 +117,16 @@ Click Join
     Click Button    join_game_btn
 
 Click Play
-    Click Button    start_play_btn
+    Click Button    start_play_btn 
 
 
-Wait And Refresh Round
-    Sleep    5s
-    Refresh Round 
-
-Refresh Round
-    Click Button    refresh_round_btn
-
-Wait And Refresh Scores
-    Sleep    3s
-    Refresh Scores
 
 Refresh Scores
-    Click Link    refresh_scores_btn
+    FOR    ${i}    IN RANGE    6
+        Click Link    refresh_scores_btn        
+        Wait Until Element Is Visible    game_results_section    3s
+        Log    try ${i}
+    END
     
 Refresh Player List
     #tries max 6 times
@@ -144,6 +138,16 @@ Refresh Player List
         Sleep    3s
         Log    try ${i}
     END
+
+Refresh Round
+    Sleep    5s
+    Click Button    refresh_round_btn
+    # FOR    ${i}    IN RANGE    6
+    #     Click Button    refresh_round_btn
+    #     Wait Until Element Is Visible    input_take_resources    3s
+    #     Log    try ${i}
+    # END
+
 
 # Refresh Scores
 #     #tries max 3 times

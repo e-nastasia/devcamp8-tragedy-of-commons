@@ -159,6 +159,9 @@ orchestrator.registerScenario(
     console.log("ROUND 2: Bob made a move: ", game_move_round_2_bob);
     t.ok(game_move_round_1_bob);
 
+
+    await sleep(5000);
+
     // Check to close the round
     let close_game_round_2_alice = await alice_common.cells[0].call(
       ZOME_NAME,
@@ -191,6 +194,7 @@ orchestrator.registerScenario(
     console.log("ROUND 3: Bob made a move: ", game_move_round_2_bob);
     t.ok(game_move_round_1_bob);
 
+    await sleep(5000)
     // Check to close the round
     let close_game_round_3_alice = await alice_common.cells[0].call(
       ZOME_NAME,

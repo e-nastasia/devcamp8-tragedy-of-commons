@@ -74,6 +74,7 @@
         else do nothing
         */
         if (!current_round_hash || rounds.length === 0) {
+            console("no round hash????: ", rounds.length);
             return;
         }
         let latest_game_info = await window.appClient.tryCloseRound(
@@ -82,22 +83,22 @@
         console.log("current round info:", latest_game_info);
         console.log("rounds:", rounds);
         let last_round = rounds[rounds.length - 1];
-        // current_round_header_hash: Some(last_round_hash),
-        //     game_session_hash: Some(game_session_element.header_address().clone()),
-        //     resources_left: Some(last_round.round_state.resource_amount),
-        //     round_num: last_round.round_num,
-        //     next_action: "WAITING".into(),
+        if (latest_game_info.type === "error"){
+            console.info("Still waiting? ", latest_game_info.data)
+        }
+
         if (latest_game_info.next_action === "WAITING") {
-            return;
+            return; // currently not needed
         }
         console.log("next action:", latest_game_info.next_action);
+
         if (last_round.fake) {
             //} && last_round.round_num === latest_game_info.round_num){
             //rounds.pop(); //remove fake round
             console.log("update fake round to real");
             addRealCompletedRound(latest_game_info);
             console.log("set new round hash");
-            current_round_hash = latest_game_info.current_round_header_hash;
+            current_round_hash = latest_game_info.current_round_entry_hash;
         }
 
         if (latest_game_info.next_action === "SHOW_GAME_RESULTS") {
@@ -113,7 +114,7 @@
         let fakePendingRound = {
             round_num: rounds.length + 1,
             resources_left: 100,
-            current_round_header_hash: "slfsd",
+            current_round_entry_hash: "slfsd",
             game_session_hash: "smdlfk",
             next_action: "TODO",
             moves: [
@@ -150,7 +151,7 @@
             convertedMoves.push(x);
         }
 
-        last_round.current_round_header_hash = bufferToBase64(latest_game_info.current_round_header_hash);
+        last_round.current_round_entry_hash = bufferToBase64(latest_game_info.current_round_entry_hash);
         last_round.resources_left = latest_game_info.resources_left;
         last_round.round_num = latest_game_info.round_num;
         last_round.fake = false;

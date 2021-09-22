@@ -1,40 +1,79 @@
-You can preview in vscode bij installing 
+You can preview in vscode by installing 
 a plugin: vstirbu.vscode-mermaid-preview
 
 Start of game:
 
 ```mermaid
 sequenceDiagram
-    participant Alice UI
-    participant Alice zome
+    participant A as Alice UI
+    participant AZ as Alice zome
     participant DHT
-    participant Bob zome
-    participant Bob UI
+    participant BZ as Bob zome
+    participant B as Bob UI
 
-    opt handle invitations
-    Alice UI    ->>   Alice zome:  accept invite
-    note right of Alice zome: todo
-    Bob UI      ->>   Bob zome:    accept invite
+    %% invitation fase
+    A    ->>   AZ: create_game_code_anchor
+    AZ  -)   DHT:         create anchor
+    Note right of DHT: not of much <br>use if we don't <br>use hash
+    
+    A    ->>   AZ: join_game_with_code
+    AZ  -)   DHT:         create anchor
+    AZ  -)   DHT:         create profile
+    AZ  -)   DHT:         link from anchor to profile<br>with tag PLAYER
 
+    B    ->>   BZ: join_game_with_code
+    BZ  -)   DHT:         create anchor
+    BZ  -)   DHT:         create profile
+    BZ  -)   DHT:         link from anchor to profile<br>with tag PLAYER
+
+    %% check if all players are present
+    A   ->> AZ:     get_players_for_game_code
+    AZ  ->> DHT:    get links from anchor to players profiles
+    B   ->> BZ:     get_players_for_game_code
+    BZ  ->> DHT:    get links from anchor to players profiles
+
+    %% player A starts game (by clicking Play)
+    A   ->> AZ:     start_game_session_with_code  
+    AZ  -) DHT:     get all players
+    AZ  -) DHT:     create game session
+    AZ  -) DHT:     create link from anchor to game session with tag GAME_SESSION
+    AZ  -) DHT:     create round zero
+    AZ  -) DHT:     create link from game session to game round with tag GAME_ROUND
+
+    %% player B polls for game round (by clicking Play)
+    B  ->> BZ:      current_round_for_game_code
+    BZ -)  DHT:     get anchor
+    BZ -)  DHT:     get link from anchor with tag GAME_SESSION
+    BZ -)  DHT:     get link from game session with tag GAME_ROUND
+    BZ -)  DHT:     get latest version of game round
+    BZ  -->> B:     entry hash of game round
+
+    %% player A makes move
+    A ->> AZ:       make_new_move
+    AZ ->> DHT:     create game move with reference to game round (for uniqueness)
+    AZ ->> DHT:     create link from game round to game move
+    AZ ->> A:       header hash from move
+    A  ->> AZ:      try_to_close_round
+    AZ ->> A:       return game info with next action
+
+    %% player B makes move
+    B ->> BZ:       make_new_move
+    BZ ->> DHT:     create game move with reference to game round (for uniqueness)
+    BZ ->> DHT:     create link from game round to game move
+    BZ ->> B:       header hash from move
+    A  ->> AZ:      try_to_close_round
+    AZ ->> A:       return game info with next action
+
+
+    alt play next round
+    A ->> AZ:       make new move ...
+    B ->> BZ:       make new move ...
     end
 
-    Alice UI    ->>   Alice zome:  start new session
-    Alice zome  -)   DHT:         create game session<br>create round zero
-    Alice zome  ->>    Bob zome:    remote signal make move
-    Bob zome    ->>   Bob UI:      signal make move
-    Alice zome  ->>   Alice UI:    signal make move
-    Alice UI    ->>   Alice zome:  input move<br>take resources
-    Alice zome  -)    DHT:         create game move<br>link with round
-    Alice zome  ->>   Alice zome:  close round? no
-    Bob UI      ->>   Bob zome:    input move<br>take resources
-    Bob zome    -)    DHT:         create game move<br>link with round
-    Bob zome    ->>   Bob zome:    close round? yes
-
-    alt handle eventual consistency
-    Bob zome    ->>   Bob zome:    close round? no
-    Alice UI    -->>  Alice zome:  close round? yes/no
-    Bob UI      -->>  Bob zome:    close round? yes
-    end
+    A  ->> AZ:      try_to_close_round
+    AZ ->> A:       return game info with next action: GAME OVER
+    B  ->> BZ:      try_to_close_round
+    BZ ->> B:       return game info with next action: GAME OVER
 
 ```
 
@@ -42,18 +81,18 @@ Starting next round
 
 ```mermaid
 sequenceDiagram
-    participant Alice UI
-    participant Alice zome
+    participant A as Alice UI
+    participant AZ as Alice zome
     participant DHT
-    participant Bob zome
-    participant Bob UI
+    participant BZ as Bob zome
+    participant B as Bob UI
 
-    Bob UI      ->>  Bob zome:    close round? yes
-    Bob zome    ->>   Bob zome:    calculate result<br>round complete? yes<br>game complete? no
-    Bob zome    ->>   DHT:         create round one
-    Bob zome    -)    Alice zome:  remote signal make move
-    Bob zome    ->>   Bob UI:      signal make move
-    Alice zome  ->>   Alice UI:    signal make move
+    B      ->>  BZ:    close round? yes
+    BZ    ->>   BZ:    calculate result<br>round complete? yes<br>game complete? no
+    BZ    ->>   DHT:         create round one
+    BZ    -)    AZ:  remote signal make move
+    BZ    ->>   B:      signal make move
+    AZ  ->>   A:    signal make move
 
 ```
 
@@ -61,18 +100,18 @@ Ending game
 
 ```mermaid
 sequenceDiagram
-    participant Alice UI
-    participant Alice zome
+    participant A as Alice UI
+    participant AZ as Alice zome
     participant DHT
-    participant Bob zome
-    participant Bob UI
+    participant BZ as Bob zome
+    participant B as Bob UI
 
-    Bob UI      ->>  Bob zome:    close round? yes
-    Bob zome    ->>   Bob zome:    calculate result<br>round complete? yes<br>game complete? yes
-    Bob zome    ->>   DHT:         create round x<br>(no signal to make moves)
-    Bob zome    ->>   DHT:         update game session
-    Bob zome    -)    Alice zome:  remote signal game ended
-    Bob zome    ->>   Bob UI:      signal game over
-    Alice zome  ->>   Alice UI:    signal game over
+    B      ->>  BZ:    close round? yes
+    BZ    ->>   BZ:    calculate result<br>round complete? yes<br>game complete? yes
+    BZ    ->>   DHT:         create round x<br>(no signal to make moves)
+    BZ    ->>   DHT:         update game session
+    BZ    -)    AZ:  remote signal game ended
+    BZ    ->>   B:      signal game over
+    AZ  ->>   A:    signal game over
 
 ```
