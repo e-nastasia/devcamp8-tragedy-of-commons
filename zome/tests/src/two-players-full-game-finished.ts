@@ -30,7 +30,7 @@ orchestrator.registerScenario(
       let payload = signal.data.payload
       t.ok(payload);
       console.log("Alice received Signal:", signal.data.payload);
-      prev_round_hash = signal.data.payload.signal_payload.round_header_hash_update;
+      prev_round_hash = signal.data.payload.signal_payload.round_entry_hash_update;
       resolve();
     }));
     // .then(function(data) {
