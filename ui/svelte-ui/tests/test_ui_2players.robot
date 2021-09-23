@@ -86,7 +86,7 @@ Play Game
     Switch Browser    B
     Refresh Scores
     
-    # [Teardown]    Close All Browsers
+    [Teardown]    Close All Browsers
 
 *** Keywords ***
 Open Browser A To App Page
