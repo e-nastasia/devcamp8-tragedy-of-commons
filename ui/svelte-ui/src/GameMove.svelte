@@ -3,6 +3,7 @@
 
     const dispatch = createEventDispatcher();
 
+    export let total_resource = 100;
 
     function makeMove(event){
         event.preventDefault();
@@ -16,7 +17,7 @@
 <section>
     <form class="gamemove">
         <h1>Make your move</h1>
-        <label for="input_join_nick">Total resources: 100</label>
+        <label for="input_join_nick">Total resources: {total_resource}</label>
         <p>Take all the resources you need</p>
 
         <label for="input_take_resources">Resources:</label>

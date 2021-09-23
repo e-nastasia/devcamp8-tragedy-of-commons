@@ -4,14 +4,36 @@
     import GameRound from "./GameRound.svelte";
     import { bufferToBase64 } from "./utils";
 
-    export let nickname = "Tixel";
-    export let gamecode = "3KL54M";
+    export let nickname = "";
+    export let gamecode = "";
     export let action = "GAME_BEGIN";
     export let current_round_hash = "";
+    let resources_default_start = 100;
+    $: total_resources = calculateTotalTaken(rounds);
 
     const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
+
+    function calculateTotalTaken(rounds){
+        if (!rounds){
+            console.error("Rounds array is empty");
+        }
+        let totalTaken = 0;
+        let totalGrown = 0;
+        for (let i = 0; i < rounds.length; i++) {
+            const round = rounds[i];
+            if (round.fake === true){
+                continue;
+            }
+            let moves = round.moves;
+            for (let j = 0; j < moves.length; j++) {
+                const move = moves[j];
+                totalTaken = totalTaken + move.resourcesTaken;
+            }
+        }
+        return resources_default_start - totalTaken + totalGrown
+    }
 
     async function refreshPlayerList() {
         const playerProfiles = await window.appClient.getPlayers(gamecode);
@@ -60,8 +82,8 @@
             current_round_hash
         );
         console.log("result make move", result);
-
-        addFakePendingRound();
+        
+        addFakePendingRound(nickname, resources, calculateTotalTaken(rounds));  //TODO
     }
 
     async function updateRound() {
@@ -110,18 +132,18 @@
         }
     }
 
-    function addFakePendingRound() {
+    function addFakePendingRound(nickname, resources_taken, resources_total) {
         let fakePendingRound = {
             round_num: rounds.length + 1,
-            resources_left: 100,
-            current_round_entry_hash: "slfsd",
-            game_session_hash: "smdlfk",
-            next_action: "TODO",
+            resources_left: resources_total,
+            current_round_entry_hash: "",
+            game_session_hash: "",
+            next_action: "WAITING",
             moves: [
                 {
-                    nickname: "tixel",
-                    id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
-                    resourcesTaken: "10",
+                    nickname: nickname,
+                    id: "",
+                    resourcesTaken: resources_taken,
                 },
             ],
             fake: true,
@@ -152,12 +174,11 @@
         }
 
         last_round.current_round_entry_hash = bufferToBase64(latest_game_info.current_round_entry_hash);
-        last_round.resources_left = latest_game_info.resources_left;
         last_round.round_num = latest_game_info.round_num;
         last_round.fake = false;
         last_round.moves = convertedMoves;
-
-
+        last_round.resources_left = calculateTotalTaken(rounds)
+        
         rounds = rounds;
         console.log("rounds: ", rounds);
     }
@@ -252,7 +273,9 @@
         >
     {/each}
 </div>
-
+<div class="columncentered">
+    <p>Resources at start: {resources_default_start}</p>
+</div>
 <div class="gamerounds">
     {#if game_status == "WAITING_PLAYERS"}
         <div class="columncentered">
@@ -281,7 +304,7 @@
             />
         {/each}
         {#if game_status == "MAKE_MOVE"}
-            <GameMove on:makeMove={makeMove} />
+            <GameMove on:makeMove={makeMove} total_resource={total_resources}/>
         {/if}
         {#if game_status == "WAIT_NEXT_ROUND"}
             <div style="text-align:center;">

@@ -15,7 +15,6 @@
             resourcesTaken: "10",
         }],
     };
-
     
     // moves
     export let moves = [];
@@ -41,17 +40,21 @@
 <section>
     <aside class="gameround">
         <h2>Round {round.round_num} - {gameRoundState}</h2>
-        <i style="color:silver">{round.current_round_entry_hash}</i>
         <ul>
             {#each moves as move}
-                <li>
-                    {move.nickname} takes {move.resourcesTaken} resources<br
-                    /><i style="color:silver">{move.id}</i>
-                </li>
+            <li>
+                {move.nickname} takes {move.resourcesTaken} resources<br
+                /><i style="color:silver">{move.id}</i>
+            </li>
             {/each}
         </ul>
         {#if gameRoundState == "IN PROGRESS"}
-            <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
+        <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
+        {:else}
+        <p>
+            <strong>total resources: {round.resources_left}</strong>
+            <i style="color:silver">{round.current_round_entry_hash}</i>
+        </p>
         {/if}
     </aside>
 </section>
