@@ -212,7 +212,7 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                     &game_session,
                     &game_session_element.header_address(),
                     &last_round,
-                    last_round_element.header_address(),
+                    last_round_element.header().entry_hash().expect("should have entry"),
                     &round_state,
                 )?;
                 return Ok(GameRoundInfo {
@@ -231,8 +231,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
             // TODO: fix the value in current_round_entry_hash: Some(last_round_hash)
             return Ok(GameRoundInfo {
                 current_round_entry_hash: Some(last_round_hash),
-                game_session_hash: Some(game_session_element.header_address().clone()),
-                resources_left: Some(last_round.round_state.resource_amount),
+                game_session_hash: Some(game_session_element.header().entry_hash().expect("should have entry").clone()),
+                resources_left: None,
                 round_num: last_round.round_num,
                 next_action: "WAITING".into(),
                 moves: vec![(12, "Bobby".into(), "msqljfmsqfdkmqlkdsf".into())],
