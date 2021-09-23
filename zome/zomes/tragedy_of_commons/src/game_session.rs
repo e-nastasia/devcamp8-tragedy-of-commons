@@ -4,6 +4,7 @@ use crate::utils::{entry_from_element_create_or_update, entry_hash_from_element}
 use crate::PlayerProfile;
 use crate::{
     game_round::{GameRound, RoundState},
+    game_code::get_game_code_anchor,
     utils::convert_keys_from_b64,
 };
 
@@ -88,10 +89,20 @@ impl GameSession {
     }
 }
 
+/// Creates GameSession with the game_code and game_params
+// TODO(e-nastasia): actually add game_params to be used for creation
+pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHashB64> {
+    let anchor = get_game_code_anchor(game_code.clone())?;
+    debug!("anchor: {:?}", anchor);
+    let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
+    debug!("players: {:?}", players);
+    start_default_session(players, anchor)
+}
+
 // TODO(e-nastasia) This is a placeholder fn that can be refactored once
 // the UI is providing game params. Or we can leave it to separate retrieval
 // of the players from the actual session create. Anyway, GameParams have to go!
-pub fn start_default_session(
+fn start_default_session(
     player_list: Vec<PlayerProfile>,
     anchor: EntryHash,
 ) -> ExternResult<EntryHashB64> {

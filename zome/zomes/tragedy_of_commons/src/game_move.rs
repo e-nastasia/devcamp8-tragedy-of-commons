@@ -3,14 +3,18 @@ use crate::{
     game_session::{GameScores, GameSession, GameSignal, SignalPayload},
     types::ResourceAmount,
     utils::{
-        convert, convert_keys_from_b64, entry_hash_from_element, must_get_header_and_entry,
-        try_get_and_convert, entry_from_element_create_or_update
+        convert, convert_keys_from_b64, entry_from_element_create_or_update,
+        entry_hash_from_element, must_get_header_and_entry, try_get_and_convert,
     },
 };
-use hdk::prelude::*;
 use hdk::prelude::holo_hash::*;
+use hdk::prelude::*;
+use std::collections::HashMap;
+
+pub const GAME_MOVE_LINK_TAG: &str = "GAME_MOVE";
 
 #[hdk_entry(id = "game_move", visibility = "public")]
+#[derive(Clone)]
 pub struct GameMove {
     pub owner: AgentPubKey,
     // For the very first round this option would be None, because we create game rounds
@@ -78,13 +82,75 @@ pub fn new_move(
     let header_hash_link = create_link(
         entry_hash_game_round,
         entry_hash_game_move.clone(),
-        LinkTag::new("GAME_MOVE"),
+        LinkTag::new(String::from(GAME_MOVE_LINK_TAG)),
     )?;
-    // todo: (if we're making a link from round to move) make a link round -> move
     // note: instead of calling try_to_close_Round right here, we can have a UI make
     // this call for us. This way making a move wouldn't be blocked by the other moves'
     // retrieval process and the process of committing the round entry.
     Ok(header_hash_link.into())
+}
+
+pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<GameMove>> {
+    info!("fetching links to game moves");
+    let links = get_links(
+        entry_hash_from_element(last_round_element)?.to_owned(),
+        Some(LinkTag::new(String::from(GAME_MOVE_LINK_TAG))),
+    )?;
+    let mut moves: Vec<GameMove> = vec![];
+    for link in links.into_inner() {
+        debug!("fetching game move element, trying locally first");
+        let game_move_element = match get(link.target.clone(), GetOptions::latest())? {
+            Some(element) => element,
+            None => return Err(WasmError::Guest("Game move not found".into())),
+        };
+        let game_move: GameMove = entry_from_element_create_or_update(&game_move_element)?;
+        moves.push(game_move);
+    }
+    Ok(moves)
+}
+
+/// Consumes list of moves passed to it to finalize them.
+/// If every player made at least one move, it returns list of moves which is guaranteed
+/// to have (TODO: the earliest) a single move for every player.
+/// If there are missing moves, it returns None, since we can't finalize the moves and
+/// have to wait for other players instead.
+pub fn finalize_moves(moves: Vec<GameMove>, number_of_players: usize) -> ExternResult<Option<Vec<GameMove>>> {
+    info!("checking number of moves");
+    debug!("moves list #{:?}", moves);
+    // Check that at least we have as many moves
+    // as there are players in the game
+    if moves.len() < number_of_players {
+        info!("Cannot close round: wait until all moves are made");
+        debug!("number of moves found: #{:?}", moves.len());
+        return Ok(None);
+    } else {
+        // Now that we know we have moves >= num of players, we need
+        // to make sure that every player made at least one move, so
+        // we're not closing the round without someone's move
+        let mut moves_per_player: HashMap::<AgentPubKey, Vec<GameMove>> = HashMap::new();
+        for m in moves {
+            match moves_per_player.get_mut(&m.owner) {
+                Some(mut moves) => {
+                    moves.push(m)
+                },
+                // TODO(e-nastasia): cloning owner value seems like a waste, but I think
+                // that alternative would be to use lifetimes. Not sure it's worth the
+                // readability penalty that we'll incur.
+                None => {moves_per_player.insert(m.owner.clone(), vec![m]);}
+            }
+        }
+        if moves_per_player.keys().len() < number_of_players {
+            info!("Cannot close the round: only {} players made their moves, waiting for total {} players", moves_per_player.keys().len(), number_of_players);
+            return Ok(None)
+        }
+        let mut new_moves = vec![];
+        for (owner, move_vec) in moves_per_player {
+            // TODO: instead of taking just a [0] move, find the move with the earliest
+            // timestamp and use it
+            new_moves.push(move_vec[0].clone());
+        }
+        Ok(Some(new_moves))
+    }
 }
 
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
