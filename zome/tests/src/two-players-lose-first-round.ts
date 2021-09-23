@@ -68,7 +68,7 @@ orchestrator.registerScenario(
       {gamecode:GAME_CODE, nickname: "Alice"}
     );
     console.log("Alice joined game: ", game_code_anchor_entry_hash_alice);
-    t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_alice);
+    t.deepEqual(game_code_anchor_entry_hash, game_code_anchor_entry_hash_alice);
 
     // bob joins with game code
     let game_code_anchor_entry_hash_bob = await bob_common.cells[0].call(
@@ -77,7 +77,7 @@ orchestrator.registerScenario(
       {gamecode:GAME_CODE, nickname: "Bob"}
     );
     console.log("Bob joined game: ", game_code_anchor_entry_hash_bob);
-    t.equal(game_code_anchor_entry_hash, game_code_anchor_entry_hash_bob);
+    t.deepEqual(game_code_anchor_entry_hash, game_code_anchor_entry_hash_bob);
 
     await sleep(5000); // wait until all links have propagated
 

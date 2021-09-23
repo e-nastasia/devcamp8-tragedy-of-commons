@@ -1,5 +1,4 @@
 use crate::error::Error;
-use hdk::prelude::holo_hash::{AgentPubKeyB64, HeaderHashB64};
 use hdk::prelude::*;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
@@ -26,7 +25,7 @@ pub fn try_from_element<T: TryFrom<Entry>>(element: Element) -> ExternResult<T> 
 /// and binary array format is used for working with keys on the backend
 /// TODO(e-nastasia): I think it may make sense to keep agent pub keys as binary arrays
 /// and only convert to binary string when sending data to UI?
-pub fn convert_keys_from_b64(input: &Vec<AgentPubKeyB64>) -> Vec<AgentPubKey> {
+pub fn convert_keys_from_b64(input: &Vec<AgentPubKey>) -> Vec<AgentPubKey> {
     input.iter().map(|k| AgentPubKey::from(k.clone())).collect()
 }
 
@@ -112,9 +111,9 @@ where
     }
 }
 
-pub fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHashB64> {
+pub fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHash> {
     match result {
-        Ok(hash) => return Ok(HeaderHashB64::from(hash)),
+        Ok(hash) => return Ok(hash),
         Err(error) => return Err(error),
     }
 }

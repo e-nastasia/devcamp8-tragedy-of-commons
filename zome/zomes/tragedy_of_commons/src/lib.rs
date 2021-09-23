@@ -1,5 +1,3 @@
-#[allow(unused)]
-use hdk::prelude::holo_hash::*;
 #[allow(unused_imports)]
 use hdk::prelude::*;
 use tracing::Level;
@@ -90,12 +88,12 @@ fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
 }
 
 #[hdk_extern]
-pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryHashB64> {
+pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryHash> {
     game_code::create_game_code_anchor(short_unique_code)
 }
 
 #[hdk_extern]
-pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHashB64> {
+pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHash> {
     player_profile::join_game_with_code(input)
 }
 
@@ -105,7 +103,7 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
 }
 
 #[hdk_extern]
-pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHashB64> {
+pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash> {
     game_session::start_game_session_with_code(game_code)
 }
 
@@ -127,7 +125,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
 
 // /// Function to call by the invite zome once all invites are taken care of
 // /// and we can actually create the GameSession and start playing
-// pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHashB64> {
+// pub fn create_new_session(input: GameSessionInput) -> ExternResult<HeaderHash> {
 //     let players: Vec<AgentPubKey> = convert_keys_from_b64(&input.players);
 //     let game_params = input.game_params;
 //     convert(game_session::new_session(players, game_params))
@@ -135,14 +133,14 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
 
 /// Function to list all game sessions that the caller has created
 #[hdk_extern]
-pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHashB64, GameSession)>> {
+pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHash, GameSession)>> {
     //game_session::get_sessions_with_tags(vec![OWNER_SESSION_TAG])
     game_session::get_my_own_sessions_via_source_query()
 }
 
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
-pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHashB64> {
+pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     convert(game_move::new_move(
         input.resource_amount,
         input.previous_round,
