@@ -3,7 +3,7 @@ use crate::game_move::{finalize_moves, get_moves_for_round, GameMove};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
-use crate::types::{PlayerStats, ResourceAmount};
+use crate::types::{PlayerStats, ResourceAmount, player_stats_from_moves};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
     must_get_entry_struct, must_get_header_and_entry,
@@ -67,20 +67,12 @@ impl GameRound {
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
 pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -> RoundState {
-    // todo:
-    // calculate round state from the player moves
-
     // resources
-    let consumed_resources_in_round: i32 = player_moves.iter().map(|x| x.resources).sum();
+    let consumed_resources_in_round: ResourceAmount = player_moves.iter().map(|x| x.resources).sum();
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats dd
-    let mut stats: HashMap<AgentPubKey, ResourceAmount> = HashMap::new();
-    for p in player_moves.iter() {
-        let a = p.owner.clone();
-        let r: ResourceAmount = p.resources;
-        stats.insert(a, r);
-    }
+    let stats = player_stats_from_moves(player_moves);
     info!("total_leftover_resource : {:?}", total_leftover_resource);
 
     RoundState {
@@ -157,26 +149,14 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
     debug!("extracting game session from element");
     let game_session: GameSession = entry_from_element_create_or_update(&game_session_element)?;
 
-    /*
-    - [DONE] get game moves
-    - do we have enough?
-        - if no, display all we have and return
-        - if yes, continue
-    - clean all moves: if any player made 2 or more, only leave the first move
-    - calculate the state
-    - is the round lost?
-        - if no, continue
-        - if yes, close the game
-    - is the last round?
-        - if no, open the next one
-        - if yes, close the game
-    */
-
     // game moves
     let moves = get_moves_for_round(&last_round_element)?;
 
+    // try to get all moves necessary to close the round
     match finalize_moves(moves, game_session.players.len())? {
+        // we get the moves, so we can close the round
         Some(unique_moves) => {
+            // TODO: convert Vec<GameMove> into something for nice printing
             let mut moves_info: Vec<(i32, String, AgentPubKey)> = vec![];
             for game_move in &unique_moves {
                 moves_info.push((
@@ -225,8 +205,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                 //game_session_hash + next action
             }
         }
+        // There aren't enough moves yet, so we get nothing and wait
         None => {
-            // TODO: convert Vec<GameMove> into something for nice printing
             // TODO: fix the value in current_round_entry_hash: Some(last_round_hash)
             return Ok(GameRoundInfo {
                 current_round_entry_hash: Some(last_round_hash),
@@ -379,6 +359,13 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
 fn get_all_round_moves(round_entry_hash: EntryHash) {
     unimplemented!();
 }
+
+// TODO: validate that we can't create round with num != 0
+// TODO: validate that game session for this round isn't finished/lost
+pub fn validate_create_entry_game_round() {
+
+}
+
 
 pub fn validate_update_entry_game_round(
     data: ValidateData,
