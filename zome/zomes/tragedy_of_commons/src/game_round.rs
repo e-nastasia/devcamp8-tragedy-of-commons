@@ -6,7 +6,7 @@ use crate::game_session::{
 use crate::types::{PlayerStats, ResourceAmount};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
-    must_get_header_and_entry,
+    must_get_entry_struct, must_get_header_and_entry,
 };
 use hdk::prelude::*;
 use std::collections::HashMap;
@@ -416,41 +416,43 @@ fn get_all_round_moves(round_entry_hash: EntryHash) {
 pub fn validate_update_entry_game_round(
     data: ValidateData,
 ) -> ExternResult<ValidateCallbackResult> {
-    // let game_round: GameRound = data
-    //     .element
-    //     .entry()
-    //     .to_app_option()?
-    //     .ok_or(WasmError::Guest(
-    //         "Trying to validate an entry that's not a GameRound".into(),
-    //     ))?;
-    // debug!("Validating GameRound update entry {:?}, data: {:?}", game_round, data);
+    let game_round: GameRound = data
+        .element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest(
+            "Trying to validate an entry that's not a GameRound".into(),
+        ))?;
+    debug!(
+        "Validating GameRound update entry {:?}, data: {:?}",
+        game_round, data
+    );
 
-    // TODO: FIX validation now that game_round.session is an EntryHash and not a HeaderHash
-    // let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
-    // if game_round.round_num > game_session.game_params.num_rounds {
-    //     return Ok(ValidateCallbackResult::Invalid(format!(
-    //         "Can't create GameRound number {} because GameSession only has {} rounds",
-    //         game_round.round_num, game_session.game_params.num_rounds
-    //     )));
-    // }
+    let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
+    if game_round.round_num > game_session.game_params.num_rounds {
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "Can't create GameRound number {} because GameSession only has {} rounds",
+            game_round.round_num, game_session.game_params.num_rounds
+        )));
+    }
 
-    // let update_header = data.element.header();
+    let update_header = data.element.header();
 
-    // match update_header {
-    //     Header::Update(update_data) => {
-    //         let prev_entry =
-    //             must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
-    //         if (prev_entry.round_num + 1) != game_round.round_num {
-    //             return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
-    //         }
-    //     }
-    //     _ => {
-    //         // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
-    //         return Ok(ValidateCallbackResult::Invalid(String::from(
-    //             "GameRound's element has the wrong header: expected Update",
-    //         )));
-    //     }
-    // }
+    match update_header {
+        Header::Update(update_data) => {
+            let prev_entry =
+                must_get_entry_struct::<GameRound>(update_data.original_entry_address.clone())?;
+            if (prev_entry.round_num + 1) != game_round.round_num {
+                return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
+            }
+        }
+        _ => {
+            // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
+            return Ok(ValidateCallbackResult::Invalid(String::from(
+                "GameRound's element has the wrong header: expected Update",
+            )));
+        }
+    }
 
     Ok(ValidateCallbackResult::Valid)
 }
