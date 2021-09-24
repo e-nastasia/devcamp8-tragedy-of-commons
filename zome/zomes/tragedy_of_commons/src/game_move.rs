@@ -33,24 +33,6 @@ pub struct GameMoveInput {
     pub previous_round: EntryHash,
 }
 
-/*
-validation rules:
-    - TODO: impl validation to make sure move is commited by player who's playing the game
-
-for the context, here are notes on how we've made this decision:
-- validate that one player only made one move for any round
-    - right now we'll need to run get_links for that, can we avoid it?
-    - alternative: get agent activity
-        retrieves source chain headers from this agent
-        get all headers that are get_link / new entry for game move
-        validate that we're not repeating the same move
-
-        validate that moves are made with timestamp >= game session
-    - another alternative: avoid strict validation here, instead take first move
-        made by agent for any round and use it when calculating
-        - NOTE: we'll have vulnerability
-        - NOTE: update round closing rules to check that every AGENT made a move
-*/
 pub fn new_move(
     resource_amount: ResourceAmount,
     round_entry_hash: EntryHash,
@@ -156,6 +138,21 @@ pub fn finalize_moves(
     }
 }
 
+/*
+for the context, here are notes on how we've made decisions about validation rules:
+- validate that one player only made one move for any round
+    - right now we'll need to run get_links for that, can we avoid it?
+    - alternative: get agent activity
+        retrieves source chain headers from this agent
+        get all headers that are get_link / new entry for game move
+        validate that we're not repeating the same move
+    - another alternative: avoid strict validation here, instead take first move
+        made by agent for any round and use it when calculating
+        - NOTE: we'll have vulnerability
+        - NOTE: update round closing rules to check that every AGENT made a move
+            - upd: this is done in finalize_moves
+- validate that moves are made with timestamp >= game session
+*/
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
@@ -165,7 +162,7 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
     );
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
-        debug!("GameMove {:?} has negative resources, INVALID", game_move);
+        debug!("GameMove {:?} has non-positive resources, INVALID", game_move);
         return Ok(ValidateCallbackResult::Invalid(format!(
             "GameMove has to have resources >= 0, but it has {}",
             game_move.resources
@@ -181,6 +178,8 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
     if !game_session.players.contains(&game_move.owner) {
         return Ok(ValidateCallbackResult::Invalid(String::from("Can't make a GameMove for this GameSession because move owner isn't in the list of GameSession players")));
     }
+
+    // TODO(e-nastasia): validate that timestamp is later than game_session timestamp
 
     Ok(ValidateCallbackResult::Valid)
 }
