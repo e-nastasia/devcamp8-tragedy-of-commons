@@ -166,8 +166,8 @@
         {
             console.debug("move: ", move);
             let x =                 {
-                    nickname: move[2],
-                    id: move[1],
+                    nickname: move[1],
+                    id: bufferToBase64(move[2]),
                     resourcesTaken: move[0],
                 };
             convertedMoves.push(x);

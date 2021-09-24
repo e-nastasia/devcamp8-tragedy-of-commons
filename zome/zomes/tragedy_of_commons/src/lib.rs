@@ -156,12 +156,6 @@ pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<GameRoundI
     game_round::try_to_close_round(prev_round_hash.into())
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
-pub struct SignalTest {
-    pub content: String,
-    pub value: String,
-}
-
 #[hdk_extern]
 pub fn validate(_validation_data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     // Ok(ValidateCallbackResult::Invalid("computer says no")
