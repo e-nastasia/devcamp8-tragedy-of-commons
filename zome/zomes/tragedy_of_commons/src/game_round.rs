@@ -3,10 +3,10 @@ use crate::game_move::{finalize_moves, get_moves_for_round, GameMove};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
-use crate::types::{PlayerStats, ResourceAmount};
+use crate::types::{PlayerStats, ResourceAmount, player_stats_from_moves};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
-    must_get_header_and_entry,
+    must_get_entry_struct, must_get_header_and_entry,
 };
 use hdk::prelude::*;
 use std::collections::HashMap;
@@ -67,20 +67,12 @@ impl GameRound {
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
 pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -> RoundState {
-    // todo:
-    // calculate round state from the player moves
-
     // resources
-    let consumed_resources_in_round: i32 = player_moves.iter().map(|x| x.resources).sum();
+    let consumed_resources_in_round: ResourceAmount = player_moves.iter().map(|x| x.resources).sum();
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats dd
-    let mut stats: HashMap<AgentPubKey, ResourceAmount> = HashMap::new();
-    for p in player_moves.iter() {
-        let a = p.owner.clone();
-        let r: ResourceAmount = p.resources;
-        stats.insert(a, r);
-    }
+    let stats = player_stats_from_moves(player_moves);
     info!("total_leftover_resource : {:?}", total_leftover_resource);
 
     RoundState {
@@ -140,10 +132,7 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, EntryHa
 pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
     //previous round
     info!("fetching element with previous round from DHT");
-    debug!(
-        "entry hash previous round: {:?}",
-        last_round_hash.clone()
-    );
+    debug!("entry hash previous round: {:?}", last_round_hash.clone());
     let last_round_element = match get(last_round_hash.clone(), GetOptions::latest())? {
         Some(element) => element,
         None => return Err(WasmError::Guest("Previous round not found".into())),
@@ -160,26 +149,14 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
     debug!("extracting game session from element");
     let game_session: GameSession = entry_from_element_create_or_update(&game_session_element)?;
 
-    /*
-    - [DONE] get game moves
-    - do we have enough?
-        - if no, display all we have and return
-        - if yes, continue
-    - clean all moves: if any player made 2 or more, only leave the first move
-    - calculate the state
-    - is the round lost?
-        - if no, continue
-        - if yes, close the game
-    - is the last round?
-        - if no, open the next one
-        - if yes, close the game
-    */
-
     // game moves
     let moves = get_moves_for_round(&last_round_element)?;
 
+    // try to get all moves necessary to close the round
     match finalize_moves(moves, game_session.players.len())? {
+        // we get the moves, so we can close the round
         Some(unique_moves) => {
+            // TODO: convert Vec<GameMove> into something for nice printing
             let mut moves_info: Vec<(i32, String, AgentPubKey)> = vec![];
             for game_move in &unique_moves {
                 moves_info.push((
@@ -228,8 +205,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                 //game_session_hash + next action
             }
         }
+        // There aren't enough moves yet, so we get nothing and wait
         None => {
-            // TODO: convert Vec<GameMove> into something for nice printing
             // TODO: fix the value in current_round_entry_hash: Some(last_round_hash)
             return Ok(GameRoundInfo {
                 current_round_entry_hash: Some(last_round_hash),
@@ -248,39 +225,6 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
             });
         }
     };
-}
-
-fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
-    info!("checking number of moves");
-    debug!("moves list #{:?}", moves);
-    // Check that at least we have as many moves
-    // as there are players in the game
-    if moves.len() < number_of_players {
-        info!("Cannot close round: wait until all moves are made");
-        debug!("number of moves found: #{:?}", moves.len());
-        return true;
-    } else {
-        // Now that we know we have moves >= num of players, we need
-        // to make sure that every player made at least one move, so
-        // we're not closing the round without someone's move
-        let mut moves_per_player: HashMap<&AgentPubKey, Vec<&GameMove>> = HashMap::new();
-        for m in moves {
-            match moves_per_player.get_mut(&m.owner) {
-                Some(mut moves) => {
-                    // TODO: sort these moves by the timestamp and only use the first one
-                    // in all calculations
-                    moves.push(m)
-                }
-                None => {
-                    moves_per_player.insert(&m.owner, vec![m]);
-                }
-            }
-        }
-        if moves_per_player.keys().len() < number_of_players {
-            return true;
-        }
-        false
-    }
 }
 
 fn start_new_round(
@@ -410,50 +354,52 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
     Ok(None)
 }
 
-// Retrieves all available game moves made in a certain round, where entry_hash identifies
-// base for the links.
-fn get_all_round_moves(round_entry_hash: EntryHash) {
-    unimplemented!();
+// TODO: validate that we can't create round with num != 0
+// TODO: validate that game session for this round isn't finished/lost
+pub fn validate_create_entry_game_round() {
+
 }
 
 pub fn validate_update_entry_game_round(
     data: ValidateData,
 ) -> ExternResult<ValidateCallbackResult> {
-    // let game_round: GameRound = data
-    //     .element
-    //     .entry()
-    //     .to_app_option()?
-    //     .ok_or(WasmError::Guest(
-    //         "Trying to validate an entry that's not a GameRound".into(),
-    //     ))?;
-    // debug!("Validating GameRound update entry {:?}, data: {:?}", game_round, data);
+    let game_round: GameRound = data
+        .element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest(
+            "Trying to validate an entry that's not a GameRound".into(),
+        ))?;
+    debug!(
+        "Validating GameRound update entry {:?}, data: {:?}",
+        game_round, data
+    );
 
-    // TODO: FIX validation now that game_round.session is an EntryHash and not a HeaderHash
-    // let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
-    // if game_round.round_num > game_session.game_params.num_rounds {
-    //     return Ok(ValidateCallbackResult::Invalid(format!(
-    //         "Can't create GameRound number {} because GameSession only has {} rounds",
-    //         game_round.round_num, game_session.game_params.num_rounds
-    //     )));
-    // }
+    let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
+    if game_round.round_num > game_session.game_params.num_rounds {
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "Can't create GameRound number {} because GameSession only has {} rounds",
+            game_round.round_num, game_session.game_params.num_rounds
+        )));
+    }
 
-    // let update_header = data.element.header();
+    let update_header = data.element.header();
 
-    // match update_header {
-    //     Header::Update(update_data) => {
-    //         let prev_entry =
-    //             must_get_header_and_entry::<GameRound>(update_data.prev_header.clone())?;
-    //         if (prev_entry.round_num + 1) != game_round.round_num {
-    //             return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
-    //         }
-    //     }
-    //     _ => {
-    //         // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
-    //         return Ok(ValidateCallbackResult::Invalid(String::from(
-    //             "GameRound's element has the wrong header: expected Update",
-    //         )));
-    //     }
-    // }
+    match update_header {
+        Header::Update(update_data) => {
+            let prev_entry =
+                must_get_entry_struct::<GameRound>(update_data.original_entry_address.clone())?;
+            if (prev_entry.round_num + 1) != game_round.round_num {
+                return Ok(ValidateCallbackResult::Invalid(format!("Can't update GameRound entry to have round num {}: previous GameRound has num {}", game_round.round_num, prev_entry.round_num)));
+            }
+        }
+        _ => {
+            // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
+            return Ok(ValidateCallbackResult::Invalid(String::from(
+                "GameRound's element has the wrong header: expected Update",
+            )));
+        }
+    }
 
     Ok(ValidateCallbackResult::Valid)
 }

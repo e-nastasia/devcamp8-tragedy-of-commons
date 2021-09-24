@@ -11,6 +11,6 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
 
 /// Retrieves entry hash of the game code anchor that corresponds
 /// to the game_code provided
-pub fn get_game_code_anchor(game_code: String) -> ExternResult<EntryHash>{
+pub fn get_game_code_anchor(game_code: String) -> ExternResult<EntryHash> {
     anchor(GAME_CODES_ANCHOR.into(), game_code.clone())
 }

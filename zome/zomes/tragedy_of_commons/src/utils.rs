@@ -66,6 +66,24 @@ pub fn entry_hash_from_element(element: &Element) -> ExternResult<&EntryHash> {
     }
 }
 
+/// Retrieves holochain entry with a given hash and then
+/// converts it into the struct of type O and returns it
+pub fn must_get_entry_struct<O>(entry_hash: EntryHash) -> ExternResult<O>
+where
+    O: TryFrom<SerializedBytes, Error = SerializedBytesError>,
+{
+    let entry = must_get_entry(entry_hash.clone())?;
+    match entry.into_inner().0 {
+        Entry::App(bytes) => match O::try_from(bytes.into()) {
+            Ok(deserialized) => Ok(deserialized),
+            Err(e) => Err(e.into()),
+        },
+        _ => Err(WasmError::Guest(
+            "entry within must_get_entry_struct must be an Entry::App variant".to_string(),
+        )),
+    }
+}
+
 #[allow(dead_code)]
 pub fn enable_tracing(level: tracing::Level) {
     // i have no idea where to put the tracing config, as all examples suggest main
