@@ -172,15 +172,15 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
         )));
     }
 
-    // // now we need to retrieve game session via the round header hash saved
-    // // in the game move entry to verify that player is making a move for the
-    // // game session they're actually playing
-    // let game_round = must_get_entry_struct::<GameRound>(game_move.round)?;
-    // let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
+    // now we need to retrieve game session via the round header hash saved
+    // in the game move entry to verify that player is making a move for the
+    // game session they're actually playing
+    let game_round = must_get_entry_struct::<GameRound>(game_move.round)?;
+    let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
 
-    // if !game_session.players.contains(&game_move.owner) {
-    //     return Ok(ValidateCallbackResult::Invalid(String::from("Can't make a GameMove for this GameSession because move owner isn't in the list of GameSession players")));
-    // }
+    if !game_session.players.contains(&game_move.owner) {
+        return Ok(ValidateCallbackResult::Invalid(String::from("Can't make a GameMove for this GameSession because move owner isn't in the list of GameSession players")));
+    }
 
     Ok(ValidateCallbackResult::Valid)
 }
