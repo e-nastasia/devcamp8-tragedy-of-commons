@@ -354,18 +354,11 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
     Ok(None)
 }
 
-// Retrieves all available game moves made in a certain round, where entry_hash identifies
-// base for the links.
-fn get_all_round_moves(round_entry_hash: EntryHash) {
-    unimplemented!();
-}
-
 // TODO: validate that we can't create round with num != 0
 // TODO: validate that game session for this round isn't finished/lost
 pub fn validate_create_entry_game_round() {
 
 }
-
 
 pub fn validate_update_entry_game_round(
     data: ValidateData,
