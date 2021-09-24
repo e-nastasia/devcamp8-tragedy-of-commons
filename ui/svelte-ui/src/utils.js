@@ -50,3 +50,9 @@ export function encodeJson(obj) {
     return value
   })
 }
+
+export function shortenBase64(hash){
+  let b64str = bufferToBase64(hash);
+  let shortened = b64str.substring(0,5) + "..." + b64str.substring(b64str.length - 10);
+  return shortened;
+}

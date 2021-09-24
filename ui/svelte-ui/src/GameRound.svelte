@@ -1,5 +1,6 @@
 <script>
     import { createEventDispatcher } from "svelte";
+import { shortenBase64 } from "./utils";
     const dispatch = createEventDispatcher();
 
     export let round = {
@@ -18,7 +19,6 @@
     
     // moves
     export let moves = [];
-    // $: moves = [...moves, round.moves];
 
 
     $: if (round.fake === false){
@@ -35,16 +35,22 @@
         }
         dispatch("updateRound");
     }
+    function resourcesToString(amount){
+        if (parseInt(amount) === 1) {
+            return amount + " resource";
+        } else {
+            return amount + " resources";
+        }
+    }
 </script>
 
 <section>
     <aside class="gameround">
-        <h2>Round {round.round_num} - {gameRoundState}</h2>
+        <h2>Round {round.round_num} - {gameRoundState}<sup style="color:silver;background-color:white;">{shortenBase64(round.current_round_entry_hash)}</sup></h2>
         <ul>
             {#each moves as move}
             <li>
-                {move.nickname} takes {move.resourcesTaken} resources<br
-                /><i style="color:silver">{move.id}</i>
+                {move.nickname} takes {resourcesToString(move.resourcesTaken)} <i style="color:silver;">{shortenBase64(move.id)}</i>
             </li>
             {/each}
         </ul>
@@ -53,7 +59,6 @@
         {:else}
         <p>
             <strong>total resources: {round.resources_left}</strong>
-            <i style="color:silver">{round.current_round_entry_hash}</i>
         </p>
         {/if}
     </aside>

@@ -2,7 +2,7 @@
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
-    import { bufferToBase64 } from "./utils";
+    import { bufferToBase64, shortenBase64 } from "./utils";
 
     export let nickname = "";
     export let gamecode = "";
@@ -167,13 +167,13 @@
             console.debug("move: ", move);
             let x =                 {
                     nickname: move[1],
-                    id: bufferToBase64(move[2]),
+                    id: move[2],
                     resourcesTaken: move[0],
                 };
             convertedMoves.push(x);
         }
 
-        last_round.current_round_entry_hash = bufferToBase64(latest_game_info.current_round_entry_hash);
+        last_round.current_round_entry_hash = latest_game_info.current_round_entry_hash;
         last_round.round_num = latest_game_info.round_num;
         last_round.fake = false;
         last_round.moves = convertedMoves;
@@ -223,6 +223,8 @@
     let player_stats = [];
     let game_score = {};
 
+
+
     let players_mock_repo = [
         { nickname: "tixel", id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f" },
         { nickname: "f00bar42", id: "4652cd28-4fc2-4c77-9709-234ca8adab81" },
@@ -266,16 +268,23 @@
     </aside>
 </section>
 
+<div class="columncentered">
+    <p>This commons starts with: <strong>{resources_default_start} resources</strong></p>
+</div>
+
 <div class="playerlist">
     {#each players as player, i}
         <button
-            >{player.nickname}<br />{bufferToBase64(player.player_id)}</button
+            ><span class="playername">{player.nickname}</span>
+            <br/>
+            <sup class="hashsup">
+                {shortenBase64(player.player_id)}
+            </sup>
+            </button
         >
     {/each}
 </div>
-<div class="columncentered">
-    <p>Resources at start: {resources_default_start}</p>
-</div>
+
 <div class="gamerounds">
     {#if game_status == "WAITING_PLAYERS"}
         <div class="columncentered">
@@ -346,6 +355,13 @@
 </div>
 
 <style>
+    .playername{
+        font-size: 2.5rem;
+    }
+    .hashsup{
+        color: #118bee;
+        background-color: white;
+    }
     .gamerounds {
         display: flex;
         flex-direction: column;
@@ -358,6 +374,14 @@
         flex-direction: column;
         justify-content: center;
         text-align: center;
+        margin-top: 1rem;
+    }
+
+    .columnright {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: right;
         margin-top: 1rem;
     }
 
