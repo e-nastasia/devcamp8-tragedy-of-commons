@@ -10,7 +10,7 @@ name = "tragedy_of_commons"
 
 [dependencies]
 hdk = "0.0.107"
-holo_hash = {version = "*", features=["encoding"]}
+#holo_hash = {version = "*", features=["encoding"]}
 derive_more = "0"
 paste = "*"
 # use whatever serde hdk uses
