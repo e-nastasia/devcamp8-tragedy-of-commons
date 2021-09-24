@@ -4,7 +4,7 @@ use crate::{
     types::ResourceAmount,
     utils::{
         convert, convert_keys_from_b64, entry_from_element_create_or_update,
-        entry_hash_from_element, must_get_header_and_entry, try_get_and_convert,
+        entry_hash_from_element, must_get_entry_struct, try_get_and_convert,
     },
 };
 use hdk::prelude::holo_hash::*;
@@ -114,7 +114,10 @@ pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<Gam
 /// to have (TODO: the earliest) a single move for every player.
 /// If there are missing moves, it returns None, since we can't finalize the moves and
 /// have to wait for other players instead.
-pub fn finalize_moves(moves: Vec<GameMove>, number_of_players: usize) -> ExternResult<Option<Vec<GameMove>>> {
+pub fn finalize_moves(
+    moves: Vec<GameMove>,
+    number_of_players: usize,
+) -> ExternResult<Option<Vec<GameMove>>> {
     info!("checking number of moves");
     debug!("moves list #{:?}", moves);
     // Check that at least we have as many moves
@@ -127,21 +130,21 @@ pub fn finalize_moves(moves: Vec<GameMove>, number_of_players: usize) -> ExternR
         // Now that we know we have moves >= num of players, we need
         // to make sure that every player made at least one move, so
         // we're not closing the round without someone's move
-        let mut moves_per_player: HashMap::<AgentPubKey, Vec<GameMove>> = HashMap::new();
+        let mut moves_per_player: HashMap<AgentPubKey, Vec<GameMove>> = HashMap::new();
         for m in moves {
             match moves_per_player.get_mut(&m.owner) {
-                Some(mut moves) => {
-                    moves.push(m)
-                },
+                Some(mut moves) => moves.push(m),
                 // TODO(e-nastasia): cloning owner value seems like a waste, but I think
                 // that alternative would be to use lifetimes. Not sure it's worth the
                 // readability penalty that we'll incur.
-                None => {moves_per_player.insert(m.owner.clone(), vec![m]);}
+                None => {
+                    moves_per_player.insert(m.owner.clone(), vec![m]);
+                }
             }
         }
         if moves_per_player.keys().len() < number_of_players {
             info!("Cannot close the round: only {} players made their moves, waiting for total {} players", moves_per_player.keys().len(), number_of_players);
-            return Ok(None)
+            return Ok(None);
         }
         let mut new_moves = vec![];
         for (owner, move_vec) in moves_per_player {
@@ -156,23 +159,24 @@ pub fn finalize_moves(moves: Vec<GameMove>, number_of_players: usize) -> ExternR
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
-    // TODO FIXME reenable validation 
-
-    // debug!("Validating GameMove create_entry {:?}, data: {:?}", game_move, data);
-    // // validate that resources consumed during the move are always positive
-    // if game_move.resources <= 0 {
-    //     debug!("GameMove {:?} has negative resources, INVALID", game_move);
-    //     return Ok(ValidateCallbackResult::Invalid(format!(
-    //         "GameMove has to have resources >= 0, but it has {}",
-    //         game_move.resources
-    //     )));
-    // }
+    debug!(
+        "Validating GameMove create_entry {:?}, data: {:?}",
+        game_move, data
+    );
+    // validate that resources consumed during the move are always positive
+    if game_move.resources <= 0 {
+        debug!("GameMove {:?} has negative resources, INVALID", game_move);
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "GameMove has to have resources >= 0, but it has {}",
+            game_move.resources
+        )));
+    }
 
     // // now we need to retrieve game session via the round header hash saved
     // // in the game move entry to verify that player is making a move for the
     // // game session they're actually playing
-    // let game_round = must_get_header_and_entry::<GameRound>(game_move.round)?;
-    // let game_session = must_get_header_and_entry::<GameSession>(game_round.session)?;
+    // let game_round = must_get_entry_struct::<GameRound>(game_move.round)?;
+    // let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
 
     // if !game_session.players.contains(&game_move.owner) {
     //     return Ok(ValidateCallbackResult::Invalid(String::from("Can't make a GameMove for this GameSession because move owner isn't in the list of GameSession players")));

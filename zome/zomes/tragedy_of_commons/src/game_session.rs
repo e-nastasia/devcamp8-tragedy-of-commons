@@ -3,8 +3,8 @@ use crate::types::{new_player_stats, PlayerStats, ResourceAmount};
 use crate::utils::{entry_from_element_create_or_update, entry_hash_from_element};
 use crate::PlayerProfile;
 use crate::{
-    game_round::{GameRound, RoundState},
     game_code::get_game_code_anchor,
+    game_round::{GameRound, RoundState},
     utils::convert_keys_from_b64,
 };
 
@@ -269,9 +269,7 @@ pub fn end_game(
     Ok(game_session_entry_hash_update.clone())
 }
 
-pub fn get_sessions_with_tags(
-    link_tags: Vec<&str>,
-) -> ExternResult<Vec<(EntryHash, GameSession)>> {
+pub fn get_sessions_with_tags(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHash, GameSession)>> {
     let agent_key: EntryHash = agent_info()?.agent_latest_pubkey.into();
     let mut results_tmp: Vec<Link> = vec![];
     for lt in link_tags {

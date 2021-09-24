@@ -140,10 +140,7 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, EntryHa
 pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
     //previous round
     info!("fetching element with previous round from DHT");
-    debug!(
-        "entry hash previous round: {:?}",
-        last_round_hash.clone()
-    );
+    debug!("entry hash previous round: {:?}", last_round_hash.clone());
     let last_round_element = match get(last_round_hash.clone(), GetOptions::latest())? {
         Some(element) => element,
         None => return Err(WasmError::Guest("Previous round not found".into())),
