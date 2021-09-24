@@ -247,39 +247,6 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
     };
 }
 
-fn missing_moves(moves: &Vec<GameMove>, number_of_players: usize) -> bool {
-    info!("checking number of moves");
-    debug!("moves list #{:?}", moves);
-    // Check that at least we have as many moves
-    // as there are players in the game
-    if moves.len() < number_of_players {
-        info!("Cannot close round: wait until all moves are made");
-        debug!("number of moves found: #{:?}", moves.len());
-        return true;
-    } else {
-        // Now that we know we have moves >= num of players, we need
-        // to make sure that every player made at least one move, so
-        // we're not closing the round without someone's move
-        let mut moves_per_player: HashMap<&AgentPubKey, Vec<&GameMove>> = HashMap::new();
-        for m in moves {
-            match moves_per_player.get_mut(&m.owner) {
-                Some(mut moves) => {
-                    // TODO: sort these moves by the timestamp and only use the first one
-                    // in all calculations
-                    moves.push(m)
-                }
-                None => {
-                    moves_per_player.insert(&m.owner, vec![m]);
-                }
-            }
-        }
-        if moves_per_player.keys().len() < number_of_players {
-            return true;
-        }
-        false
-    }
-}
-
 fn start_new_round(
     game_session: &GameSession,
     prev_round: &GameRound,
