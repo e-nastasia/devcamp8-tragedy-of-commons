@@ -23,13 +23,13 @@ export const base64ToBuffer = base64 => {
 }
 
 export function decodeJson(jsonStr) {
-  return JSON.parse( jsonStr, function( key, value ){
+  return JSON.parse(jsonStr, function (key, value) {
     // the receiver function looks for the typed array flag
-    try{
+    try {
       if (key == "pubKey") {
         return base64ToBuffer(value)
       }
-    }catch(e){
+    } catch (e) {
       console.log("decodeJson Error:", e)
     }
 
@@ -39,7 +39,7 @@ export function decodeJson(jsonStr) {
 }
 
 export function encodeJson(obj) {
-  return JSON.stringify( obj , function( key, value ){
+  return JSON.stringify(obj, function (key, value) {
     if (key == "pubKey") {
       if (typeof window !== "undefined") {
         return bufferToBase64(value) // In the browser it's the actual array
@@ -51,8 +51,8 @@ export function encodeJson(obj) {
   })
 }
 
-export function shortenBase64(hash){
+export function shortenBase64(hash) {
   let b64str = bufferToBase64(hash);
-  let shortened = b64str.substring(0,5) + "..." + b64str.substring(b64str.length - 10);
+  let shortened = b64str.substring(0, 5) + "..." + b64str.substring(b64str.length - 10);
   return shortened;
 }

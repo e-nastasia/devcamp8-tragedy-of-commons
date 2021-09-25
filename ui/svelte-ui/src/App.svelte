@@ -7,7 +7,9 @@
 
 	const DELAY = 300;
 
-	let queryParamPort = new URLSearchParams(window.location.search).get('port');
+	let queryParamPort = new URLSearchParams(window.location.search).get(
+		"port"
+	);
 
 	let status = "START"; // "GAME_BEGIN"  "GAME_JOIN" "LOADING"
 	let nickname = "---";
@@ -25,7 +27,7 @@
 			status = "LOADING";
 			const anchor = await window.appClient.startNewGame(gamecode);
 			console.log("anchor", anchor);
-			const result = await window.appClient.joinGame(gamecode,nickname);
+			const result = await window.appClient.joinGame(gamecode, nickname);
 			console.log("joined game", result);
 			status = "GAME_BEGIN";
 		} catch (error) {
@@ -41,10 +43,10 @@
 		status = "LOADING";
 		nickname = event.detail.nickname;
 		gamecode = event.detail.gamecode;
-		console.log("nick and code: ", nickname, gamecode)
-		console.log("gamecode", gamecode)
+		console.log("nick and code: ", nickname, gamecode);
+		console.log("gamecode", gamecode);
 		const result = await window.appClient.joinGame(gamecode, nickname);
-		console.log("joingame",result);
+		console.log("joingame", result);
 		status = "GAME_JOIN";
 	}
 
@@ -63,22 +65,23 @@
 			await appClient.connect();
 			window.appClient = appClient;
 			connected = true;
-			errorMessage  = '';
+			errorMessage = "";
 		} catch (error) {
 			errorMessage = error.data || error.message;
 			connected = false;
 		}
-	};
+	}
 
 	onMount(async () => {
-		console.log("on mount")
+		console.log("on mount");
 		connect();
 	});
-	
+
 	onDestroy(() => {
 		if (window.appClient) {
 			window.appClient.close();
-		}});
+		}
+	});
 </script>
 
 <NavBar />

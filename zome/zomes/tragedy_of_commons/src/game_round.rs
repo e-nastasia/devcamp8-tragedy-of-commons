@@ -32,6 +32,7 @@ pub struct GameRoundInfo {
     pub round_num: u32,
     pub resources_left: Option<i32>,
     pub current_round_entry_hash: Option<EntryHash>,
+    pub prev_round_entry_hash: Option<EntryHash>,
     pub game_session_hash: Option<EntryHash>,
     pub next_action: String,
     pub moves: Vec<(i32, String, AgentPubKey)>,
@@ -176,6 +177,7 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                 )?;
                 return Ok(GameRoundInfo {
                     current_round_entry_hash: Some(hash),
+                    prev_round_entry_hash: Some(last_round_hash),
                     game_session_hash: None,
                     resources_left: Some(round_state.resource_amount),
                     round_num: last_round.round_num + 1,
@@ -196,6 +198,7 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                 )?;
                 return Ok(GameRoundInfo {
                     current_round_entry_hash: None,
+                    prev_round_entry_hash: Some(last_round_hash),
                     game_session_hash: Some(hash),
                     resources_left: Some(round_state.resource_amount),
                     round_num: last_round.round_num + 1,
@@ -209,7 +212,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
         None => {
             // TODO: fix the value in current_round_entry_hash: Some(last_round_hash)
             return Ok(GameRoundInfo {
-                current_round_entry_hash: Some(last_round_hash),
+                current_round_entry_hash: None,
+                prev_round_entry_hash: Some(last_round_hash),
                 game_session_hash: Some(
                     game_session_element
                         .header()

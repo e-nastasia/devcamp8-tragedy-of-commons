@@ -1,6 +1,6 @@
 <script>
     import { createEventDispatcher } from "svelte";
-import { shortenBase64 } from "./utils";
+    import { shortenBase64 } from "./utils";
     const dispatch = createEventDispatcher();
 
     export let round = {
@@ -10,32 +10,32 @@ import { shortenBase64 } from "./utils";
         game_session_hash: "smdlfk",
         next_action: "TODO",
         moves: [
-        {
-            nickname: "tixel",
-            id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
-            resourcesTaken: "10",
-        }],
+            {
+                nickname: "tixel",
+                id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f",
+                resourcesTaken: "10",
+            },
+        ],
     };
-    
+
     // moves
     export let moves = [];
 
-
-    $: if (round.fake === false){
+    $: if (round.fake === false) {
         gameRoundState = "COMPLETE";
     } else {
         gameRoundState = "IN PROGRESS";
-    } 
-    
+    }
+
     let gameRoundState = "NEW"; // COMPLETE
 
     function refreshGameRound() {
-        if (gameRoundState == "COMPLETE"){
+        if (gameRoundState == "COMPLETE") {
             return;
         }
         dispatch("updateRound");
     }
-    function resourcesToString(amount){
+    function resourcesToString(amount) {
         if (parseInt(amount) === 1) {
             return amount + " resource";
         } else {
@@ -46,20 +46,29 @@ import { shortenBase64 } from "./utils";
 
 <section>
     <aside class="gameround">
-        <h2>Round {round.round_num} - {gameRoundState}<sup style="color:silver;background-color:white;">{shortenBase64(round.current_round_entry_hash)}</sup></h2>
+        <h2>
+            Round {round.round_num} - {gameRoundState}<sup
+                style="color:silver;background-color:white;"
+                >{shortenBase64(round.prev_round_entry_hash)}</sup
+            >
+        </h2>
         <ul>
             {#each moves as move}
-            <li>
-                {move.nickname} takes {resourcesToString(move.resourcesTaken)} <i style="color:silver;">{shortenBase64(move.id)}</i>
-            </li>
+                <li>
+                    {move.nickname} takes {resourcesToString(
+                        move.resourcesTaken
+                    )} <i style="color:silver;">{shortenBase64(move.id)}</i>
+                </li>
             {/each}
         </ul>
         {#if gameRoundState == "IN PROGRESS"}
-        <button id="refresh_round_btn" on:click={refreshGameRound}>refresh</button>
+            <button id="refresh_round_btn" on:click={refreshGameRound}
+                >refresh</button
+            >
         {:else}
-        <p>
-            <strong>total resources: {round.resources_left}</strong>
-        </p>
+            <p>
+                <strong>total resources: {round.resources_left}</strong>
+            </p>
         {/if}
     </aside>
 </section>

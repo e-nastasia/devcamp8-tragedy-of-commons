@@ -15,15 +15,15 @@
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
 
-    function calculateTotalTaken(rounds){
-        if (!rounds){
+    function calculateTotalTaken(rounds) {
+        if (!rounds) {
             console.error("Rounds array is empty");
         }
         let totalTaken = 0;
         let totalGrown = 0;
         for (let i = 0; i < rounds.length; i++) {
             const round = rounds[i];
-            if (round.fake === true){
+            if (round.fake === true) {
                 continue;
             }
             let moves = round.moves;
@@ -32,7 +32,7 @@
                 totalTaken = totalTaken + move.resourcesTaken;
             }
         }
-        return resources_default_start - totalTaken + totalGrown
+        return resources_default_start - totalTaken + totalGrown;
     }
 
     async function refreshPlayerList() {
@@ -82,8 +82,8 @@
             current_round_hash
         );
         console.log("result make move", result);
-        
-        addFakePendingRound(nickname, resources, calculateTotalTaken(rounds));  //TODO
+
+        addFakePendingRound(nickname, resources, calculateTotalTaken(rounds)); //TODO
     }
 
     async function updateRound() {
@@ -105,8 +105,8 @@
         console.log("current round info:", latest_game_info);
         console.log("rounds:", rounds);
         let last_round = rounds[rounds.length - 1];
-        if (latest_game_info.type === "error"){
-            console.info("Still waiting? ", latest_game_info.data)
+        if (latest_game_info.type === "error") {
+            console.info("Still waiting? ", latest_game_info.data);
         }
 
         if (latest_game_info.next_action === "WAITING") {
@@ -137,6 +137,7 @@
             round_num: rounds.length + 1,
             resources_left: resources_total,
             current_round_entry_hash: "",
+            prev_round_entry_hash: "",
             game_session_hash: "",
             next_action: "WAITING",
             moves: [
@@ -155,30 +156,32 @@
 
     function addRealCompletedRound(latest_game_info) {
         let last_round = rounds[rounds.length - 1];
-        if (last_round.round_num !== latest_game_info.round_num){
+        if (last_round.round_num !== latest_game_info.round_num) {
             console.log("last round is different. Oink?");
             return;
         }
         let convertedMoves = [];
-        
+
         latest_game_info.moves.forEach(convertMove);
-        function convertMove(move, index)
-        {
+        function convertMove(move, index) {
             console.debug("move: ", move);
-            let x =                 {
-                    nickname: move[1],
-                    id: move[2],
-                    resourcesTaken: move[0],
-                };
+            let x = {
+                nickname: move[1],
+                id: move[2],
+                resourcesTaken: move[0],
+            };
             convertedMoves.push(x);
         }
 
-        last_round.current_round_entry_hash = latest_game_info.current_round_entry_hash;
+        last_round.current_round_entry_hash =
+            latest_game_info.current_round_entry_hash;
+        last_round.prev_round_entry_hash =
+            latest_game_info.prev_round_entry_hash;
         last_round.round_num = latest_game_info.round_num;
         last_round.fake = false;
         last_round.moves = convertedMoves;
-        last_round.resources_left = calculateTotalTaken(rounds)
-        
+        last_round.resources_left = calculateTotalTaken(rounds);
+
         rounds = rounds;
         console.log("rounds: ", rounds);
     }
@@ -223,8 +226,6 @@
     let player_stats = [];
     let game_score = {};
 
-
-
     let players_mock_repo = [
         { nickname: "tixel", id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f" },
         { nickname: "f00bar42", id: "4652cd28-4fc2-4c77-9709-234ca8adab81" },
@@ -268,20 +269,15 @@
     </aside>
 </section>
 
-<div class="columncentered">
-    <p>This commons starts with: <strong>{resources_default_start} resources</strong></p>
-</div>
-
 <div class="playerlist">
     {#each players as player, i}
         <button
             ><span class="playername">{player.nickname}</span>
-            <br/>
+            <br />
             <sup class="hashsup">
                 {shortenBase64(player.player_id)}
             </sup>
-            </button
-        >
+        </button>
     {/each}
 </div>
 
@@ -291,11 +287,17 @@
             <p>
                 Wait until all player joined the game.
                 <br />
-                <a id="refresh_player_list" href="#" on:click={refreshPlayerList}>Refresh</a>
+                <a
+                    id="refresh_player_list"
+                    href="#"
+                    on:click={refreshPlayerList}>Refresh</a
+                >
                 <br />
                 {#if players.length != 0}
-                    <button id="start_play_btn" class="startgamebutton" on:click={play}
-                        >Play!</button
+                    <button
+                        id="start_play_btn"
+                        class="startgamebutton"
+                        on:click={play}>Play!</button
                     >
                 {/if}
             </p>
@@ -304,6 +306,15 @@
         <div class="columncentered">
             <a href="#" on:click={refreshPlayerList}>Refresh player list</a>
         </div>
+        <section>
+            <aside class="gameround">
+                <p>
+                    This commons starts with: <strong
+                        >{resources_default_start} resources</strong
+                    >
+                </p>
+            </aside>
+        </section>
         <!-- TODO for each list of rounds played-->
         {#each rounds as round, i}
             <GameRound
@@ -313,7 +324,7 @@
             />
         {/each}
         {#if game_status == "MAKE_MOVE"}
-            <GameMove on:makeMove={makeMove} total_resource={total_resources}/>
+            <GameMove on:makeMove={makeMove} total_resource={total_resources} />
         {/if}
         {#if game_status == "WAIT_NEXT_ROUND"}
             <div style="text-align:center;">
@@ -327,7 +338,10 @@
                 <p>
                     Calculating game scores...
                     <br />
-                    <a id="refresh_scores_btn" href="#" on:click={getAsyncFinalResults}>Refresh scores</a
+                    <a
+                        id="refresh_scores_btn"
+                        href="#"
+                        on:click={getAsyncFinalResults}>Refresh scores</a
                     >
                 </p>
             </div>
@@ -355,10 +369,15 @@
 </div>
 
 <style>
-    .playername{
+    .gameround {
+        width: 70%;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+    .playername {
         font-size: 2.5rem;
     }
-    .hashsup{
+    .hashsup {
         color: #118bee;
         background-color: white;
     }

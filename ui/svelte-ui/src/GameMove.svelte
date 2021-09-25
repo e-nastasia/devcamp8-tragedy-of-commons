@@ -5,12 +5,12 @@
 
     export let total_resource = 100;
 
-    function makeMove(event){
+    function makeMove(event) {
         event.preventDefault();
         let input = document.getElementById("input_take_resources").value;
-        dispatch('makeMove', {
-			resources: input
-		});
+        dispatch("makeMove", {
+            resources: input,
+        });
     }
 </script>
 
@@ -21,8 +21,15 @@
         <p>Take all the resources you need</p>
 
         <label for="input_take_resources">Resources:</label>
-        <input type="number" id="input_take_resources" size="20" placeholder="" />
-        <button id="make_move_btn" type="submit" on:click="{makeMove}">Submit</button>
+        <input
+            type="number"
+            id="input_take_resources"
+            size="20"
+            placeholder=""
+        />
+        <button id="make_move_btn" type="submit" on:click={makeMove}
+            >Submit</button
+        >
     </form>
 </section>
 
