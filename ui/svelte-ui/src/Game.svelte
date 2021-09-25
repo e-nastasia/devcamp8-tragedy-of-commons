@@ -1,4 +1,6 @@
 <script>
+import { afterUpdate } from "svelte";
+
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
@@ -226,28 +228,10 @@
     let player_stats = [];
     let game_score = {};
 
-    let players_mock_repo = [
-        { nickname: "tixel", id: "56c95c9a-e210-41ec-8fec-fb9683c8d76f" },
-        { nickname: "f00bar42", id: "4652cd28-4fc2-4c77-9709-234ca8adab81" },
-        { nickname: "harlan", id: "c6b4f8a6-224f-4a7e-9a87-63416e0cafaf" },
-        { nickname: "robot5x", id: "68472d6d-39d2-44cc-8c8c-5d21c8d75ae5" },
-        { nickname: "lchang", id: "81ded8af-dcf1-407c-922d-20b9d7e3a42e" },
-        {
-            nickname: "sidsthalekar",
-            id: "a5f78d5d-899e-458d-8b0e-98781c83d7ac",
-        },
-        {
-            nickname: "guillemcordoba",
-            id: "7ca195ac-71f3-4283-baa7-912d8a75e163",
-        },
-        {
-            nickname: "petersgrandadventure",
-            id: "ceef318d-4437-4485-8281-c47a018bc238",
-        },
-        { nickname: "nphias", id: "51797e5b-7306-4d6c-861b-a1a425112c37" },
-        { nickname: "alexoceann", id: "4a0656a7-223e-4260-a84b-2b975f77eb52" },
-        { nickname: "qubeo", id: "68ccf4f9-2ba3-42a1-87ca-9ffe562bca62" },
-    ];
+	afterUpdate(() => {
+		console.log("scrolling to", document.body.scrollHeight)
+		window.scrollTo(0,document.body.scrollHeight);
+	})
 </script>
 
 <section>

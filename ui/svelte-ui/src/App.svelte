@@ -60,6 +60,11 @@
 	let connected = false;
 
 	async function connect() {
+		if (connected && window.appClient) {
+			window.appClient = null;
+			connected = false;
+			return;
+		}
 		const appClient = new AppClient(appHost, appPort);
 		try {
 			await appClient.connect();
