@@ -1,5 +1,5 @@
 <script>
-import { afterUpdate } from "svelte";
+    import { afterUpdate } from "svelte";
 
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
@@ -16,6 +16,11 @@ import { afterUpdate } from "svelte";
     const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
+
+    let rounds = [];
+    let players = [];
+    let player_stats = [];
+    let game_score = {};
 
     function calculateTotalTaken(rounds) {
         if (!rounds) {
@@ -65,10 +70,6 @@ import { afterUpdate } from "svelte";
             }
         }
     }
-
-    let rounds = [];
-
-    // let last_round_state="IN PROGRESS";
 
     async function makeMove(event) {
         game_status = "WAIT_NEXT_ROUND";
@@ -168,7 +169,7 @@ import { afterUpdate } from "svelte";
         function convertMove(move, index) {
             console.debug("move: ", move);
             let x = {
-                nickname: move[1],
+                nickname: findPlayerNameByHash(move[2]),
                 id: move[2],
                 resourcesTaken: move[0],
             };
@@ -188,16 +189,14 @@ import { afterUpdate } from "svelte";
         console.log("rounds: ", rounds);
     }
 
-    function roundComplete() {
-        if (rounds.length == 2) {
-            // MAX ROUNDS
-            game_status = "WAIT_GAME_SCORE";
-            return;
+    function findPlayerNameByHash(hash) {
+        for (let i = 0; i < players.length; i++) {
+            const p = players[i];
+            if (p.player_id.toString() === hash.toString()) {
+                return p.nickname;
+            }
         }
-        if (game_status == "GAME_OVER") {
-            return;
-        }
-        game_status = "MAKE_MOVE";
+        return "name not found";
     }
 
     function callZomeToGetResults() {
@@ -224,14 +223,10 @@ import { afterUpdate } from "svelte";
         result_status = "GAME_LOST";
     }
 
-    let players = [];
-    let player_stats = [];
-    let game_score = {};
-
-	afterUpdate(() => {
-		console.log("scrolling to", document.body.scrollHeight)
-		window.scrollTo(0,document.body.scrollHeight);
-	})
+    afterUpdate(() => {
+        console.log("scrolling to", document.body.scrollHeight);
+        window.scrollTo(0, document.body.scrollHeight);
+    });
 </script>
 
 <section>
