@@ -4,10 +4,11 @@
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
     import GameRound from "./GameRound.svelte";
-    import { bufferToBase64, shortenBase64 } from "./utils";
+    import { bufferToBase64, shorten, shortenBase64 } from "./utils";
 
     export let nickname = "";
     export let gamecode = "";
+    export let agentPubKeyB64 = "";
     export let action = "GAME_BEGIN";
     export let current_round_hash = "";
     let resources_default_start = 100;
@@ -239,8 +240,8 @@
 <section>
     <aside>
         <h3>Your nickname</h3>
-        <span id="nickname" style="font-size: 4rem !important;">{nickname}</span
-        >
+        <span id="nickname" style="font-size: 4rem !important;">{nickname}</span>
+        <i style="color:silver">{shorten(agentPubKeyB64, 10, 20)}</i>
     </aside>
     <aside>
         <h3>Game code</h3>

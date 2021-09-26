@@ -5,8 +5,6 @@
 	import { AppClient } from "./app-client";
 	import { onDestroy, onMount } from "svelte";
 
-	const DELAY = 300;
-
 	let queryParamPort = new URLSearchParams(window.location.search).get(
 		"port"
 	);
@@ -15,6 +13,7 @@
 	let nickname = "---";
 	let gamecode = "------";
 	let errorMessage = "";
+	let agentPubKey = "";
 
 	async function startNewGame(event) {
 		if (status === "LOADING") {
@@ -58,6 +57,7 @@
 	let appPort = queryParamPort || 8000;
 	let appId = "tragedy_of_commons";
 	let connected = false;
+	let agentPubKeyB64 = "";
 
 	async function connect() {
 		if (connected && window.appClient) {
@@ -69,6 +69,7 @@
 		try {
 			await appClient.connect();
 			window.appClient = appClient;
+			agentPubKeyB64 = appClient.agentPubKeyB64;
 			connected = true;
 			errorMessage = "";
 		} catch (error) {
@@ -100,7 +101,7 @@
 		<p>Calling zome...</p>
 	</div>
 {:else}
-	<Game action={status} {nickname} {gamecode} />
+	<Game action={status} {nickname} {gamecode} {agentPubKeyB64}/>
 {/if}
 
 <footer>

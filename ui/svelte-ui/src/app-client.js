@@ -11,6 +11,7 @@ export class AppClient {
     #dna = '';
     #dnaStr = '';
     #agentPubKey = '';
+    agentPubKeyB64 = '';
     #appId = "tragedy_of_commons";
     #appInfo = null;
 
@@ -29,7 +30,7 @@ export class AppClient {
         this.#agentPubKey = this.#cellId[1]
         this.#dna = this.#cellId[0]
         this.#dnaStr = bufferToBase64(this.#dna)
-        // this.#agentPubKey = bufferToBase64(this.#agentPubKey);
+        this.agentPubKeyB64 = bufferToBase64(this.#agentPubKey);
         console.log("appinfo:{}", this.#appInfo);
     }
 
