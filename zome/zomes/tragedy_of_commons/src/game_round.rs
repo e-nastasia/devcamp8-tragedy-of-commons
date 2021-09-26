@@ -3,7 +3,7 @@ use crate::game_move::{finalize_moves, get_moves_for_round, GameMove};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
-use crate::types::{PlayerStats, ResourceAmount, player_stats_from_moves};
+use crate::types::{player_stats_from_moves, PlayerStats, ResourceAmount};
 use crate::utils::{
     convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
     must_get_entry_struct, must_get_header_and_entry,
@@ -69,7 +69,8 @@ impl GameRound {
 // so it has to be very lightweight and can not make any DHT queries
 pub fn calculate_round_state(params: &GameParams, player_moves: Vec<GameMove>) -> RoundState {
     // resources
-    let consumed_resources_in_round: ResourceAmount = player_moves.iter().map(|x| x.resources).sum();
+    let consumed_resources_in_round: ResourceAmount =
+        player_moves.iter().map(|x| x.resources).sum();
     let total_leftover_resource = params.start_amount - consumed_resources_in_round;
 
     // player stats dd
@@ -140,6 +141,10 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
     };
     debug!("extracting game round from element");
     let last_round: GameRound = entry_from_element_create_or_update(&last_round_element)?;
+
+
+    // TODO optimization: check if new round with next round_num already exists
+    // in that case it is not necessary create it again
 
     // game session
     info!("fetching element with game session from DHT, trying locally first");
@@ -360,9 +365,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
 
 // TODO: validate that we can't create round with num != 0
 // TODO: validate that game session for this round isn't finished/lost
-pub fn validate_create_entry_game_round() {
-
-}
+pub fn validate_create_entry_game_round() {}
 
 pub fn validate_update_entry_game_round(
     data: ValidateData,

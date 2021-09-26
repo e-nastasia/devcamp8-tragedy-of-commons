@@ -56,3 +56,8 @@ export function shortenBase64(hash) {
   let shortened = b64str.substring(0, 5) + "..." + b64str.substring(b64str.length - 10);
   return shortened;
 }
+
+export function shorten(input) {
+  let shortened = input.substring(0, 3) + "..." + input.substring(input.length - 5);
+  return shortened;
+}

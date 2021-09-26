@@ -20,7 +20,6 @@
     let rounds = [];
     let players = [];
     let player_stats = [];
-    let game_score = {};
 
     function calculateTotalTaken(rounds) {
         if (!rounds) {
@@ -128,6 +127,7 @@
 
         if (latest_game_info.next_action === "SHOW_GAME_RESULTS") {
             game_status = "WAIT_GAME_SCORE";
+            calculateResults();
         } else if (latest_game_info.next_action === "START_NEXT_ROUND") {
             game_status = "MAKE_MOVE";
         } else {
@@ -199,28 +199,35 @@
         return "name not found";
     }
 
-    function callZomeToGetResults() {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve("resolved");
-            }, DELAY);
-        });
-    }
-
-    async function getAsyncFinalResults() {
-        let result = await callZomeToGetResults();
+    function calculateResults() {
+        let all_moves = [];
+        for (let i = 0; i < rounds.length; i++) {
+            const round = rounds[i];
+            all_moves = all_moves.concat(round.moves);
+        }
+        let stats = sumMoves(all_moves);
+        console.log(stats);
         let mock_results = {
-            total_score: 100,
-            stats: [
-                { nickname: "tixel", score: 10 },
-                { nickname: "f00bar42", score: 10 },
-                { nickname: "bierlitzm", score: 10 },
-            ],
+            total_score: calculateTotalTaken(rounds),
+            stats: stats,
         };
-        game_score = { totalscore: 100 };
         player_stats = mock_results.stats;
         game_status = "GAME_OVER";
         result_status = "GAME_LOST";
+    }
+
+    function sumMoves(allMoves){
+        let stats = {};
+        for (let i = 0; i < allMoves.length; i++) {
+            const move = allMoves[i];
+            const player = bufferToBase64(move.id);
+            if (stats[player] === undefined){
+                stats[player] = 0
+            }
+            stats[player] = stats[player] + parseInt(move.resourcesTaken); 
+        }
+
+        return Object.entries(stats);
     }
 
     afterUpdate(() => {
@@ -342,7 +349,7 @@
                     <h1>Yes we made it... together.</h1>
                 </div>
             {/if}
-            <GameResults {player_stats} {game_score} />
+            <GameResults {player_stats} resources_left={total_resources} {players}/>
         {/if}
     {/if}
 </div>

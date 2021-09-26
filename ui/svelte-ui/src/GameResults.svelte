@@ -1,20 +1,35 @@
 <script>
-    export let game_scores = { totalscore: 100 };
+import { bufferToBase64, shorten } from "./utils";
+
+
+    export let resources_left = 100;
     export let player_stats = [
-        { nickname: "tixel", score: 10 },
-        { nickname: "f00bar42", score: 10 },
-        { nickname: "bierlitzm", score: 10 },
+        [ "mslfmsljfmlkds", 10 ],
+        [ "xcvxcvj", 10 ],
+        [ "zerzer", 10 ],
     ];
+    export let players = [];
+
+    function getPlayerName(id){
+        for (let i = 0; i < players.length; i++) {
+            const player = players[i];
+            if (bufferToBase64(player.player_id) === id){
+                return player.nickname;
+            }
+        }
+    }
+    
 </script>
 
 <section id="game_results_section">
     <aside class="gameresults">
         <h2>Game scores</h2>
-        <p>Total score: {game_scores.totalscore}</p>
+        <p>Total score: {resources_left}</p>
         <ul>
             {#each player_stats as player}
                 <li>
-                    {player.nickname} took {player.score} resources in total
+                    <strong>{getPlayerName(player[0])}</strong> took {player[1]} resources in total
+                    <br><i class="playerId">{shorten(player[0])}</i> 
                 </li>
             {/each}
         </ul>
@@ -22,6 +37,9 @@
 </section>
 
 <style>
+    .playerId{
+        color: silver;
+    }
     .gameresults {
         width: 70%;
         background-color: lavender;

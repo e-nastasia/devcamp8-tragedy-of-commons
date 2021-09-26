@@ -25,7 +25,9 @@
             type="number"
             id="input_take_resources"
             size="20"
+            min="0"
             placeholder=""
+            value="1"
         />
         <button id="make_move_btn" type="submit" on:click={makeMove}
             >Submit</button
