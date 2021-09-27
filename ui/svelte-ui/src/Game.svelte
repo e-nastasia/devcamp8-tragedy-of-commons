@@ -14,7 +14,6 @@
     let resources_default_start = 100;
     $: total_resources = calculateTotalTaken(rounds);
 
-    const DELAY = 300;
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
 
@@ -208,24 +207,28 @@
         }
         let stats = sumMoves(all_moves);
         console.log(stats);
-        let mock_results = {
+        let calculated_results = {
             total_score: calculateTotalTaken(rounds),
             stats: stats,
         };
-        player_stats = mock_results.stats;
+        player_stats = calculated_results.stats;
         game_status = "GAME_OVER";
-        result_status = "GAME_LOST";
+        if (calculated_results.total_score > 0) {
+            result_status = "GAME_WON";
+        } else {
+            result_status = "GAME_LOST";
+        }
     }
 
-    function sumMoves(allMoves){
+    function sumMoves(allMoves) {
         let stats = {};
         for (let i = 0; i < allMoves.length; i++) {
             const move = allMoves[i];
             const player = bufferToBase64(move.id);
-            if (stats[player] === undefined){
-                stats[player] = 0
+            if (stats[player] === undefined) {
+                stats[player] = 0;
             }
-            stats[player] = stats[player] + parseInt(move.resourcesTaken); 
+            stats[player] = stats[player] + parseInt(move.resourcesTaken);
         }
 
         return Object.entries(stats);
@@ -240,7 +243,8 @@
 <section>
     <aside>
         <h3>Your nickname</h3>
-        <span id="nickname" style="font-size: 4rem !important;">{nickname}</span>
+        <span id="nickname" style="font-size: 4rem !important;">{nickname}</span
+        >
         <i style="color:silver">{shorten(agentPubKeyB64, 10, 20)}</i>
     </aside>
     <aside>
@@ -320,37 +324,36 @@
                 Click refresh
             </div>
         {/if}
-        {#if game_status == "WAIT_GAME_SCORE"}
-            <div class="columncentered">
-                <p>
-                    Calculating game scores...
-                    <br />
-                    <a
-                        id="refresh_scores_btn"
-                        href="#"
-                        on:click={getAsyncFinalResults}>Refresh scores</a
-                    >
-                </p>
-            </div>
-        {/if}
 
         <!-- ONLY if game ended-->
         {#if game_status == "GAME_OVER"}
+            <GameResults
+                {player_stats}
+                resources_left={total_resources}
+                {players}
+            />
             {#if result_status == "GAME_LOST"}
                 <div style="text-align:center;">
                     <h1>
                         We lost
                         <br />
-                        What a tragedy...
+                        ...what a tragedy
                     </h1>
+                    <p>
+                        We overextended our commons.<br />We went beyond it
+                        natural limits.<br />It imploded :'‑(
+                    </p>
                 </div>
             {/if}
             {#if result_status == "GAME_WON"}
                 <div style="text-align:center;">
                     <h1>Yes we made it... together.</h1>
+                    <p>
+                        We never took more than <br />what our commons could
+                        regrow.<br />There is a future...
+                    </p>
                 </div>
             {/if}
-            <GameResults {player_stats} resources_left={total_resources} {players}/>
         {/if}
     {/if}
 </div>
