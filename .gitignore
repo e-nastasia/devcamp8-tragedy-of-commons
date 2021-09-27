@@ -5,6 +5,7 @@ node_modules/
 .hc_live**
 **.dna
 **.happ
+**.webhapp
 ui/svelte-ui/tests/**.log
 ui/svelte-ui/tests/**.png
 ui/svelte-ui/tests/**.xml

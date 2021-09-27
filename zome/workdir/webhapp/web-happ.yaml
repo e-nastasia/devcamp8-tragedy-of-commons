@@ -1,0 +1,7 @@
+---
+manifest_version: "1"
+name: tragedy_of_commons
+ui:
+  bundled: "../../../ui/svelte-ui/dist.zip"
+happ_manifest:
+  bundled: "../happ/tragedy_of_commons.happ"
