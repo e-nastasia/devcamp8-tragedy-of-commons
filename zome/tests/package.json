@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@holochain/tryorama": "holochain/tryorama#bump-hc-0-0-103",
+    "@holochain/tryorama": "0.4.5",
     "@types/lodash": "^4.14.158",
     "@types/node": "^14.0.14",
     "lodash": "^4.17.19",
