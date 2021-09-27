@@ -55,17 +55,26 @@
             game_status = "MAKE_MOVE";
         } else if (action == "GAME_JOIN") {
             console.log("check if game has been started");
-            let result = await window.appClient.currentRoundForGameCode(
-                gamecode
-            );
-            console.log("result:", result);
-            if (!result) {
-                alert("Still waiting on other players");
-            } else {
-                // get current round hash
-                console.log("game joined", result);
-                current_round_hash = result;
-                game_status = "MAKE_MOVE";
+            try {
+                let result = await window.appClient
+                    .currentRoundForGameCode(gamecode)
+                    .catch();
+                console.log("result:", result);
+                if (result) {
+                    // get current round hash
+                    console.log("game joined", result);
+                    current_round_hash = result;
+                    game_status = "MAKE_MOVE";
+                } else {
+                    alert(
+                        "Still waiting on other players or game host to start playing..."
+                    );
+                }
+            } catch (error) {
+                if (error.type === "ribosome_error" || error.type === "error") {
+                    console.info("Error: ", error.data);
+                    alert("Error: " + error.data.data);
+                }
             }
         }
     }
@@ -132,6 +141,7 @@
             game_status = "MAKE_MOVE";
         } else {
             console.error("unknown action:", latest_game_info.next_action);
+            alert("Still waiting on other players");
         }
     }
 

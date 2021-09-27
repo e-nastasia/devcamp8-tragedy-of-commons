@@ -77,6 +77,7 @@ export class AppClient {
         };
         return this.#appClient.callZome(params);
     }
+
     async startGame(gameCode) {
         const params = {
             cap: null,
@@ -89,16 +90,22 @@ export class AppClient {
         return this.#appClient.callZome(params);
     }
     async currentRoundForGameCode(gameCode) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'current_round_for_game_code',
-            provenance: this.#agentPubKey,
-            payload: gameCode
-        };
-        return this.#appClient.callZome(params);
-    }
+        try {
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'current_round_for_game_code',
+                provenance: this.#agentPubKey,
+                payload: gameCode
+            };
+            return this.#appClient.callZome(params);
+        } catch (error) {
+            console.log('ERROR: callZome threw error', error)
+            return error;
+        }
+    };
+
     // async currentRoundInfoForHeaderHash(entryHash) {
     //     const params = {
     //         cap: null,
@@ -111,75 +118,75 @@ export class AppClient {
     //     return this.#appClient.callZome(params);
     // }
     async makeMove(amount, prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'make_new_move',
-            provenance: this.#agentPubKey,
-            payload: { resource_amount: parseInt(amount), previous_round: prev_round_hash }
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'make_new_move',
+                provenance: this.#agentPubKey,
+                payload: { resource_amount: parseInt(amount), previous_round: prev_round_hash }
+            };
+            return this.#appClient.callZome(params);
+        }
     async tryCloseRound(prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'try_to_close_round',
-            provenance: this.#agentPubKey,
-            payload: prev_round_hash
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'try_to_close_round',
+                provenance: this.#agentPubKey,
+                payload: prev_round_hash
+            };
+            return this.#appClient.callZome(params);
+        }
 
 
     async getMyOwnedSessions(amount, prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'get_my_owned_sessions',
-            provenance: this.#agentPubKey,
-            payload: null
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'get_my_owned_sessions',
+                provenance: this.#agentPubKey,
+                payload: null
+            };
+            return this.#appClient.callZome(params);
+        }
     async getMyPlayedSessions(amount, prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'get_my_played_sessions',
-            provenance: this.#agentPubKey,
-            payload: null
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'get_my_played_sessions',
+                provenance: this.#agentPubKey,
+                payload: null
+            };
+            return this.#appClient.callZome(params);
+        }
     async getAllMySessions(amount, prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'get_all_my_sessions',
-            provenance: this.#agentPubKey,
-            payload: null
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'get_all_my_sessions',
+                provenance: this.#agentPubKey,
+                payload: null
+            };
+            return this.#appClient.callZome(params);
+        }
     async getMyActiveSessions(amount, prev_round_hash) {
-        const params = {
-            cap: null,
-            cell_id: this.#cellId,
-            zome_name: 'tragedy_of_commons',
-            fn_name: 'get_my_active_sessions',
-            provenance: this.#agentPubKey,
-            payload: null
-        };
-        return this.#appClient.callZome(params);
-    }
+            const params = {
+                cap: null,
+                cell_id: this.#cellId,
+                zome_name: 'tragedy_of_commons',
+                fn_name: 'get_my_active_sessions',
+                provenance: this.#agentPubKey,
+                payload: null
+            };
+            return this.#appClient.callZome(params);
+        }
 
-}
+    }
 
 function signalHandler(connection, signal) {
     // ignore signals not meant for me

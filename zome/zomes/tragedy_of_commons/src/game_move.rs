@@ -1,13 +1,5 @@
-use crate::{
-    game_round::{calculate_round_state, GameRound, RoundState},
-    game_session::{GameScores, GameSession, GameSignal, SignalPayload},
-    types::ResourceAmount,
-    utils::{
-        convert, convert_keys_from_b64, entry_from_element_create_or_update,
-        entry_hash_from_element, must_get_entry_struct, try_get_and_convert,
-    },
-};
-use hdk::prelude::holo_hash::*;
+use crate::{game_round::{calculate_round_state, GameRound, RoundState}, game_session::{GameScores, GameSession, GameSignal, SignalPayload}, types::ResourceAmount, utils::{check_agent_is_player_current_session, convert, convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct, try_get_and_convert}};
+use hdk::prelude::holo_hash::hash_type::Agent;
 use hdk::prelude::*;
 use std::collections::HashMap;
 
@@ -37,6 +29,32 @@ pub fn new_move(
     resource_amount: ResourceAmount,
     round_entry_hash: EntryHash,
 ) -> ExternResult<HeaderHash> {
+    // round
+    let game_round_element = match get(round_entry_hash.clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Round not found".into())),
+    };
+    let entry_hash_game_round = entry_hash_from_element(&game_round_element)?.to_owned();
+
+    let game_round: GameRound = game_round_element
+        .entry()
+        .to_app_option()?
+        .to_owned()
+        .expect("game round should be known");
+
+    // game session
+    let game_session_element = match get(game_round.session.clone(), GetOptions::content())? {
+        Some(element) => element,
+        None => return Err(WasmError::Guest("Round not found".into())),
+    };
+    let game_session: GameSession = game_session_element
+        .entry()
+        .to_app_option()?
+        .to_owned()
+        .expect("game session should be known");
+
+    check_agent_is_player_current_session(game_session);
+
     // todo: add guard clauses for empty input
     debug!(
         "current round: {:?} amount: {:?}",
@@ -50,11 +68,6 @@ pub fn new_move(
     create_entry(&game_move);
     let entry_hash_game_move = hash_entry(&game_move)?;
 
-    let game_round_element = match get(round_entry_hash.clone(), GetOptions::content())? {
-        Some(element) => element,
-        None => return Err(WasmError::Guest("Round not found".into())),
-    };
-    let entry_hash_game_round = entry_hash_from_element(&game_round_element)?.to_owned();
     debug!(
         "link move {:?} to round {:?}",
         &game_move,
@@ -162,7 +175,10 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
     );
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
-        debug!("GameMove {:?} has non-positive resources, INVALID", game_move);
+        debug!(
+            "GameMove {:?} has non-positive resources, INVALID",
+            game_move
+        );
         return Ok(ValidateCallbackResult::Invalid(format!(
             "GameMove has to have resources >= 0, but it has {}",
             game_move.resources

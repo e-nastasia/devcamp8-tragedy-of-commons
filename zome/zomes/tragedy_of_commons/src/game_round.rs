@@ -4,10 +4,7 @@ use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
 use crate::types::{player_stats_from_moves, PlayerStats, ResourceAmount};
-use crate::utils::{
-    convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element,
-    must_get_entry_struct, must_get_header_and_entry,
-};
+use crate::utils::{check_agent_is_player_current_session, convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct, must_get_header_and_entry};
 use hdk::prelude::*;
 use std::collections::HashMap;
 use std::vec;
@@ -324,9 +321,14 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
         debug!("link: {:?}", link);
         let element: Element = get(link.target.clone(), GetOptions::latest())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-
+        let game_session: GameSession = element.entry().to_app_option()?.expect("game session has to exist");
         let game_session_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
-
+        let result = check_agent_is_player_current_session(game_session);
+        match result {
+            Ok(x) => debug!("player is participant in current game"),
+            Err(err)=> return Err(err),    
+        };
+        
         let round_links: Links = get_links(
             game_session_entry_hash.clone(),
             Some(LinkTag::new("GAME_ROUND")),

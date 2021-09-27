@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::{error::Error, game_session::GameSession};
 use hdk::prelude::*;
 // NOTE: didn't had time to figure out how to apply this once on a lib level
 // TODO: remove it later
@@ -133,5 +133,26 @@ pub fn convert(result: ExternResult<HeaderHash>) -> ExternResult<HeaderHash> {
     match result {
         Ok(hash) => return Ok(hash),
         Err(error) => return Err(error),
+    }
+}
+
+pub fn check_agent_is_player_current_session(game_session:GameSession) -> ExternResult<()>{
+    let agent_pubkey: AgentPubKey = agent_info()?.agent_initial_pubkey;
+
+    // if game_session.players
+    let matched_player: Vec<AgentPubKey> = game_session
+        .players
+        .into_iter()
+        .filter(|player| agent_pubkey.eq(player.into()))
+        .collect();
+    if matched_player.len() == 1 {
+        info!("Player found in game session");
+        return Ok(())
+    } else {
+        error!("No matched player found.");
+        return Err(WasmError::Guest(
+            "This player is not known in the game session. Probably joined the game to late."
+                .into(),
+        ))
     }
 }
