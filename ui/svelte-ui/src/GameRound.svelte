@@ -67,7 +67,7 @@
             >
         {:else}
             <p>
-                <strong>total resources: {round.resources_left}</strong>
+                <strong>total resources: {round.resources_left}</strong> ( -{round.resources_taken_round} / +{round.resources_grown_round} )
             </p>
         {/if}
     </aside>

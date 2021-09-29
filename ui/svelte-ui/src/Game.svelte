@@ -12,7 +12,7 @@
     export let action = "GAME_BEGIN";
     export let current_round_hash = "";
     let resources_default_start = 100;
-    $: total_resources = calculateTotalTaken(rounds);
+    $: total_resources = 0;//calculateTotalTaken(rounds);
 
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
@@ -193,8 +193,11 @@
         last_round.round_num = latest_game_info.round_num;
         last_round.fake = false;
         last_round.moves = convertedMoves;
-        last_round.resources_left = calculateTotalTaken(rounds);
-
+        last_round.resources_left = latest_game_info.resources_left; //calculateTotalTaken(rounds);
+        last_round.resources_taken_round = latest_game_info.resources_taken_round; 
+        last_round.resources_grown_round = latest_game_info.resources_grown_round;
+        
+        total_resources = latest_game_info.resources_left;
         rounds = rounds;
         console.log("rounds: ", rounds);
     }

@@ -176,11 +176,11 @@ pub fn new_session(
     let round_zero = GameRound::new(
         0,
         game_session_entry_hash.clone(),
-        RoundState::new(
-            game_session.game_params.start_amount,
-            new_player_stats(&players),
-        ),
-        no_moves,
+        game_session.game_params.start_amount,
+        0,
+        0,
+            // new_player_stats(&players),
+            // no_moves,
     );
     let header_hash_round_zero = create_entry(&round_zero)?;
     let entry_hash_round_zero = hash_entry(&round_zero)?;
@@ -225,7 +225,7 @@ pub fn end_game(
     // based on that content it can be derive if the game has ended or not
 
     info!("updating game session: setting finished state and adding player stats");
-    let game_status = if round_state.resource_amount <= 0 {
+    let game_status = if round_state.resources_taken_round <= 0 {
         SessionState::Lost {
             last_round: last_round_entry_hash.clone(),
         }
