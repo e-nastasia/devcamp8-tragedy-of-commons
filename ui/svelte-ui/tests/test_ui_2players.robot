@@ -81,10 +81,10 @@ Play Game
     Refresh Last Round 
 
     #GAME OVER
-    Refresh Scores
+    Check Scores
 
     Switch Browser    B
-    Refresh Scores
+    Check Scores
     
     [Teardown]    Close All Browsers
 
@@ -149,18 +149,19 @@ Refresh Round
     # END
 
 Refresh Last Round
-    Sleep    5s
+    Sleep    3s
     Click Button    refresh_round_btn
-    Wait Until Element Is Visible    refresh_scores_btn    3s
+    # Wait Until Element Is Visible    refresh_scores_btn    3s
     # FOR    ${i}    IN RANGE    6      
     #     Click Button    refresh_round_btn
     #     Wait Until Element Is Visible    refresh_scores_btn    3s
     #     Log    try ${i}
     # END
 
-Refresh Scores
-    Sleep    5s
-    Click Link    refresh_scores_btn
+Check Scores
+    Sleep    3s
+    Page Should Contain    Game scores
+    # Click Link    refresh_scores_btn
 #     #tries max 3 times
 #     FOR    ${i}    IN RANGE    6
 #         Click Element   refresh_player_list
