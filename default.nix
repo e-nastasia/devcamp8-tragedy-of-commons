@@ -1,5 +1,5 @@
 {
-  holonixPath ?  builtins.fetchTarball { url = "https://github.com/holochain/holonix/archive/develop.tar.gz"; }
+  holonixPath ?  builtins.fetchTarball { url = "https://github.com/holochain/holonix/archive/a0dcdfac2c8783c58805175dd5bc5528ccbb35fd.tar.gz"; }
 }:
 
 let
@@ -12,13 +12,12 @@ let
     holochainVersionId = "custom";
 
     holochainVersion = {
-      rev = "holochain-0.0.108";
-      sha256 = "1p9rqd2d2wlyzc214ia93b1f18fgqspmza863q4hrz9ba6xigzjs";
-      cargoSha256 = "0p4m8ckbd7v411wgh14p0iz4dwi84i3cha5m1zgnqlln0wkqsb0f";
+      rev = "holochain-0.0.107";
+      sha256 = "1m5clhh0xpr4ajdbybxjqc5vblkd30lsfb1sac4zbzxjrnpp5iki";
+      cargoSha256 = "175b76j31sls0gj08imchwnk7n4ylsxlc1bm58zrhfmq62hcchb1";
       bins = {
         holochain = "holochain";
         hc = "hc";
-        kitsune-p2p-proxy = "kitsune_p2p/proxy";
       };
 
       lairKeystoreHashes = {

@@ -1,8 +1,0 @@
----
-manifest_version: "1"
-name: tragedy_of_commons
-uid: 00000000-0000-0000-0000-000000000000
-properties: ~
-zomes:
-  - name: tragedy_of_commons
-    bundled: ../../target/wasm32-unknown-unknown/release/tragedy_of_commons.wasm
