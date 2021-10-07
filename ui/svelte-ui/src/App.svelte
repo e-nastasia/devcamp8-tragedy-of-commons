@@ -105,30 +105,7 @@
 {/if}
 
 <footer>
-	<div
-		style="display:flex; vertical-align:middle; justify-content:space-around;"
-	>
-		<div>
-			<label>Host</label><input bind:value={appHost} />
-		</div>
-		<div>
-			<label>Port</label>
-			<input type="number" bind:value={appPort} />
-		</div>
-		<div>
-			<label>AppId</label>
-			<input bind:value={appId} />
-		</div>
-	</div>
-	<div style="display:flex; justify-content:center;">
-		<button class="linkbutton" on:click={connect}>
-			{#if connected}
-				disconnect
-			{:else}
-				connect
-			{/if}
-		</button>
-	</div>
+
 	{#if errorMessage}
 		<h3 style="color: red;">{errorMessage}</h3>
 	{/if}
