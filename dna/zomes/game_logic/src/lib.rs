@@ -15,6 +15,8 @@ mod player_profile;
 use crate::player_profile::{JoinGameInfo, PlayerProfile};
 
 entry_defs![
+    Anchor::entry_def(),
+    Path::entry_def(),
     player_profile::PlayerProfile::entry_def()
 ];
 
