@@ -8,6 +8,7 @@
     "start": "sirv public --no-clear"
   },
   "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.15.8",
     "@babel/preset-env": "^7.15.8",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
@@ -20,6 +21,7 @@
     "svelte": "^3.0.0"
   },
   "dependencies": {
+    "@babel/runtime": "^7.15.4",
     "@holochain/conductor-api": "0.2.1",
     "sirv-cli": "^1.0.0"
   }
