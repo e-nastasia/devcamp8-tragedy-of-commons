@@ -141,10 +141,7 @@ pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHash, GameSession)
 /// Function to make a new move in the game specified by input
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
-    convert(game_move::new_move(
-        input.resource_amount,
-        input.previous_round,
-    ))
+    game_move::new_move(input.resource_amount, input.previous_round)
 }
 
 /// Function to call from the UI on a regular basis to try and close the currently

@@ -82,7 +82,7 @@ pub fn new_move(
     // note: instead of calling try_to_close_Round right here, we can have a UI make
     // this call for us. This way making a move wouldn't be blocked by the other moves'
     // retrieval process and the process of committing the round entry.
-    Ok(header_hash_link.into())
+    Ok(header_hash_link)
 }
 
 pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<GameMove>> {
