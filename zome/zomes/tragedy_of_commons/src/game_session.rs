@@ -11,8 +11,9 @@ use crate::{
 use hdk::prelude::*;
 use std::{collections::HashMap, time::SystemTime};
 
-pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
-pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
+pub const OWNER_SESSION_TAG: &str = "MY_GAMES";
+pub const GAME_CODE_TO_SESSION_TAG: &str = "GAME_SESSION";
+pub const SESSION_TO_ROUND_TAG: &str = "GAME_ROUND";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
@@ -165,7 +166,7 @@ pub fn new_session(
     create_link(
         anchor.into(),
         game_session_entry_hash.clone(),
-        LinkTag::new("GAME_SESSION"),
+        LinkTag::new(GAME_CODE_TO_SESSION_TAG),
     )?;
 
     // create game round results for round 0
@@ -188,7 +189,7 @@ pub fn new_session(
     create_link(
         game_session_entry_hash.clone(),
         entry_hash_round_zero.clone(),
-        LinkTag::new("GAME_ROUND"),
+        LinkTag::new(SESSION_TO_ROUND_TAG),
     );
 
     // use remote signals from RSM to send a real-time notif to invited players
@@ -310,7 +311,7 @@ pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, Ga
 pub fn get_sessions_with_status(
     target_state: SessionState,
 ) -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let all_sessions = get_sessions_with_tags(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])?;
+    let all_sessions = get_sessions_with_tags(vec![OWNER_SESSION_TAG])?;
 
     let results = all_sessions
         .into_iter()

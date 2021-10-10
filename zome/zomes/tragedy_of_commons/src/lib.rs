@@ -9,7 +9,7 @@ use crate::{
     game_round::GameRoundInfo,
     game_session::{
         GameParams, GameSession, GameSessionInput, GameSignal, SessionState, SignalPayload,
-        OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG,
+        OWNER_SESSION_TAG,
     },
     player_profile::{JoinGameInfo, PlayerProfile},
     utils::{convert, entry_from_element_create_or_update},
