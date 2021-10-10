@@ -58,5 +58,7 @@ export default (orchestrator: Orchestrator<any>) =>
     );
     console.log("List of players in the game: ", list_of_players);
     t.ok(list_of_players);
+    // Verify that there actually 2 players in the game: no more, no less
+    t.ok(list_of_players.length==2);
 
 });
