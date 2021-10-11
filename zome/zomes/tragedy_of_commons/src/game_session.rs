@@ -94,29 +94,13 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
-    start_default_session(players, anchor)
-}
-
-// TODO(e-nastasia) This is a placeholder fn that can be refactored once
-// the UI is providing game params. Or we can leave it to separate retrieval
-// of the players from the actual session create. Anyway, GameParams have to go!
-fn start_default_session(
-    player_list: Vec<PlayerProfile>,
-    anchor: EntryHash,
-) -> ExternResult<EntryHash> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
         num_rounds: 3,
     };
-    let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
-    debug!("player agentpubkeys: {:?}", players);
-    let round_zero = new_session(players, game_params, anchor);
-    debug!("new session created: {:?}", round_zero);
-    match round_zero {
-        Ok(hash) => Ok(hash),
-        Err(error) => Err(error),
-    }
+    let player_keys: Vec<AgentPubKey> = players.iter().map(|x| x.player_id.clone()).collect();
+    new_session(player_keys, game_params, anchor)
 }
 
 /// Create a new GameSession with the confirmed players (who accepted their invites).
