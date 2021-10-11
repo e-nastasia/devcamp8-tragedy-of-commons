@@ -9,17 +9,16 @@ use crate::{
 };
 
 use hdk::prelude::*;
-use std::{collections::HashMap, time::SystemTime};
+use std::{time::SystemTime};
 
-pub const OWNER_SESSION_TAG: &str = "my_game_sessions";
-pub const PARTICIPANT_SESSION_TAG: &str = "game_sessions";
+pub const OWNER_SESSION_TAG: &str = "MY_GAMES";
+pub const GAME_CODE_TO_SESSION_TAG: &str = "GAME_SESSION";
+pub const SESSION_TO_ROUND_TAG: &str = "GAME_ROUND";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum SessionState {
     InProgress,
     Lost { last_round: EntryHash },
-    // TODO: when validating things, check that last game round is finished to verify
-    // that session itself is finished
     Finished { last_round: EntryHash },
 }
 
@@ -28,15 +27,12 @@ pub struct GameParams {
     pub regeneration_factor: f32,
     pub start_amount: ResourceAmount,
     pub num_rounds: u32,
-    pub resource_coef: u32,
-    pub reputation_coef: u32,
 }
 
 #[hdk_entry(id = "game_session", visibility = "public")]
 #[derive(Clone)]
 pub struct GameSession {
     pub owner: AgentPubKey, // who started the game
-    // pub created_at: Timestamp,     // when the game was started
     pub status: SessionState,      // how the game is going
     pub game_params: GameParams,   // what specific game are we playing
     pub players: Vec<AgentPubKey>, // who is playing
@@ -64,30 +60,6 @@ pub struct GameScores {
     //TODO add the actual results :-)
 }
 
-/*
-validation rules:
-
-- make sure session is created only when invites are answered and there's at least one accepted
-    - TODO: add addresses of accepted invites into game session, later
-
-*/
-
-impl GameSession {
-    // called in different contexts:
-    // if validation: if round isn't available, validation sin't finished
-    // if session state update: round is available
-    pub fn update_state(&self, _game_round: GameRound) {
-        // this is called every time after GameRound is created
-
-        // if round is lost <= 0:
-        //  game session is lost
-        // elif number round == num_rounds:
-        //  game session is finished
-        // else:
-        //  game session is in progress
-    }
-}
-
 /// Creates GameSession with the game_code and game_params
 // TODO(e-nastasia): actually add game_params to be used for creation
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash> {
@@ -95,31 +67,13 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);
-    start_default_session(players, anchor)
-}
-
-// TODO(e-nastasia) This is a placeholder fn that can be refactored once
-// the UI is providing game params. Or we can leave it to separate retrieval
-// of the players from the actual session create. Anyway, GameParams have to go!
-fn start_default_session(
-    player_list: Vec<PlayerProfile>,
-    anchor: EntryHash,
-) -> ExternResult<EntryHash> {
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
         num_rounds: 3,
-        resource_coef: 3,
-        reputation_coef: 2,
     };
-    let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
-    debug!("player agentpubkeys: {:?}", players);
-    let round_zero = new_session(players, game_params, anchor);
-    debug!("new session created: {:?}", round_zero);
-    match round_zero {
-        Ok(hash) => Ok(hash),
-        Err(error) => Err(error),
-    }
+    let player_keys: Vec<AgentPubKey> = players.iter().map(|x| x.player_id.clone()).collect();
+    new_session(player_keys, game_params, anchor)
 }
 
 /// Create a new GameSession with the confirmed players (who accepted their invites).
@@ -165,7 +119,7 @@ pub fn new_session(
     create_link(
         anchor.into(),
         game_session_entry_hash.clone(),
-        LinkTag::new("GAME_SESSION"),
+        LinkTag::new(GAME_CODE_TO_SESSION_TAG),
     )?;
 
     // create game round results for round 0
@@ -188,7 +142,7 @@ pub fn new_session(
     create_link(
         game_session_entry_hash.clone(),
         entry_hash_round_zero.clone(),
-        LinkTag::new("GAME_ROUND"),
+        LinkTag::new(SESSION_TO_ROUND_TAG),
     );
 
     // use remote signals from RSM to send a real-time notif to invited players
@@ -208,6 +162,25 @@ pub fn new_session(
     debug!("sending signal to {:?}", players);
 
     Ok(entry_hash_round_zero)
+}
+
+pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
+    let filter = ChainQueryFilter::new()
+        .include_entries(true)
+        .entry_type(EntryType::App(AppEntryType::new(
+            entry_def_index!(GameSession)?,
+            zome_info()?.zome_id,
+            EntryVisibility::Public,
+        )));
+
+    let list_of_elements = query(filter)?;
+    let mut list_of_tuples: Vec<(EntryHash, GameSession)> = vec![];
+    for el in list_of_elements {
+        let gs: GameSession = entry_from_element_create_or_update(&el)?;
+        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
+        list_of_tuples.push((gs_entry_hash, gs));
+    }
+    Ok(list_of_tuples)
 }
 
 pub fn end_game(
@@ -269,69 +242,8 @@ pub fn end_game(
     Ok(game_session_entry_hash_update.clone())
 }
 
-pub fn get_sessions_with_tags(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let agent_key: EntryHash = agent_info()?.agent_latest_pubkey.into();
-    let mut results_tmp: Vec<Link> = vec![];
-    for lt in link_tags {
-        let mut links = get_links(agent_key.clone(), Some(LinkTag::new(lt)))?.into_inner();
-        results_tmp.append(&mut links);
-    }
-
-    let results = results_tmp
-        .iter()
-        .map(|link| {
-            let result = get_game_session(link.target.clone())?;
-            Ok((link.target.clone(), result))
-        })
-        .collect::<ExternResult<Vec<(EntryHash, GameSession)>>>()?;
-
-    Ok(results)
-}
-
-pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let filter = ChainQueryFilter::new()
-        .include_entries(true)
-        .entry_type(EntryType::App(AppEntryType::new(
-            entry_def_index!(GameSession)?,
-            zome_info()?.zome_id,
-            EntryVisibility::Public,
-        )));
-
-    let list_of_elements = query(filter)?;
-    let mut list_of_tuples: Vec<(EntryHash, GameSession)> = vec![];
-    for el in list_of_elements {
-        let gs: GameSession = entry_from_element_create_or_update(&el)?;
-        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
-        list_of_tuples.push((gs_entry_hash, gs));
-    }
-    Ok(list_of_tuples)
-}
-
-pub fn get_sessions_with_status(
-    target_state: SessionState,
-) -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let all_sessions = get_sessions_with_tags(vec![OWNER_SESSION_TAG, PARTICIPANT_SESSION_TAG])?;
-
-    let results = all_sessions
-        .into_iter()
-        .filter(|entry| entry.1.status == target_state)
-        .collect::<Vec<(EntryHash, GameSession)>>();
-
-    Ok(results)
-}
-
-fn get_game_session(game_result_hash: EntryHash) -> ExternResult<GameSession> {
-    let element = get(game_result_hash.clone(), GetOptions::default())?.ok_or(WasmError::Guest(
-        format!("Could not get game session at: {}", game_result_hash).into(),
-    ))?;
-
-    let game_result: GameSession = element
-        .entry()
-        .to_app_option()?
-        .ok_or(WasmError::Guest("Could not get game result".into()))?;
-
-    Ok(game_result)
-}
+// TODO: when validating things, check that last game round is finished to verify
+// that session itself is finished
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "signal_name", content = "signal_payload")]
