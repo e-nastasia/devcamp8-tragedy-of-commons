@@ -29,8 +29,6 @@ pub struct GameParams {
     pub regeneration_factor: f32,
     pub start_amount: ResourceAmount,
     pub num_rounds: u32,
-    pub resource_coef: u32,
-    pub reputation_coef: u32,
 }
 
 #[hdk_entry(id = "game_session", visibility = "public")]
@@ -110,8 +108,6 @@ fn start_default_session(
         regeneration_factor: 1.1,
         start_amount: 100,
         num_rounds: 3,
-        resource_coef: 3,
-        reputation_coef: 2,
     };
     let players: Vec<AgentPubKey> = player_list.iter().map(|x| x.player_id.clone()).collect(); //convert_keys_from_b64(&player_list);
     debug!("player agentpubkeys: {:?}", players);
