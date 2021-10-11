@@ -29,6 +29,7 @@ pub fn new_move(
     resource_amount: ResourceAmount,
     round_entry_hash: EntryHash,
 ) -> ExternResult<HeaderHash> {
+    debug!("NEW MOVE FOR {} in round {:?}", resource_amount, round_entry_hash);
     // round
     let game_round_element = match get(round_entry_hash.clone(), GetOptions::content())? {
         Some(element) => element,
@@ -169,10 +170,10 @@ for the context, here are notes on how we've made decisions about validation rul
 pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
     let game_move: GameMove = entry_from_element_create_or_update(&data.element)?;
 
-    debug!(
-        "Validating GameMove create_entry {:?}, data: {:?}",
-        game_move, data
-    );
+    // debug!(
+    //     "Validating GameMove create_entry {:?}, data: {:?}",
+    //     game_move, data
+    // );
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
         debug!(

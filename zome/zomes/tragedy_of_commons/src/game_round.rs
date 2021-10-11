@@ -399,10 +399,10 @@ pub fn validate_update_entry_game_round(
         .ok_or(WasmError::Guest(
             "Trying to validate an entry that's not a GameRound".into(),
         ))?;
-    debug!(
-        "Validating GameRound update entry {:?}, data: {:?}",
-        game_round, data
-    );
+    // debug!(
+    //     "Validating GameRound update entry {:?}, data: {:?}",
+    //     game_round, data
+    // );
 
     let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
     if game_round.round_num > game_session.game_params.num_rounds {
