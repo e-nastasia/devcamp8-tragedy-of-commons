@@ -12,6 +12,9 @@ pub fn create_game_code_anchor(short_unique_code: String) -> ExternResult<EntryH
 /// Retrieves entry hash of the game code anchor that corresponds
 /// to the game_code provided
 pub fn get_game_code_anchor(game_code: String) -> ExternResult<EntryHash> {
+    /* Since do not know the hash of the anchor, because only the game code is known,
+    we have to calculate the hash.
+    */
     let path: Path = (&Anchor {
         anchor_type: GAME_CODES_ANCHOR.into(),
         anchor_text: Some(game_code),
