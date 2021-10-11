@@ -3,7 +3,7 @@ use crate::types::{new_player_stats, PlayerStats, ResourceAmount};
 use crate::utils::{entry_from_element_create_or_update, entry_hash_from_element};
 use crate::PlayerProfile;
 use crate::{
-    game_code::get_game_code_anchor,
+    game_code::calculate_game_code_anchor_entry_hash,
     game_round::{GameRound, RoundState},
     utils::convert_keys_from_b64,
 };
@@ -63,7 +63,7 @@ pub struct GameScores {
 /// Creates GameSession with the game_code and game_params
 // TODO(e-nastasia): actually add game_params to be used for creation
 pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash> {
-    let anchor = get_game_code_anchor(game_code.clone())?;
+    let anchor = calculate_game_code_anchor_entry_hash(game_code.clone())?;
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
     debug!("players: {:?}", players);

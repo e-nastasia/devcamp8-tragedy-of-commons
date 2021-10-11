@@ -1,4 +1,4 @@
-use crate::game_code::get_game_code_anchor;
+use crate::game_code::calculate_game_code_anchor_entry_hash;
 use crate::game_move::{finalize_moves, get_moves_for_round, GameMove};
 use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
@@ -323,7 +323,7 @@ fn create_new_round(
 // }
 
 pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<EntryHash>> {
-    let anchor = get_game_code_anchor(game_code)?;
+    let anchor = calculate_game_code_anchor_entry_hash(game_code)?;
     let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
     let links_vec = links.into_inner();
     debug!("links: {:?}", &links_vec);
