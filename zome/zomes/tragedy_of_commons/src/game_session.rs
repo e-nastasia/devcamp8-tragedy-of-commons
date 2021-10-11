@@ -19,8 +19,6 @@ pub const SESSION_TO_ROUND_TAG: &str = "GAME_ROUND";
 pub enum SessionState {
     InProgress,
     Lost { last_round: EntryHash },
-    // TODO: when validating things, check that last game round is finished to verify
-    // that session itself is finished
     Finished { last_round: EntryHash },
 }
 
@@ -250,25 +248,6 @@ pub fn end_game(
     Ok(game_session_entry_hash_update.clone())
 }
 
-pub fn get_sessions_with_tags(link_tags: Vec<&str>) -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let agent_key: EntryHash = agent_info()?.agent_latest_pubkey.into();
-    let mut results_tmp: Vec<Link> = vec![];
-    for lt in link_tags {
-        let mut links = get_links(agent_key.clone(), Some(LinkTag::new(lt)))?.into_inner();
-        results_tmp.append(&mut links);
-    }
-
-    let results = results_tmp
-        .iter()
-        .map(|link| {
-            let result = get_game_session(link.target.clone())?;
-            Ok((link.target.clone(), result))
-        })
-        .collect::<ExternResult<Vec<(EntryHash, GameSession)>>>()?;
-
-    Ok(results)
-}
-
 pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
     let filter = ChainQueryFilter::new()
         .include_entries(true)
@@ -288,31 +267,8 @@ pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, Ga
     Ok(list_of_tuples)
 }
 
-pub fn get_sessions_with_status(
-    target_state: SessionState,
-) -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let all_sessions = get_sessions_with_tags(vec![OWNER_SESSION_TAG])?;
-
-    let results = all_sessions
-        .into_iter()
-        .filter(|entry| entry.1.status == target_state)
-        .collect::<Vec<(EntryHash, GameSession)>>();
-
-    Ok(results)
-}
-
-fn get_game_session(game_result_hash: EntryHash) -> ExternResult<GameSession> {
-    let element = get(game_result_hash.clone(), GetOptions::default())?.ok_or(WasmError::Guest(
-        format!("Could not get game session at: {}", game_result_hash).into(),
-    ))?;
-
-    let game_result: GameSession = element
-        .entry()
-        .to_app_option()?
-        .ok_or(WasmError::Guest("Could not get game result".into()))?;
-
-    Ok(game_result)
-}
+// TODO: when validating things, check that last game round is finished to verify
+// that session itself is finished
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "signal_name", content = "signal_payload")]
