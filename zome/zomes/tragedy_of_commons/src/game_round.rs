@@ -6,7 +6,6 @@ use crate::game_session::{
 use crate::types::{player_stats_from_moves, PlayerStats, ResourceAmount};
 use crate::utils::{check_agent_is_player_current_session, convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct, must_get_header_and_entry};
 use hdk::prelude::*;
-use std::collections::HashMap;
 use std::vec;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

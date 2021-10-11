@@ -1,7 +1,7 @@
 use crate::{game_round::{calculate_round_state, GameRound, RoundState}, game_session::{GameScores, GameSession, GameSignal, SignalPayload}, types::ResourceAmount, utils::{check_agent_is_player_current_session, convert, convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct, try_get_and_convert}};
 use hdk::prelude::holo_hash::hash_type::Agent;
 use hdk::prelude::*;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 pub const GAME_MOVE_LINK_TAG: &str = "GAME_MOVE";
 
@@ -125,7 +125,7 @@ pub fn finalize_moves(
         // Now that we know we have moves >= num of players, we need
         // to make sure that every player made at least one move, so
         // we're not closing the round without someone's move
-        let mut moves_per_player: HashMap<AgentPubKey, Vec<GameMove>> = HashMap::new();
+        let mut moves_per_player: BTreeMap<AgentPubKey, Vec<GameMove>> = BTreeMap::new();
         for m in moves {
             match moves_per_player.get_mut(&m.owner) {
                 Some(mut moves) => moves.push(m),

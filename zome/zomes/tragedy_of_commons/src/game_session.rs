@@ -9,7 +9,7 @@ use crate::{
 };
 
 use hdk::prelude::*;
-use std::{collections::HashMap, time::SystemTime};
+use std::{time::SystemTime};
 
 pub const OWNER_SESSION_TAG: &str = "MY_GAMES";
 pub const GAME_CODE_TO_SESSION_TAG: &str = "GAME_SESSION";
