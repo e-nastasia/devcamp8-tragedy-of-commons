@@ -33,7 +33,6 @@ pub struct GameParams {
 #[derive(Clone)]
 pub struct GameSession {
     pub owner: AgentPubKey, // who started the game
-    // pub created_at: Timestamp,     // when the game was started
     pub status: SessionState,      // how the game is going
     pub game_params: GameParams,   // what specific game are we playing
     pub players: Vec<AgentPubKey>, // who is playing
@@ -59,30 +58,6 @@ pub struct GameScores {
     pub game_session: GameSession,
     pub game_session_entry_hash: EntryHash,
     //TODO add the actual results :-)
-}
-
-/*
-validation rules:
-
-- make sure session is created only when invites are answered and there's at least one accepted
-    - TODO: add addresses of accepted invites into game session, later
-
-*/
-
-impl GameSession {
-    // called in different contexts:
-    // if validation: if round isn't available, validation sin't finished
-    // if session state update: round is available
-    pub fn update_state(&self, _game_round: GameRound) {
-        // this is called every time after GameRound is created
-
-        // if round is lost <= 0:
-        //  game session is lost
-        // elif number round == num_rounds:
-        //  game session is finished
-        // else:
-        //  game session is in progress
-    }
 }
 
 /// Creates GameSession with the game_code and game_params
@@ -189,6 +164,25 @@ pub fn new_session(
     Ok(entry_hash_round_zero)
 }
 
+pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
+    let filter = ChainQueryFilter::new()
+        .include_entries(true)
+        .entry_type(EntryType::App(AppEntryType::new(
+            entry_def_index!(GameSession)?,
+            zome_info()?.zome_id,
+            EntryVisibility::Public,
+        )));
+
+    let list_of_elements = query(filter)?;
+    let mut list_of_tuples: Vec<(EntryHash, GameSession)> = vec![];
+    for el in list_of_elements {
+        let gs: GameSession = entry_from_element_create_or_update(&el)?;
+        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
+        list_of_tuples.push((gs_entry_hash, gs));
+    }
+    Ok(list_of_tuples)
+}
+
 pub fn end_game(
     game_session: &GameSession,
     game_session_header_hash: &HeaderHash,
@@ -246,25 +240,6 @@ pub fn end_game(
     debug!("sending signal to {:?}", game_session.players.clone());
 
     Ok(game_session_entry_hash_update.clone())
-}
-
-pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
-    let filter = ChainQueryFilter::new()
-        .include_entries(true)
-        .entry_type(EntryType::App(AppEntryType::new(
-            entry_def_index!(GameSession)?,
-            zome_info()?.zome_id,
-            EntryVisibility::Public,
-        )));
-
-    let list_of_elements = query(filter)?;
-    let mut list_of_tuples: Vec<(EntryHash, GameSession)> = vec![];
-    for el in list_of_elements {
-        let gs: GameSession = entry_from_element_create_or_update(&el)?;
-        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
-        list_of_tuples.push((gs_entry_hash, gs));
-    }
-    Ok(list_of_tuples)
 }
 
 // TODO: when validating things, check that last game round is finished to verify
