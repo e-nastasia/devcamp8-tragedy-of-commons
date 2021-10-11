@@ -1,4 +1,4 @@
-use crate::game_code::get_game_code_anchor;
+use crate::game_code::{create_game_code_anchor, get_game_code_anchor};
 use hdk::prelude::*;
 
 pub const PLAYER_LINK_TAG: &str = "PLAYER";
