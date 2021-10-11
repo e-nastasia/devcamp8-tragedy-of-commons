@@ -41,7 +41,7 @@ pub fn create_and_hash_entry_player_profile(nickname: String) -> ExternResult<En
 /// Creates user's profile for the game and registers this user as one of the game players
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHash> {
     info!("join_game_with_code | input: {:?}", input);
-    let anchor = get_game_code_anchor(input.gamecode)?;
+    let anchor = create_game_code_anchor(input.gamecode)?;
     debug!("join_game_with_code | anchor created {:?}", &anchor);
     let player_profile_entry_hash = create_and_hash_entry_player_profile(input.nickname)?;
     debug!(
