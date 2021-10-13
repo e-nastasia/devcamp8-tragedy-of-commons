@@ -9,19 +9,12 @@ pub const GAME_MOVE_LINK_TAG: &str = "GAME_MOVE";
 #[derive(Clone)]
 pub struct GameMove {
     pub owner: AgentPubKey,
-    // For the very first round this option would be None, because we create game rounds
-    // retrospectively. And since all players are notified by the signal when they can make
-    // a move, maybe we could pass that value from there, so that every player has it
-    // when they're making a move
     pub round: EntryHash,
     pub resources: ResourceAmount,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameMoveInput {
     pub resource_amount: ResourceAmount,
-    // NOTE: if we're linking all moves to the round, this can never be None
-    // as we'll need a base for the link. Instead moves for the round 0 could be
-    // linked directly from the game session.
     pub previous_round: EntryHash,
 }
 

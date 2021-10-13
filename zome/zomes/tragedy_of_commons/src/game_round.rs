@@ -21,19 +21,17 @@ pub struct RoundState {
 pub struct GameRound {
     pub round_num: u32,
     pub session: EntryHash,
-    pub resources_left: i32,
-    pub resources_taken_round: i32,
-    pub resources_grown_round: i32,
-    // pub round_state: RoundState,
-    // pub game_moves: Vec<EntryHash>,
+    pub resources_left: ResourceAmount,
+    pub resources_taken_round: ResourceAmount,
+    pub resources_grown_round: ResourceAmount,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameRoundInfo {
     pub round_num: u32,
-    pub resources_left: Option<i32>,
-    pub resources_taken_round: Option<i32>,
-    pub resources_grown_round: Option<i32>,
+    pub resources_left: Option<ResourceAmount>,
+    pub resources_taken_round: Option<ResourceAmount>,
+    pub resources_grown_round: Option<ResourceAmount>,
     pub current_round_entry_hash: Option<EntryHash>,
     pub prev_round_entry_hash: Option<EntryHash>,
     pub game_session_hash: Option<EntryHash>,
