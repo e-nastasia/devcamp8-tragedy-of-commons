@@ -206,7 +206,7 @@ pub fn end_game(
     // based on that content it can be derive if the game has ended or not
 
     info!("updating game session: setting finished state and adding player stats");
-    let game_status = if round_state.resources_taken_round <= 0 {
+    let game_status = if round_state.resources_taken <= 0 {
         SessionState::Lost {
             last_round: last_round_entry_hash.clone(),
         }
