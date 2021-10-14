@@ -176,9 +176,17 @@ pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, Ga
     let list_of_elements = query(filter)?;
     let mut list_of_tuples: Vec<(EntryHash, GameSession)> = vec![];
     for el in list_of_elements {
-        let gs: GameSession = entry_from_element_create_or_update(&el)?;
-        let gs_entry_hash: EntryHash = entry_hash_from_element(&el)?.to_owned();
-        list_of_tuples.push((gs_entry_hash, gs));
+        // Retrieve an Option with our entry inside. Since not all Elements can have
+        // entry, their method `entry()` returns an Option which would be None in case
+        // the corresponding Element is something different.
+        let entry_option = el.entry().to_app_option()?;
+        // Now try to unpack the option that we received and write an error to show
+        // in case it turns out there's no entry
+        let gs: GameSession = entry_option.ok_or(WasmError::Guest(
+            "The targeted entry is not GameSession".into(),
+        ))?;
+        let gs_hash = hash_entry(&gs)?;
+        list_of_tuples.push((gs_hash, gs));
     }
     Ok(list_of_tuples)
 }
@@ -198,7 +206,7 @@ pub fn end_game(
     // based on that content it can be derive if the game has ended or not
 
     info!("updating game session: setting finished state and adding player stats");
-    let game_status = if round_state.resources_taken_round <= 0 {
+    let game_status = if round_state.resources_taken <= 0 {
         SessionState::Lost {
             last_round: last_round_entry_hash.clone(),
         }

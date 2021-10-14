@@ -4,15 +4,19 @@ use crate::game_session::{
     GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
 };
 use crate::types::{player_stats_from_moves, PlayerStats, ResourceAmount};
-use crate::utils::{check_agent_is_player_current_session, convert_keys_from_b64, entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct, must_get_header_and_entry};
+use crate::utils::{
+    check_agent_is_player_current_session, convert_keys_from_b64,
+    entry_from_element_create_or_update, entry_hash_from_element, must_get_entry_struct,
+    must_get_header_and_entry,
+};
 use hdk::prelude::*;
 use std::vec;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoundState {
     pub resources_left: ResourceAmount,
-    pub resources_taken_round: ResourceAmount,
-    pub resources_grown_round: ResourceAmount,
+    pub resources_taken: ResourceAmount,
+    pub resources_grown: ResourceAmount,
     pub player_stats: PlayerStats,
 }
 
@@ -21,19 +25,15 @@ pub struct RoundState {
 pub struct GameRound {
     pub round_num: u32,
     pub session: EntryHash,
-    pub resources_left: i32,
-    pub resources_taken_round: i32,
-    pub resources_grown_round: i32,
-    // pub round_state: RoundState,
-    // pub game_moves: Vec<EntryHash>,
+    pub state: RoundState,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameRoundInfo {
     pub round_num: u32,
-    pub resources_left: Option<i32>,
-    pub resources_taken_round: Option<i32>,
-    pub resources_grown_round: Option<i32>,
+    pub resources_left: Option<ResourceAmount>,
+    pub resources_taken_round: Option<ResourceAmount>,
+    pub resources_grown_round: Option<ResourceAmount>,
     pub current_round_entry_hash: Option<EntryHash>,
     pub prev_round_entry_hash: Option<EntryHash>,
     pub game_session_hash: Option<EntryHash>,
@@ -43,11 +43,16 @@ pub struct GameRoundInfo {
 
 impl RoundState {
     /// Creates a new RoundState instance with the provided input
-    pub fn new(resource_amount: ResourceAmount, player_stats: PlayerStats) -> RoundState {
+    pub fn new(
+        resources_left: ResourceAmount,
+        resources_taken: ResourceAmount,
+        resources_grown: ResourceAmount,
+        player_stats: PlayerStats,
+    ) -> RoundState {
         RoundState {
-            resources_left: resource_amount,
-            resources_taken_round: 0,
-            resources_grown_round: 0,
+            resources_left,
+            resources_taken,
+            resources_grown,
             player_stats,
         }
     }
@@ -58,30 +63,38 @@ impl GameRound {
     pub fn new(
         round_num: u32,
         session: EntryHash,
-        resources_left: ResourceAmount,        
+        resources_left: ResourceAmount,
         resources_taken: ResourceAmount,
         resources_grown: ResourceAmount,
         // previous_round_moves: Vec<EntryHash>,
     ) -> GameRound {
+        let state = RoundState::new(
+            resources_left,
+            resources_taken,
+            resources_grown,
+            PlayerStats::new(),
+        );
         GameRound {
             round_num,
             session,
-            resources_left,
-            resources_taken_round: resources_taken,
-            resources_grown_round: resources_grown,
-            // game_moves: previous_round_moves,
+            state,
         }
     }
 }
 
 // NOTE: this fn would be used both in validation and when creating game round entries
 // so it has to be very lightweight and can not make any DHT queries
-pub fn calculate_round_state(last_round:&GameRound, params: &GameParams, player_moves: Vec<GameMove>) -> RoundState {
+pub fn calculate_round_state(
+    last_round: &GameRound,
+    params: &GameParams,
+    player_moves: Vec<GameMove>,
+) -> RoundState {
     // resources
     let consumed_resources_in_round: ResourceAmount =
         player_moves.iter().map(|x| x.resources).sum();
     let grown_resources_in_round = 10; // fixed regrowth
-    let total_leftover_resource = last_round.resources_left - consumed_resources_in_round + grown_resources_in_round;
+    let total_leftover_resource =
+        last_round.state.resources_left - consumed_resources_in_round + grown_resources_in_round;
 
     // player stats dd
     let stats = player_stats_from_moves(player_moves);
@@ -89,8 +102,8 @@ pub fn calculate_round_state(last_round:&GameRound, params: &GameParams, player_
 
     RoundState {
         resources_left: total_leftover_resource,
-        resources_taken_round: consumed_resources_in_round,
-        resources_grown_round: grown_resources_in_round,
+        resources_taken: consumed_resources_in_round,
+        resources_grown: grown_resources_in_round,
         player_stats: stats,
     }
 }
@@ -181,7 +194,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                 ));
             }
             info!("all players made their moves: calculating round state");
-            let round_state = calculate_round_state(&last_round, &game_session.game_params, unique_moves);
+            let round_state =
+                calculate_round_state(&last_round, &game_session.game_params, unique_moves);
             if start_new_round(&game_session, &last_round, &round_state) {
                 let hash = create_new_round(
                     &game_session,
@@ -194,8 +208,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                     prev_round_entry_hash: Some(last_round_hash),
                     game_session_hash: None,
                     resources_left: Some(round_state.resources_left),
-                    resources_taken_round: Some(round_state.resources_taken_round),
-                    resources_grown_round: Some(round_state.resources_grown_round),
+                    resources_taken_round: Some(round_state.resources_taken),
+                    resources_grown_round: Some(round_state.resources_grown),
                     round_num: last_round.round_num + 1,
                     next_action: "START_NEXT_ROUND".into(),
                     moves: moves_info,
@@ -217,8 +231,8 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
                     prev_round_entry_hash: Some(last_round_hash),
                     game_session_hash: Some(hash),
                     resources_left: Some(round_state.resources_left),
-                    resources_taken_round: Some(round_state.resources_taken_round),
-                    resources_grown_round: Some(round_state.resources_grown_round),
+                    resources_taken_round: Some(round_state.resources_taken),
+                    resources_grown_round: Some(round_state.resources_grown),
                     round_num: last_round.round_num + 1,
                     next_action: "SHOW_GAME_RESULTS".into(),
                     moves: moves_info,
@@ -273,15 +287,14 @@ fn create_new_round(
         last_round.round_num
     );
     //update chain from the previous round entry hash and commit an updated version
-    let next_round = GameRound {
-        round_num: last_round.round_num + 1,
-        session: last_round.session.clone().into(),
-        resources_left:round_state.resources_left,
-        resources_taken_round:round_state.resources_taken_round,
-        resources_grown_round:round_state.resources_grown_round,
-        // game_moves: vec![],  TODO add these back
-    };
-    debug!("new round: {:#?}", next_round);
+    let next_round = GameRound::new(
+        last_round.round_num + 1,
+        last_round.session.clone().into(),
+        round_state.resources_left,
+        round_state.resources_taken,
+        round_state.resources_grown,
+    );
+    debug!("new round: {:?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
     let round_entry_hash_update = hash_entry(&next_round)?;
     info!("updated round header hash: {:?}", round_header_hash_update);
@@ -341,14 +354,17 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
         debug!("link: {:#?}", link);
         let element: Element = get(link.target.clone(), GetOptions::latest())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-        let game_session: GameSession = element.entry().to_app_option()?.expect("game session has to exist");
+        let game_session: GameSession = element
+            .entry()
+            .to_app_option()?
+            .expect("game session has to exist");
         let game_session_entry_hash: &EntryHash = entry_hash_from_element(&element)?;
         let result = check_agent_is_player_current_session(game_session);
         match result {
             Ok(x) => debug!("player is participant in current game"),
-            Err(err)=> return Err(err),    
+            Err(err) => return Err(err),
         };
-        
+
         let round_links: Links = get_links(
             game_session_entry_hash.clone(),
             Some(LinkTag::new("GAME_ROUND")),
