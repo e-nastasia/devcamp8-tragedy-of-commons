@@ -77,9 +77,9 @@ immediately available. No polling needed
 Downside: More DHT ops, extra header in the DHT
 */
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHash> {
-    info!("join_game_with_code | input: {:?}", input);
+    info!("join_game_with_code | input: {:#?}", input);
     let anchor = create_game_code_anchor(input.gamecode)?;
-    debug!("join_game_with_code | anchor created {:?}", &anchor);
+    debug!("join_game_with_code | anchor created {:#?}", &anchor);
     let player_profile_entry_hash = create_and_hash_entry_player_profile(input.nickname)?;
     debug!(
         "join_game_with_code | profile entry hash {:?}",
@@ -100,10 +100,10 @@ pub fn get_player_profiles_for_game_code(
     let anchor = calculate_game_code_anchor_entry_hash(short_unique_code)?;
     debug!("anchor: {:?}", anchor);
     let links: Links = get_links(anchor, Some(LinkTag::new(String::from(PLAYER_LINK_TAG))))?;
-    debug!("links: {:?}", links);
+    debug!("links: {:#?}", links);
     let mut players = vec![];
     for link in links.into_inner() {
-        debug!("link: {:?}", link);
+        debug!("link: {:#?}", link);
         let element: Element = get(link.target, GetOptions::default())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
         let entry_option = element.entry().to_app_option()?;
@@ -124,7 +124,7 @@ pub fn get_players_for_game_code(short_unique_code: String) -> ExternResult<Vec<
 
     // debug!("filter profiles to extract nickname");
     let players: Vec<String> = player_profiles.iter().map(|x| x.nickname.clone()).collect();
-    debug!("players: {:?}", players);
-    debug!("profiles {:?}", player_profiles);
+    debug!("players: {:#?}", players);
+    debug!("profiles {:#?}", player_profiles);
     Ok(player_profiles) // or more Rust like: anchor.into())
 }

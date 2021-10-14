@@ -70,7 +70,7 @@ pub fn new_move(
     let entry_hash_game_move = hash_entry(&game_move)?;
 
     debug!(
-        "link move {:?} to round {:?}",
+        "link move {:#?} to round {:#?}",
         &game_move,
         entry_hash_game_round.clone()
     );
@@ -177,7 +177,7 @@ pub fn validate_create_entry_game_move(data: ValidateData) -> ExternResult<Valid
     // validate that resources consumed during the move are always positive
     if game_move.resources <= 0 {
         debug!(
-            "GameMove {:?} has non-positive resources, INVALID",
+            "GameMove {:#?} has non-positive resources, INVALID",
             game_move
         );
         return Ok(ValidateCallbackResult::Invalid(format!(

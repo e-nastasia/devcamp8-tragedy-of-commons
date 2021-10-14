@@ -66,7 +66,7 @@ pub fn start_game_session_with_code(game_code: String) -> ExternResult<EntryHash
     let anchor = calculate_game_code_anchor_entry_hash(game_code.clone())?;
     debug!("anchor: {:?}", anchor);
     let players = crate::player_profile::get_player_profiles_for_game_code(game_code)?;
-    debug!("players: {:?}", players);
+    debug!("players: {:#?}", players);
     let game_params = GameParams {
         regeneration_factor: 1.1,
         start_amount: 100,
@@ -159,7 +159,7 @@ pub fn new_session(
     // Since we're storing agent keys as AgentPubKey, and remote_signal only accepts
     // the AgentPubKey type, we need to convert our keys to the expected data type
     remote_signal(signal, players.clone())?;
-    debug!("sending signal to {:?}", players);
+    debug!("sending signal to {:#?}", players);
 
     Ok(entry_hash_round_zero)
 }
@@ -237,7 +237,7 @@ pub fn end_game(
     // Since we're storing agent keys as AgentPubKey, and remote_signal only accepts
     // the AgentPubKey type, we need to convert our keys to the expected data type
     remote_signal(signal, game_session.players.clone())?;
-    debug!("sending signal to {:?}", game_session.players.clone());
+    debug!("sending signal to {:#?}", game_session.players.clone());
 
     Ok(game_session_entry_hash_update.clone())
 }

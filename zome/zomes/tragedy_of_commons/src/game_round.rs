@@ -104,7 +104,7 @@ fn get_latest_round(header_hash: HeaderHash) -> ExternResult<(GameRound, EntryHa
     };
     debug!("extracting game round from element");
     let last_round: GameRound = entry_from_element_create_or_update(&round_element)?;
-    debug!("get latest round: {:?}", last_round);
+    debug!("get latest round: {:#?}", last_round);
     let last_round_entry_hash = round_element
         .header()
         .entry_hash()
@@ -281,7 +281,7 @@ fn create_new_round(
         resources_grown_round:round_state.resources_grown_round,
         // game_moves: vec![],  TODO add these back
     };
-    debug!("new round: {:?}", next_round);
+    debug!("new round: {:#?}", next_round);
     let round_header_hash_update = update_entry(last_round_header_hash.clone(), &next_round)?;
     let round_entry_hash_update = hash_entry(&next_round)?;
     info!("updated round header hash: {:?}", round_header_hash_update);
@@ -293,7 +293,7 @@ fn create_new_round(
     };
     let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
     remote_signal(signal, game_session.players.clone())?;
-    debug!("sending signal to {:?}", game_session.players.clone());
+    debug!("sending signal to {:#?}", game_session.players.clone());
 
     Ok(round_entry_hash_update)
 }
@@ -326,7 +326,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
     let anchor = calculate_game_code_anchor_entry_hash(game_code)?;
     let links: Links = get_links(anchor, Some(LinkTag::new("GAME_SESSION")))?;
     let links_vec = links.into_inner();
-    debug!("links: {:?}", &links_vec);
+    debug!("links: {:#?}", &links_vec);
 
     if links_vec.len() > 0 {
         if links_vec.len() > 1 {
@@ -338,7 +338,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
         // should be only one link
         let link = &links_vec[0];
 
-        debug!("link: {:?}", link);
+        debug!("link: {:#?}", link);
         let element: Element = get(link.target.clone(), GetOptions::latest())?
             .ok_or(WasmError::Guest(String::from("Entry not found")))?;
         let game_session: GameSession = element.entry().to_app_option()?.expect("game session has to exist");
@@ -356,7 +356,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
         let round_links_vec = round_links.into_inner();
 
         if round_links_vec.len() > 0 {
-            debug!("links session round: {:?}", &round_links_vec);
+            debug!("links session round: {:#?}", &round_links_vec);
             if round_links_vec.len() > 1 {
                 // TODO find alternative for clone to get len
                 return Err(WasmError::Guest(String::from(
@@ -366,7 +366,7 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
             // should be only one link
             let link = &round_links_vec[0];
 
-            debug!("link session round: {:?}", &link);
+            debug!("link session round: {:#?}", &link);
             let element: Element = get(link.target.clone(), GetOptions::latest())?
                 .ok_or(WasmError::Guest(String::from("Entry not found")))?;
 
