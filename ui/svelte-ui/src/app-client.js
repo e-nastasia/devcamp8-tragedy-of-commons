@@ -188,18 +188,4 @@ export class AppClient {
 
     }
 
-function signalHandler(connection, signal) {
-    // ignore signals not meant for me
-    // if (!connection.syn || bufferToBase64(signal.data.cellId[1]) != connection.syn.me) {
-    //     return
-    // }
-    console.log('Got Signal', signal.data.payload.signal_name, signal)
-    //alert(signal.data.payload.signal_name);
-    switch (signal.data.payload.signal_name) {
-        case 'SyncReq':
-            connection.session.syncReq({ from: signal.data.payload.signal_payload })
-            break
-        default:
-            console.log("signal data: {:?}", signal.data);
-    }
-}
+

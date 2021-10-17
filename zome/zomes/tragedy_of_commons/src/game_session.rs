@@ -155,13 +155,19 @@ pub fn new_session(
         game_session_entry_hash: game_session_entry_hash.into(),
         round_entry_hash_update: entry_hash_round_zero.clone().into(),
     };
-    let signal = ExternIO::encode(GameSignal::StartNextRound(signal_payload))?;
-    // Since we're storing agent keys as AgentPubKey, and remote_signal only accepts
-    // the AgentPubKey type, we need to convert our keys to the expected data type
-    remote_signal(signal, players.clone())?;
+
+    let signal = ExternIO::encode(GameSignal::StartGame(signal_payload))?;
+    let other_players = others(players.clone())?;
+    remote_signal(signal, other_players)?;
     debug!("sending signal to {:#?}", players);
 
     Ok(entry_hash_round_zero)
+}
+
+fn others(players: Vec<AgentPubKey>) -> Result<Vec<AgentPubKey>, WasmError> {
+    let me = &agent_info()?.agent_initial_pubkey;
+    let others:Vec<AgentPubKey> = players.into_iter().filter(|p| p.ne(me)).collect();
+    Ok(others)
 }
 
 pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, GameSession)>> {
@@ -256,6 +262,8 @@ pub fn end_game(
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "signal_name", content = "signal_payload")]
 pub enum GameSignal {
+    PlayerJoined(PlayerProfile),
+    StartGame(SignalPayload),
     StartNextRound(SignalPayload),
     GameOver(SignalPayload),
 }

@@ -1,4 +1,4 @@
-use crate::game_code::{create_game_code_anchor, calculate_game_code_anchor_entry_hash};
+use crate::{game_code::{calculate_game_code_anchor_entry_hash, create_game_code_anchor}, game_session::GameSignal};
 use hdk::prelude::*;
 
 pub const PLAYER_LINK_TAG: &str = "PLAYER";
@@ -39,7 +39,7 @@ pub fn create_and_hash_entry_player_profile(nickname: String) -> ExternResult<En
 }
 
 /// Creates user's profile for the game and registers this user as one of the game players
-/* 
+/*
 When you create an anchor with the function return a EntryHash. Once you
 know the entry_hash of an anchor it is best to use the get_anchor(entry_hash) fn to retrieve
 this anchor, when you need it. In the case of the devcamp game, we have a little problem.
@@ -78,6 +78,7 @@ Downside: More DHT ops, extra header in the DHT
 */
 pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHash> {
     info!("join_game_with_code | input: {:#?}", input);
+    let input_for_signal = input.clone();
     let anchor = create_game_code_anchor(input.gamecode)?;
     debug!("join_game_with_code | anchor created {:#?}", &anchor);
     let player_profile_entry_hash = create_and_hash_entry_player_profile(input.nickname)?;
@@ -91,7 +92,20 @@ pub fn join_game_with_code(input: JoinGameInfo) -> ExternResult<EntryHash> {
         LinkTag::new(String::from(PLAYER_LINK_TAG)),
     )?;
     debug!("join_game_with_code | link created");
+    send_signal_player_joined(input_for_signal)?;
     Ok(anchor) // or more Rust like: anchor.into())
+}
+
+fn send_signal_player_joined(input: JoinGameInfo) -> ExternResult<()> {
+    let p = PlayerProfile {
+        player_id: agent_info()?.agent_initial_pubkey, // bad design for real apps 1/ initial_pubkey is linked to app itself, so no roaming profile 2/ lost if app is reinstalled (= basicly new user)
+        nickname: input.nickname,
+    };
+    let signal = ExternIO::encode(GameSignal::PlayerJoined(p))?;
+    let players = get_player_profiles_for_game_code(input.gamecode)?;
+    let player_keys: Vec<AgentPubKey> = players.iter().map(|x| x.player_id.clone()).collect();
+    remote_signal(signal, player_keys)?;
+    Ok(())
 }
 
 pub fn get_player_profiles_for_game_code(

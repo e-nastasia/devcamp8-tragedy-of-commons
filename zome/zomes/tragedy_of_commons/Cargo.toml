@@ -22,7 +22,7 @@ mockall = "*"
 
 [dev-dependencies]
 #holochain_types = {version = "0.0.5", features=["fixturators", "subtle-encoding"]}
-#fixt = "0.0.5"
+#fixt = "*"
 
 [features]
 default = []

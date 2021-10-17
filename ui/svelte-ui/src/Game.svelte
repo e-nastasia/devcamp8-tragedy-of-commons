@@ -1,5 +1,6 @@
 <script>
     import { afterUpdate } from "svelte";
+    import { toast } from '@zerodevx/svelte-toast'
 
     import GameMove from "./GameMove.svelte";
     import GameResults from "./GameResults.svelte";
@@ -11,8 +12,22 @@
     export let agentPubKeyB64 = "";
     export let action = "GAME_BEGIN";
     export let current_round_hash = "";
+
+    export const controller = {
+        startNextRound() {
+            switch (game_status) {
+                case "WAITING_PLAYERS":
+                    game_status = "MAKE_MOVE";    
+                    break;
+                case "WAIT_NEXT_ROUND":
+                    updateRound();
+                    break;
+            }
+        },
+    };
+
     let resources_default_start = 100;
-    $: total_resources = 0;//calculateTotalTaken(rounds);
+    $: total_resources = 0; //calculateTotalTaken(rounds);
 
     let game_status = "WAITING_PLAYERS"; // "MAKE_MOVE" "WAIT_NEXT_ROUND" "WAIT_GAME_SCORE" "GAME_OVER"
     let result_status = "WAIT_RESULTS"; //"GAME_LOST" "GAME_WON"
@@ -50,6 +65,10 @@
     async function play() {
         console.log("action", action);
         if (action == "GAME_BEGIN") {
+            // check game has already started, so we do not start it twice
+            if (current_round_hash) {
+                return;
+            }
             current_round_hash = await window.appClient.startGame(gamecode);
             console.log("game started", current_round_hash);
             game_status = "MAKE_MOVE";
@@ -66,14 +85,14 @@
                     current_round_hash = result;
                     game_status = "MAKE_MOVE";
                 } else {
-                    alert(
+                    toast.push(
                         "Still waiting on other players or game host to start playing..."
                     );
                 }
             } catch (error) {
                 if (error.type === "ribosome_error" || error.type === "error") {
                     console.info("Error: ", error.data);
-                    alert("Error: " + error.data.data);
+                    toast.push("Error: " + error.data.data);
                 }
             }
         }
@@ -95,6 +114,9 @@
         console.log("result make move", result);
 
         addFakePendingRound(nickname, resources, calculateTotalTaken(rounds)); //TODO
+
+        // check to see is round has completed
+        updateRound();
     }
 
     async function updateRound() {
@@ -141,7 +163,7 @@
             game_status = "MAKE_MOVE";
         } else {
             console.error("unknown action:", latest_game_info.next_action);
-            alert("Still waiting on other players");
+            toast.push("Still waiting on other players");
         }
     }
 
@@ -194,9 +216,11 @@
         last_round.fake = false;
         last_round.moves = convertedMoves;
         last_round.resources_left = latest_game_info.resources_left; //calculateTotalTaken(rounds);
-        last_round.resources_taken_round = latest_game_info.resources_taken_round; 
-        last_round.resources_grown_round = latest_game_info.resources_grown_round;
-        
+        last_round.resources_taken_round =
+            latest_game_info.resources_taken_round;
+        last_round.resources_grown_round =
+            latest_game_info.resources_grown_round;
+
         total_resources = latest_game_info.resources_left;
         rounds = rounds;
         console.log("rounds: ", rounds);
