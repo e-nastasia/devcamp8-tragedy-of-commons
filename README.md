@@ -1,132 +1,89 @@
-# Reusable Module Template
 
-This repository is meant to be a scaffolding starting point to build reusable holochain modules (zome & UI module).
+# DevCamp8: Game of commons
 
-This is what is has included:
+This is the official repository for the [Holochain](https://www.holochain.org/) DevCamp 8 -- a community organized learning event for developers who want to develop on Holochain.
+Here we present a step-by-step Holochain based implementation of the classical economics game [Tragedy of commons](https://en.wikipedia.org/wiki/Tragedy_of_the_commons). The word "tragedy" is removed from the name of our version for a more positive spin :)
 
-- UI and Zome Instructions to use the module in a bigger app
-- Github Actions automatic integration with building and testing
-- Zome
-  - Basic sample code 
-  - Integrated tests with tryorama
-  - Instructions to include the zome as a crate in any DNA
-- UI
-  - Reusable CustomElements with `lit-element`
-  - Automated demoing with `storybook`, also publishing to `gh-pages`
-  - Automated testing with `web-test-runner`
-  - Automated end-to-end testing with the holochain zome
-  - See [open-wc](https://open-wc.org/) for all the available tools and documentation
+## Repo structure
 
-## How to scaffold a holochain reusable module
+This repo has a branch for every DevCamp session about a specific part of this application. Every branch contains several commits to explain the step-by-step process of development, and the code compiles for every commit (if it doesn't, please open an issue pointing to a commit!).
+If you're looking at this repository after the DevCamp, we recommend you follow the branches for every session to understand the process. There are a few things in the comments that are explained at the first occurence of any code, so reading code from earlier sessions would guarantee you bump into those comments early.
 
-1. Create a new repository from this template (you can use the `Use this template` button on the top of this page).
-2. Look for all the `TODO` keyword to see the places that need to be changed. (NOTE: replacing it inside the files can easily be done with your IDE, and for renaming files & directories you can use this bash one-liner: `new_name=YOUR_NEW_NAME_HERE find . -name "*todo_rename*" | while read line ; do mv $line $(echo $line | sed 's/todo_rename/$new_name/g') ; done`)
-`grep -RIn 'todo_rename_zome'  --exclude-dir=target -l . |  while read line ; do sed -i 's/todo_rename_zome/tragedy_of_commons/g' $line ; done`
+There's a separate file in the root of this repo called HOMEWORK.md. Homework isn't the best word, but it kinda fits: this file contains our recommendations on things to do with the code to make your learning more interactive.
 
-3. Remove this section of this README.md until this next line.
+## Context
 
+We decided to implement a game for a few reasons:
+1. (almost) no data input required. There are a lot of decentralized app examples that copy the existing platforms, such as twitter/youtube and so on, but all of them require users to actually start producing the data (which is often made up) to get familiar with the decentralized UX. Here, you just need to try and play the game.
+2. it's collaborative. One of the main points of all decentralized apps is to enable/improve collaboration, so it seems logical to choose collaborative use-case for a decentralized framework intro. It also allows us to easily demostrate all the major implications of the Holochain's eventual consistency.
 
----
+## Environment Setup
 
-# TODO_RENAME_MODULE
+1. Install the holochain dev environment (only nix-shell is required): https://developer.holochain.org/docs/install/
+2. Enable Holochain cachix with:
 
-> TODO: carefully change whatever needed in this README.
+```bash
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use holochain-ci
+```
 
-Small zome to create and see calendar events, in holochain RSM.
+3. Clone this repo and `cd` inside of it.
+4. Enter the nix shell by running this in the root folder of the repository: 
 
-This module is designed to be included in other DNAs, assuming as little as possible from those. It is packaged as a holochain zome, and an npm package that offers native Web Components that can be used across browsers and frameworks.
+```bash
+nix-shell
+npm install
+```
+
+This will install all the needed dependencies in your local environment, including `holochain`, `hc` and `npm`.
+
+## Building the DNA
+
+- Build the DNA (assumes you are still in the nix shell for correct rust/cargo versions from step above):
+
+```bash
+npm run build:happ
+```
+
+## Running the DNA tests
+
+```bash
+npm run test
+```
+
+## UI
+
+To test out the UI:
+
+``` bash
+npm start
+```
+
+To run another agent, open another terminal, and execute again:
+
+```bash
+npm start
+```
+
+Each new agent that you create this way will get assigned its own port and get connected to the other agents.
+
+## Package
+
+To package the web happ:
+
+``` bash
+npm run package
+```
+
+You'll have the `game-of-commons.webhapp` in `workdir`. This is what you should distribute so that the Holochain Launcher can install it.
+
+You will also have its subcomponent `game-of-commons.happ` in the same folder`.
 
 ## Documentation
 
-See our [`storybook`](https://holochain-open-dev.github.io/tragedy_of_commons).
+We are using this tooling:
 
-## Installation and usage
-
-### Including the zome in your DNA
-
-1. Create a new folder in the `zomes` of the consuming DNA, with the name you want to give to this zome in your DNA.
-2. Add a new `Cargo.toml` in that folder. In its content, paste the `Cargo.toml` content from any zome.
-3. Change the `name` properties of the `Cargo.toml` file to the name you want to give to this zome in your DNA.
-4. Add this zome as a dependency in the `Cargo.toml` file:
-```toml
-[dependencies]
-tragedy_of_commons = {git = "TODO_CHANGE_MODULE_URL", package = "tragedy_of_commons"}
-```
-5. Create a `src` folder besides the `Cargo.toml` with this content:
-```rust
-extern crate tragedy_of_commons;
-```
-6. If you haven't yet, in the top level `Cargo.toml` file of your DNA, add this to specify which version of holochain you want to target:
-```toml
-hc_utils = {git = "https://github.com/guillemcordoba/hc-utils", branch = "develop", package = "hc_utils"}
-hdk3 = {git = "https://github.com/holochain/holochain", rev = "7037aa2ccfb1ad9a8ece98eb379686f605dc1a0c", package = "hdk3"}
-holo_hash = {git = "https://github.com/holochain/holochain", rev = "7037aa2ccfb1ad9a8ece98eb379686f605dc1a0c", package = "holo_hash"}
-```
-7. Add the zome into your `*.dna.workdir/dna.json` file.
-8. Compile the DNA with the usual `CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown`.
-
-### Using the UI module
-
-1. Install the module with `npm install https://github.com/holochain-open-dev/todo_rename#ui-build`.
-
-2. Import and create the `mobx` store for profiles and for this module, and define the custom elements you need in your app:
-
-```js
-import {
-  CreateOffer,
-  MyOffers,
-  PendingOfferList,
-  MyBalance,
-  PublicTransactorService,
-  TransactorStore,
-} from "@llavors-mutues/public-transactor";
-import { connectStore } from "@holochain-open-dev/common";
-import {
-  ProfilePrompt,
-  ProfilesStore,
-  ProfilesService,
-} from "@holochain-open-dev/profiles";
-import { AppWebsocket } from "@holochain/conductor-api";
-
-async function setupTransactor() {
-  const appWebsocket = await ConductorApi.AppWebsocket.connect(
-    process.env.CONDUCTOR_URL,
-    12000
-  );
-  const appInfo = await appWebsocket.appInfo({
-    installed_app_id: "test-app",
-  });
-
-  const cellId = appInfo.cell_data[0][0];
-
-  const profilesService = new ProfilesService(appWebsocket, cellId);
-  const profilesStore = new ProfilesStore(profilesService);
-  const service = new PublicTransactorService(appWebsocket, cellId);
-  const store = new TransactorStore(service, profilesStore);
-
-  customElements.define(
-    "profile-prompt",
-    connectStore(ProfilePrompt, profilesStore)
-  );
-  customElements.define("create-offer", connectStore(CreateOffer, store));
-  customElements.define("my-offers", connectStore(MyOffers, store));
-  customElements.define("my-balance", connectStore(MyBalance, store));
-}
-```
-
-3. All the elements you have defined are now available to use as normal HTML tags:
-
-```html
-...
-<body>
-  <create-offer style="height: 400px; width: 500px"></create-offer>
-</body>
-```
-
-Take into account that at this point the elements already expect a holochain conductor running at `ws://localhost:8888`.
-
-You can see a full working example [here](/ui/demo/index.html).
-
-## Developer Setup
-
-See our [developer setup guide](/dev-setup.md).
+- [NPM Workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces/): npm v7's built-in monorepo capabilities.
+- [hc](https://github.com/holochain/holochain/tree/develop/crates/hc): Holochain CLI to easily manage Holochain development instances.
+- [@holochain/tryorama](https://www.npmjs.com/package/@holochain/tryorama): test framework.
+- [@holochain/conductor-api](https://www.npmjs.com/package/@holochain/conductor-api): client library to connect to Holochain from the UI.
