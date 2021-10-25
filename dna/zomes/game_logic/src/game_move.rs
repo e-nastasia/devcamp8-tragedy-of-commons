@@ -58,7 +58,7 @@ pub fn get_moves_for_round(last_round_hash: EntryHash) -> ExternResult<Vec<GameM
     )?;
     let mut moves: Vec<GameMove> = vec![];
     for link in links.into_inner() {
-        let game_move: GameMove = try_get_and_convert(link.target)?;
+        let game_move: GameMove = try_get_and_convert(link.target, GetOptions::latest())?;
         moves.push(game_move);
     }
     Ok(moves)
