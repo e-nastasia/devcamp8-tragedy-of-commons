@@ -1,6 +1,6 @@
 use crate::{
     game_move::GameMove,
-    game_session::{GameParams, PlayerStats, ResourceAmount},
+    game_session::{GameParams, PlayerStats, ResourceAmount, GameSession},
     utils::player_stats_from_moves,
 };
 use hdk::prelude::*;
@@ -62,7 +62,7 @@ impl GameRound {
 /// Calculate state of the round using provided game params and player moves
 /// NOTE: this fn would be used both in validation and when creating game round entries
 /// so it doesn't make any DHT queries and only operates with input data
-pub fn calculate_round_state(
+fn calculate_round_state(
     last_round: &GameRound,
     params: &GameParams,
     player_moves: Vec<GameMove>,
@@ -83,13 +83,27 @@ pub fn calculate_round_state(
     }
 }
 
+/// Checks if we can start a new round given the game session and
+/// it's latest round (which would be previous round in regard to the one
+/// we want to start)
+fn can_start_new_round(
+    game_session: &GameSession,
+    prev_round: &GameRound,
+    round_state: &RoundState,
+) -> bool {
+    // do we have rounds left to play?
+    prev_round.round_num + 1 < game_session.game_params.num_rounds
+    // are resources not depleted?
+        && round_state.resources_left > 0
+}
+
 /*
 
 try_to_close_round
     + get_moves_for_round
     + finalize_moves
-    calculate_round_state
-    start_new_round
+    + calculate_round_state
+    + start_new_round
     create_new_round
     end_game
 */
