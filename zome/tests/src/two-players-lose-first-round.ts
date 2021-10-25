@@ -91,13 +91,14 @@ orchestrator.registerScenario(
     t.ok(list_of_players);
 
     //Alice starts a new game (session) with bob and herself
-    let session_header_hash = await alice_common.cells[0].call(
+    let first_round_hash = await alice_common.cells[0].call(
       ZOME_NAME,
       "start_game_session_with_code",
       GAME_CODE
     );
-    console.log(session_header_hash);
-    t.ok(session_header_hash);
+    prev_round_hash = first_round_hash;
+    console.log("Game session started, first round hash: ", prev_round_hash);
+    t.ok(prev_round_hash);
 
     //Ensure every thing is ok
     await signalPromiseAlice;

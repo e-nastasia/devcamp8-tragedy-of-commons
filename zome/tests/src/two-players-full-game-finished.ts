@@ -89,27 +89,27 @@ orchestrator.registerScenario(
     t.ok(list_of_players);
 
     //Alice starts a new game (session) with bob and herself
-    let session_header_hash = await alice_common.cells[0].call(
+    let first_round_hash = await alice_common.cells[0].call(
       ZOME_NAME,
       "start_game_session_with_code",
       GAME_CODE
     );
-    console.log(session_header_hash);
-    t.ok(session_header_hash);
+    prev_round_hash = first_round_hash;
+    console.log("Game session started, first round hash: ", prev_round_hash);
+    t.ok(prev_round_hash);
 
     //Ensure every thing is ok
     await signalPromiseAlice;
     await signalPromiseBob;
 
     await sleep(5000);
-    console.log("prev_round_hash", prev_round_hash);
 
     // ROUND 1
     // Alice makes her move
     let game_move_round_1_alice = await alice_common.cells[0].call(
       ZOME_NAME,
       "make_new_move",
-      {resource_amount: 5, previous_round: prev_round_hash},
+      {resource_amount: 5, previous_round: first_round_hash},
     );
     console.log("ROUND 1: Alice made a move: ", game_move_round_1_alice);
     t.ok(game_move_round_1_alice);
@@ -118,7 +118,7 @@ orchestrator.registerScenario(
     let game_move_round_1_bob = await bob_common.cells[0].call(
       ZOME_NAME,
       "make_new_move",
-      {resource_amount: 10, previous_round: prev_round_hash},
+      {resource_amount: 10, previous_round: first_round_hash},
     );
     console.log("ROUND 1: Bob made a move: ", game_move_round_1_bob);
     t.ok(game_move_round_1_bob);
