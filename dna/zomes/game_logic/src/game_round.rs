@@ -1,5 +1,5 @@
+use crate::game_session::{PlayerStats, ResourceAmount};
 use hdk::prelude::*;
-use crate::game_session::{ResourceAmount, PlayerStats};
 
 // Having a separate struct for the round state would come in
 // handy later in development
@@ -39,7 +39,7 @@ impl GameRound {
         resources_left: ResourceAmount,
         resources_taken: ResourceAmount,
         resources_grown: ResourceAmount,
-        player_stats: PlayerStats
+        player_stats: PlayerStats,
     ) -> GameRound {
         let state = RoundState {
             resources_left,
