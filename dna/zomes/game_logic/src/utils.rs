@@ -35,6 +35,21 @@ pub fn try_from_element<T: TryFrom<Entry>>(element: Element) -> ExternResult<T> 
     }
 }
 
+/// Attempts to get an element at the entry_hash and returns it
+/// if the element exists
+pub fn try_get_element(
+    entry_hash: EntryHash,
+    get_options: GetOptions,
+) -> ExternResult<Element> {
+    match get(entry_hash.clone(), get_options)? {
+        Some(element) => Ok(element),
+        None => Err(WasmError::Guest(format!(
+            "There is no element at the hash {}",
+            entry_hash
+        ))),
+    }
+}
+
 /// Generates PlayerStats instance with the state from the input game_moves
 pub fn player_stats_from_moves(game_moves: Vec<GameMove>) -> PlayerStats {
     game_moves
