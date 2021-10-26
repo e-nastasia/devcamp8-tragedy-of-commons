@@ -14,6 +14,7 @@ mod utils;
 use crate::{
     game_session::GameSession,
     player_profile::{JoinGameInfo, PlayerProfile},
+    game_round::GameRoundInfo
 };
 
 // This is part of Holochain data model definition, and here we specify
@@ -78,4 +79,12 @@ pub fn get_my_owned_sessions(_: ()) -> ExternResult<Vec<(EntryHash, GameSession)
 #[hdk_extern]
 pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
     game_move::new_move(input.resource_amount, input.round_hash)
+}
+
+/// Function to call from the UI on a regular basis to try and close the currently
+/// active GameRound. It will check the currently available GameRound state and then
+/// will close it if it's possible. If not, it will return None
+#[hdk_extern]
+pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
+    game_round::try_to_close_round(prev_round_hash.into())
 }
