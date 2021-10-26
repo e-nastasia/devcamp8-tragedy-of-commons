@@ -100,7 +100,7 @@ pub fn get_moves_for_round(last_round_element: &Element) -> ExternResult<Vec<Gam
 
 /// Consumes list of moves passed to it to finalize them.
 /// If every player made at least one move, it returns list of moves which is guaranteed
-/// to have (TODO: the earliest) a single move for every player.
+/// to have a single move for every player.
 /// If there are missing moves, it returns None, since we can't finalize the moves and
 /// have to wait for other players instead.
 pub fn finalize_moves(
@@ -137,8 +137,8 @@ pub fn finalize_moves(
         }
         let mut new_moves = vec![];
         for (owner, move_vec) in moves_per_player {
-            // TODO: instead of taking just a [0] move, find the move with the earliest
-            // timestamp and use it
+            // NOTE(e-nastasia): if we add a timestamp to the game move, we'll be able to
+            // filter moves here, but for now we'll do with just taking some move
             new_moves.push(move_vec[0].clone());
         }
         Ok(Some(new_moves))

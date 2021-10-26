@@ -38,7 +38,7 @@ pub struct GameRoundInfo {
     pub prev_round_entry_hash: Option<EntryHash>,
     pub game_session_hash: Option<EntryHash>,
     pub next_action: String,
-    pub moves: Vec<(i32, String, AgentPubKey)>,
+    pub moves: Vec<(ResourceAmount, String, AgentPubKey)>,
 }
 
 impl RoundState {
@@ -92,19 +92,20 @@ pub fn calculate_round_state(
     // resources
     let consumed_resources_in_round: ResourceAmount =
         player_moves.iter().map(|x| x.resources).sum();
-    let grown_resources_in_round = 10; // fixed regrowth
+    let resources_left = last_round.state.resources_left - consumed_resources_in_round;
     let total_leftover_resource =
-        last_round.state.resources_left - consumed_resources_in_round + grown_resources_in_round;
+            (resources_left as f32 * params.regeneration_factor) as i32;
+    let grown_resources_in_round = total_leftover_resource - resources_left;
 
     // player stats dd
-    let stats = player_stats_from_moves(player_moves);
+    let player_stats = player_stats_from_moves(player_moves);
     info!("total_leftover_resource : {:?}", total_leftover_resource);
 
     RoundState {
         resources_left: total_leftover_resource,
         resources_taken: consumed_resources_in_round,
         resources_grown: grown_resources_in_round,
-        player_stats: stats,
+        player_stats,
     }
 }
 

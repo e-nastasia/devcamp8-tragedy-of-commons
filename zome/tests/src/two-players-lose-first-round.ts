@@ -163,7 +163,7 @@ orchestrator.registerScenario(
     );
     console.log("Bob tried to close round 1: ", close_game_round_1_bob);
     console.log("Verify that game has ended and next_action = SHOW_GAME_RESULTS");
-    t.ok(close_game_round_1_bob.next_action = "SHOW_GAME_RESULTS");
+    t.ok(close_game_round_1_bob.next_action == "SHOW_GAME_RESULTS");
   }
 );
 

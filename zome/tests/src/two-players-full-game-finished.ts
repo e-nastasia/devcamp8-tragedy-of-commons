@@ -133,12 +133,14 @@ orchestrator.registerScenario(
       prev_round_hash,
     );
     console.log("Bob tried to close round 1: ", close_game_round_1_bob);
-    console.log("Verify that first round has ended and next_action = START_NEXT_ROUND");
-    t.ok(close_game_round_1_bob.next_action = "START_NEXT_ROUND");
-    prev_round_hash = close_game_round_1_bob.current_round_header_hash;
+    console.log("Verify that first round has ended and next_action = START_NEXT_ROUND:", close_game_round_1_bob.next_action);
+    t.ok(close_game_round_1_bob.next_action == "START_NEXT_ROUND");
+    prev_round_hash = close_game_round_1_bob.current_round_entry_hash;
 
     // wait for round data to propagate
     await sleep(2000);
+
+    console.log("Alice makes new move for round 2, prev round hash:", prev_round_hash);
 
     // ROUND 2
     // Alice makes her move
@@ -169,8 +171,8 @@ orchestrator.registerScenario(
       prev_round_hash,
     );
     console.log("Alice tried to close round 2: ", close_game_round_2_alice);
-    console.log("Verify that round 2 has ended and next_action = START_NEXT_ROUND");
-    t.ok(close_game_round_1_bob.next_action = "START_NEXT_ROUND");
+    console.log("Verify that round 2 has ended and next_action = START_NEXT_ROUND: ", close_game_round_2_alice.next_action);
+    t.ok(close_game_round_2_alice.next_action == "START_NEXT_ROUND");
 
     // wait for round data to propagate
     await sleep(2000);
@@ -202,8 +204,8 @@ orchestrator.registerScenario(
       prev_round_hash,
     );
     console.log("Alice tried to close round 3: ", close_game_round_3_alice);
-    console.log("Verify that round 3 has ended and next_action = SHOW_GAME_RESULTS");
-    t.ok(close_game_round_1_bob.next_action = "SHOW_GAME_RESULTS");
+    console.log("Verify that round 3 has ended and next_action = SHOW_GAME_RESULTS: ", );
+    t.ok(close_game_round_3_alice.next_action == "SHOW_GAME_RESULTS");
   }
 );
 

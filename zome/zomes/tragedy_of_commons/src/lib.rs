@@ -78,7 +78,7 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
 // function required to process remote signals see hdk/src/p2p.rs
 #[hdk_extern]
 fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
-    debug!("Received remote signal {:#?}", signal);
+    //debug!("Received remote signal {:#?}", signal);
     let game_signal_result: Result<GameSignal, SerializedBytesError> = signal.decode();
     //debug!("Received REMOTE signal {:#?}", sig);
     match game_signal_result {
