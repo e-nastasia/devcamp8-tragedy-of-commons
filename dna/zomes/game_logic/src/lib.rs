@@ -12,9 +12,9 @@ mod player_profile;
 mod utils;
 
 use crate::{
+    game_round::GameRoundInfo,
     game_session::GameSession,
     player_profile::{JoinGameInfo, PlayerProfile},
-    game_round::GameRoundInfo
 };
 
 // This is part of Holochain data model definition, and here we specify

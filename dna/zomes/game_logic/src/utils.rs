@@ -37,10 +37,7 @@ pub fn try_from_element<T: TryFrom<Entry>>(element: Element) -> ExternResult<T> 
 
 /// Attempts to get an element at the entry_hash and returns it
 /// if the element exists
-pub fn try_get_element(
-    entry_hash: EntryHash,
-    get_options: GetOptions,
-) -> ExternResult<Element> {
+pub fn try_get_element(entry_hash: EntryHash, get_options: GetOptions) -> ExternResult<Element> {
     match get(entry_hash.clone(), get_options)? {
         Some(element) => Ok(element),
         None => Err(WasmError::Guest(format!(

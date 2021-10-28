@@ -1,5 +1,6 @@
 use crate::{
-    game_code::get_game_code_anchor, game_round::{GameRound, RoundState},
+    game_code::get_game_code_anchor,
+    game_round::{GameRound, RoundState},
     player_profile::get_player_profiles_for_game_code,
 };
 use hdk::prelude::*;
@@ -171,7 +172,7 @@ pub fn get_my_own_sessions_via_source_query() -> ExternResult<Vec<(EntryHash, Ga
     Ok(list_of_tuples)
 }
 
-/// Ends the game session and updates it's state (finished/lost) 
+/// Ends the game session and updates it's state (finished/lost)
 /// depending on the results of the last round.
 /// NOTE: GameRound param is needed if we want to send a signal that session
 /// has ended, but right now we don't have signals so this param is skipped
@@ -213,7 +214,7 @@ pub fn end_game(
         update_entry(game_session_header_hash.clone(), &game_session_update)?;
     // Calculate the hash of the entry that we just commited
     // Reminder: update_entry would return us only the header hash,
-    // but we need the entry hash, 
+    // but we need the entry hash,
     let game_session_entry_hash_update = hash_entry(&game_session_update)?;
     debug!(
         "updated game session header hash: {:?}",

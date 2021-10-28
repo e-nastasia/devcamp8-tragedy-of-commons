@@ -1,6 +1,6 @@
 use crate::{
-    game_move::{GameMove, finalize_moves, get_moves_for_round},
-    game_session::{GameParams, GameSession, PlayerStats, ResourceAmount, end_game},
+    game_move::{finalize_moves, get_moves_for_round, GameMove},
+    game_session::{end_game, GameParams, GameSession, PlayerStats, ResourceAmount},
     utils::{player_stats_from_moves, try_from_element, try_get_element},
 };
 use hdk::prelude::*;
@@ -142,10 +142,10 @@ fn create_new_round(
     Ok(round_entry_hash_update)
 }
 
-/// Poll the current DHT state to check if player executing this fn can 
+/// Poll the current DHT state to check if player executing this fn can
 /// close the current round
 pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
-    // Retrieve last round element from the DHT and convert it to a Rust struct instance 
+    // Retrieve last round element from the DHT and convert it to a Rust struct instance
     // We would need both the element and the struct instance during this fn
     let last_round_element = try_get_element(last_round_hash.clone(), GetOptions::latest())?;
     let last_round: GameRound = try_from_element(last_round_element.clone())?;
@@ -155,7 +155,7 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
     // we're executing it someone else already closed the round at last_round_hash
     // so we can save ourselves the necesity to commit this round update again
 
-    // Retrieve game session element from the DHT and convert it to a Rust struct instance 
+    // Retrieve game session element from the DHT and convert it to a Rust struct instance
     // We would need both the element and the struct instance during this fn
     let game_session_element = try_get_element(last_round.session.clone(), GetOptions::latest())?;
     let game_session: GameSession = try_from_element(game_session_element.clone())?;
@@ -227,9 +227,7 @@ pub fn try_to_close_round(last_round_hash: EntryHash) -> ExternResult<GameRoundI
             return Ok(GameRoundInfo {
                 current_round_entry_hash: None,
                 prev_round_entry_hash: Some(last_round_hash),
-                game_session_hash: Some(
-                    last_round.session.clone(),
-                ),
+                game_session_hash: Some(last_round.session.clone()),
                 resources_left: None,
                 resources_taken_round: None,
                 resources_grown_round: None,
