@@ -2,13 +2,10 @@ use game_move::GameMoveInput;
 use hdk::prelude::*;
 
 mod game_code;
-#[allow(dead_code)]
 mod game_move;
-#[allow(dead_code)]
 mod game_round;
 mod game_session;
 mod player_profile;
-#[allow(dead_code)]
 mod utils;
 
 use crate::{
