@@ -228,3 +228,9 @@ pub fn end_game(
     // Return hash of the entry as the ID of the new data we commited to DHT
     Ok(game_session_entry_hash_update.clone())
 }
+
+// TODO: validate that GameSession can't be created with any other
+// state than InProgress
+
+// TODO: validate that when GameSession is updated state is changed
+// from InProgress to either Lost/Finished
