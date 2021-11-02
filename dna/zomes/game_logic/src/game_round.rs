@@ -30,6 +30,7 @@ pub struct GameRound {
     pub state: RoundState,
 }
 
+/// Helper struct to package output for the UI
 #[derive(Clone, Debug, Serialize, Deserialize, SerializedBytes)]
 pub struct GameRoundInfo {
     pub round_num: u32,

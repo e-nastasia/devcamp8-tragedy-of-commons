@@ -1,4 +1,3 @@
-use game_move::GameMoveInput;
 use hdk::prelude::*;
 
 mod game_code;
@@ -9,7 +8,7 @@ mod player_profile;
 mod utils;
 
 use crate::{
-    game_round::GameRoundInfo,
+    game_round::{GameRoundInfo, GameRoundInfo},
     game_session::GameSession,
     player_profile::{JoinGameInfo, PlayerProfile},
 };
