@@ -8,7 +8,8 @@ mod player_profile;
 mod utils;
 
 use crate::{
-    game_round::{GameRoundInfo, GameRoundInfo},
+    game_move::GameMoveInput,
+    game_round::GameRoundInfo,
     game_session::GameSession,
     player_profile::{JoinGameInfo, PlayerProfile},
 };
@@ -83,4 +84,11 @@ pub fn make_new_move(input: GameMoveInput) -> ExternResult<HeaderHash> {
 #[hdk_extern]
 pub fn try_to_close_round(prev_round_hash: EntryHash) -> ExternResult<GameRoundInfo> {
     game_round::try_to_close_round(prev_round_hash.into())
+}
+
+#[hdk_extern]
+pub fn validate_update_entry_game_round(
+    data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_round::validate_update_entry_game_round(data)
 }
