@@ -92,3 +92,24 @@ pub fn validate_update_entry_game_round(
 ) -> ExternResult<ValidateCallbackResult> {
     game_round::validate_update_entry_game_round(data)
 }
+
+#[hdk_extern]
+pub fn validate_create_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_move::validate_create_entry_game_move(validate_data)
+}
+
+#[hdk_extern]
+pub fn validate_update_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_move::validate_update_entry_game_move(validate_data)
+}
+
+#[hdk_extern]
+pub fn validate_delete_entry_game_move(
+    validate_data: ValidateData,
+) -> ExternResult<ValidateCallbackResult> {
+    game_move::validate_delete_entry_game_move(validate_data)
+}
