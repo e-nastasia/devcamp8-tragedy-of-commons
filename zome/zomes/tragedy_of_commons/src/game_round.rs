@@ -1,7 +1,7 @@
 use crate::game_code::calculate_game_code_anchor_entry_hash;
 use crate::game_move::{finalize_moves, get_moves_for_round, GameMove};
 use crate::game_session::{
-    GameParams, GameScores, GameSession, GameSignal, SessionState, SignalPayload,
+    GameParams, GameScores, GameSession, SessionState, GameSignal, SignalPayload,
 };
 use crate::types::{player_stats_from_moves, PlayerStats, ResourceAmount};
 use crate::utils::{
@@ -402,9 +402,30 @@ pub fn current_round_for_game_code(game_code: String) -> ExternResult<Option<Ent
     Ok(None)
 }
 
-// TODO: validate that we can't create round with num != 0
-// TODO: validate that game session for this round isn't finished/lost
-pub fn validate_create_entry_game_round() {}
+pub fn validate_create_entry_game_round(data: ValidateData) -> ExternResult<ValidateCallbackResult> {
+    let game_round: GameRound = data
+        .element
+        .entry()
+        .to_app_option()?
+        .ok_or(WasmError::Guest(
+            "Trying to validate an entry that's not a GameRound".into(),
+        ))?;
+    
+    if game_round.round_num != 0 {
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "Can't create GameRound with number {}: number can only be 0",
+            game_round.round_num,
+        )));
+    }
+    let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
+    if game_session.status != SessionState::InProgress {
+        return Ok(ValidateCallbackResult::Invalid(format!(
+            "Can't create GameRound for the GameSession {:?} because it's not InProgress",
+            game_session,
+        )));
+    }
+    Ok(ValidateCallbackResult::Valid)
+}
 
 pub fn validate_update_entry_game_round(
     data: ValidateData,
@@ -424,7 +445,7 @@ pub fn validate_update_entry_game_round(
     let game_session = must_get_entry_struct::<GameSession>(game_round.session)?;
     if game_round.round_num > game_session.game_params.num_rounds {
         return Ok(ValidateCallbackResult::Invalid(format!(
-            "Can't create GameRound number {} because GameSession only has {} rounds",
+            "Can't update GameRound number {} because GameSession only has {} rounds",
             game_round.round_num, game_session.game_params.num_rounds
         )));
     }
