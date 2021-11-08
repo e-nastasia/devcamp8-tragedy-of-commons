@@ -275,7 +275,6 @@ pub fn validate_update_entry_game_round(
             }
         }
         _ => {
-            // TODO(e-nastasia): perhaps add there the type of header received, for a more informative error message
             return Ok(ValidateCallbackResult::Invalid(String::from(
                 "GameRound's element has the wrong header: expected Update",
             )));
